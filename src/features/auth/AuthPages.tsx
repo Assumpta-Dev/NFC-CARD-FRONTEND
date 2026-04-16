@@ -1,0 +1,397 @@
+// ===========================================================
+// AUTH PAGES — Login & Register
+// OVOU-inspired dark theme design
+// ===========================================================
+
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { authApi, getErrorMessage } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+import { Button, DarkAlert } from "../../components/ui";
+import {
+  HiOutlineCreditCard,
+  HiOutlineMail,
+  HiOutlineLockClosed,
+  HiOutlineUser,
+  HiOutlineIdentification,
+} from "react-icons/hi";
+
+function IconInput({
+  icon: Icon,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  autoComplete,
+  required = false,
+  id,
+  name,
+}: {
+  icon: React.ElementType;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder: string;
+  autoComplete?: string;
+  required?: boolean;
+  id?: string;
+  name?: string;
+}) {
+  return (
+    <div className="relative w-full">
+      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+      <input
+        id={id}
+        name={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        autoComplete={autoComplete}
+        className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
+        focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
+        transition-all duration-200 caret-white"
+      />
+    </div>
+  );
+}
+
+// ===========================================================
+// SHARED LAYOUT — Dark full-page centered card
+// ===========================================================
+function AuthLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-surface-900 flex items-center justify-center p-4">
+      {/* Subtle radial glow behind the card */}
+      <div
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative w-full max-w-md animate-fade-in">
+        {/* Brand mark */}
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+          <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+            <HiOutlineCreditCard className="text-white text-lg" />
+          </div>
+          <span className="font-bold text-white text-lg tracking-tight">
+            NFC Card
+          </span>
+        </div>
+
+        {/* Glass-dark card */}
+        <div className="bg-surface-800 rounded-3xl border border-surface-600 p-8 shadow-2xl shadow-black/40">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===========================================================
+// LOGIN PAGE
+// ===========================================================
+export function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ||
+    "/dashboard";
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      const { token, user } = await authApi.login({ email, password });
+      login(token, user!);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout>
+      {/* Heading */}
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold text-white">Welcome back</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Sign in to manage your digital card
+        </p>
+      </div>
+
+      {error && <DarkAlert message={error} className="mb-5" />}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email with icon prefix */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="email"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Email address
+          </label>
+          <div className="relative">
+            <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              autoComplete="email"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
+                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
+                transition-all duration-200 caret-white"
+            />
+          </div>
+        </div>
+
+        {/* Password with icon prefix */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="password"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Password
+          </label>
+          <div className="relative">
+            <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+            <input
+              id="password"
+              name="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              autoComplete="current-password"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
+                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
+                transition-all duration-200 caret-white"
+            />
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          fullWidth
+          className="mt-2 py-3 text-base rounded-xl"
+        >
+          Sign in
+        </Button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-surface-600" />
+        <span className="text-xs text-gray-600">or</span>
+        <div className="flex-1 h-px bg-surface-600" />
+      </div>
+
+      <p className="text-center text-sm text-gray-600">
+        Don't have an account?{" "}
+        <Link
+          to="/register"
+          className="text-brand-400 font-semibold hover:text-brand-300 transition-colors"
+        >
+          Create one
+        </Link>
+      </p>
+    </AuthLayout>
+  );
+}
+
+// ===========================================================
+// REGISTER PAGE
+// ===========================================================
+export function RegisterPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [cardId, setCardId] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefilledCardId = params.get("cardId");
+    if (prefilledCardId) setCardId(prefilledCardId);
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setError("Password must contain at least one number");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const result = await authApi.register({
+        name,
+        email,
+        password,
+        cardId: cardId || undefined,
+      });
+      login(result.token, result.user!);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper for icon-prefixed inputs
+
+  return (
+    <AuthLayout>
+      <div className="mb-7">
+        <h1 className="text-2xl font-bold text-white">Create your card</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Set up your digital business card in seconds
+        </p>
+      </div>
+
+      {error && <DarkAlert message={error} className="mb-5" />}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Full name */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="name"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Full name
+          </label>
+          <IconInput
+            id="name"
+            name="name"
+            icon={HiOutlineUser}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Jane Smith"
+            autoComplete="name"
+            required
+          />
+        </div>
+
+        {/* Email */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="register-email"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Email address
+          </label>
+          <IconInput
+            id="register-email"
+            name="email"
+            icon={HiOutlineMail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+          />
+        </div>
+
+        {/* Password */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="register-password"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Password
+          </label>
+          <IconInput
+            id="register-password"
+            name="password"
+            icon={HiOutlineLockClosed}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            type="password"
+            placeholder="Min 8 chars, include a number"
+            autoComplete="new-password"
+            required
+          />
+        </div>
+
+        {/* Card ID (optional) */}
+        <div className="space-y-1.5">
+          <label
+            htmlFor="cardId"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+          >
+            Card ID{" "}
+            <span className="normal-case text-gray-600 font-normal tracking-normal">
+              (optional)
+            </span>
+          </label>
+          <IconInput
+            id="cardId"
+            name="cardId"
+            icon={HiOutlineIdentification}
+            value={cardId}
+            onChange={(e) => setCardId(e.target.value.toUpperCase())}
+            placeholder="CARD_XXXXXX"
+          />
+          <p className="text-xs text-gray-600 px-1">
+            Enter your physical card ID to activate it immediately
+          </p>
+        </div>
+
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          fullWidth
+          className="mt-2 py-3 text-base rounded-xl"
+        >
+          Create account
+        </Button>
+      </form>
+
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-surface-600" />
+        <span className="text-xs text-gray-600">or</span>
+        <div className="flex-1 h-px bg-surface-600" />
+      </div>
+
+      <p className="text-center text-sm text-gray-600">
+        Already have an account?{" "}
+        <Link
+          to="/login"
+          className="text-brand-400 font-semibold hover:text-brand-300 transition-colors"
+        >
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
+  );
+}
