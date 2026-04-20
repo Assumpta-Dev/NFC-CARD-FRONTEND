@@ -54,7 +54,7 @@ import {
 //   4. Set JWT_SECRET to a random 64-char string
 //   5. Run: npm run dev (listens on :5000)
 // ===========================================================
-const BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
