@@ -28,6 +28,8 @@ import {
   HiOutlineX,
 } from "react-icons/hi";
 import { MdOutlineBarChart } from "react-icons/md";
+import { CardQrCodePanel } from "../card/CardQrCodePanel";
+import { getPublicCardPath, getPublicCardUrl } from "../card/publicCardUrl";
 
 // How many cards to show per page in the cards list
 const CARDS_PER_PAGE = 5;
@@ -98,9 +100,7 @@ export function UserDashboard() {
   }, [selectedCardId]);
 
   const copyCardLink = async (cardId: string) => {
-    await navigator.clipboard.writeText(
-      `${window.location.origin}/card/${cardId}`,
-    );
+    await navigator.clipboard.writeText(getPublicCardUrl(cardId));
     setCopied(true);
     setCopiedId(cardId);
     setTimeout(() => {
@@ -126,6 +126,7 @@ export function UserDashboard() {
   const periodTotal = filteredBreakdown.reduce((sum, d) => sum + d.count, 0);
   const displayTotal =
     timeFilter === "all" ? (analytics?.totalScans ?? 0) : periodTotal;
+  const selectedCard = cards.find((card) => card.cardId === selectedCardId);
 
   // Pagination
   const totalCardPages = Math.ceil(cards.length / CARDS_PER_PAGE);
@@ -153,20 +154,22 @@ export function UserDashboard() {
           DARK HERO HEADER — OVOU-inspired analytics section
           Stats are displayed prominently inside the dark zone
           ════════════════════════════════════════════════════ */}
-      <div className="bg-gray-900 text-white">
+      <div className="bg-white border-b border-[#DE3A16]">
         <div className="max-w-4xl mx-auto px-4 pt-5 pb-8">
           {/* Top bar: logo + actions */}
           <div className="flex items-center justify-between mb-7">
-            <div className="flex items-center gap-2">
-              <HiOutlineCreditCard className="text-brand-400 text-xl" />
-              <span className="font-bold text-white tracking-tight">
-                NFC Card
+            <div className="flex items-center gap-3">
+              <span className="icon-badge w-10 h-10 rounded-xl">
+                <HiOutlineCreditCard className="text-xl" />
+              </span>
+              <span className="font-bold text-gray-900 tracking-tight">
+                E-Card
               </span>
             </div>
             <div className="flex items-center gap-0.5">
               <Link
                 to="/profile"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
               >
                 <HiOutlinePencil className="text-base" />
                 <span className="hidden sm:inline">Edit Profile</span>
@@ -174,7 +177,7 @@ export function UserDashboard() {
               {user?.role === "ADMIN" && (
                 <Link
                   to="/admin"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-brand-400 hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-brand-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
                 >
                   <HiOutlineShieldCheck className="text-base" />
                   <span className="hidden sm:inline">Admin</span>
@@ -182,7 +185,7 @@ export function UserDashboard() {
               )}
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
               >
                 <HiOutlineLogout className="text-base" />
                 <span className="hidden sm:inline">Sign out</span>
@@ -194,50 +197,56 @@ export function UserDashboard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">
             Analytics
           </p>
-          <h1 className="text-2xl font-bold text-white leading-tight">
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
             Hi, {user?.name?.split(" ")[0]}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <p className="text-gray-600 text-sm mt-1">
             Here's a showcase of your analytics
           </p>
 
           {/* ── User Summary Stats ── */}
           {userSummary && (
             <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-center gap-1 mb-2">
-                  <HiOutlineCreditCard className="text-blue-400 text-lg" />
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                  <span className="icon-badge w-9 h-9 rounded-xl">
+                    <HiOutlineCreditCard className="text-lg" />
+                  </span>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Today
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {userSummary.today.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Scans</p>
               </div>
 
-              <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-center gap-1 mb-2">
-                  <MdOutlineBarChart className="text-green-400 text-lg" />
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                  <span className="icon-badge w-9 h-9 rounded-xl">
+                    <MdOutlineBarChart className="text-lg" />
+                  </span>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     This Week
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {userSummary.week.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Scans</p>
               </div>
 
-              <div className="bg-white/10 rounded-xl p-4 text-center">
+              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-center gap-1 mb-2">
-                  <HiOutlineCheck className="text-purple-400 text-lg" />
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                  <span className="icon-badge w-9 h-9 rounded-xl">
+                    <HiOutlineCheck className="text-lg" />
+                  </span>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Total
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {userSummary.total.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Scans</p>
@@ -253,8 +262,8 @@ export function UserDashboard() {
                 onClick={() => setTimeFilter(f)}
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
                   timeFilter === f
-                    ? "bg-white text-gray-900"
-                    : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+                    ? "bg-[#DE3A16] text-white"
+                    : "bg-white text-gray-600 border border-[#DE3A16] hover:bg-[#DE3A16] hover:text-white"
                 }`}
               >
                 {f === "all" ? "All-Time" : f.toUpperCase()}
@@ -264,7 +273,7 @@ export function UserDashboard() {
 
           {/* ── Stats Block inside dark header (OVOU-inspired) ── */}
           {analytics && (
-            <div className="mt-6 grid grid-cols-3 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
+            <div className="mt-6 grid grid-cols-3 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
               {/* Stat 1: Period Total */}
               <div className="px-4 py-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
@@ -277,7 +286,7 @@ export function UserDashboard() {
                         : "All-Time"}
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {displayTotal.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">Scans</p>
@@ -291,7 +300,7 @@ export function UserDashboard() {
                     Today
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {analytics.scansToday.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">Scans</p>
@@ -305,7 +314,7 @@ export function UserDashboard() {
                     Mobile
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {analytics.deviceBreakdown.mobile > 0
                     ? `${Math.round((analytics.deviceBreakdown.mobile / (analytics.deviceBreakdown.mobile + analytics.deviceBreakdown.desktop)) * 100)}%`
                     : "—"}
@@ -327,7 +336,7 @@ export function UserDashboard() {
             <HiOutlineCreditCard className="text-gray-300 text-6xl mx-auto mb-4" />
             <h3 className="font-bold text-gray-900 mb-2">No cards yet</h3>
             <p className="text-gray-500 text-sm mb-6">
-              Tap or scan your physical NFC card to activate it.
+              Tap or scan your physical E-Card to activate it.
             </p>
             <Link to="/profile" className="btn-primary inline-flex">
               Set up your profile
@@ -666,6 +675,14 @@ export function UserDashboard() {
           </div>
         )}
 
+        {selectedCard?.status === "ACTIVE" && (
+          <CardQrCodePanel
+            cardId={selectedCard.cardId}
+            title="Card Access"
+            description="This single public link is the source for your QR code, NFC tap destination, browser preview, and sharing."
+          />
+        )}
+
         {/* ── Recent Scans ───────────────────────────── */}
         {recentScans.length > 0 && (
           <div className="card p-6">
@@ -779,7 +796,7 @@ export function UserDashboard() {
           Navigate back with the Back button or close (×).
           ════════════════════════════════════════════════════ */}
       {previewCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
           <div className="relative w-full max-w-sm h-[88vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
             {/* Modal header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white flex-shrink-0">
@@ -805,7 +822,7 @@ export function UserDashboard() {
 
             {/* Card rendered in an iframe — isolated from dashboard state */}
             <iframe
-              src={`/card/${previewCard}`}
+              src={getPublicCardPath(previewCard)}
               className="flex-1 w-full border-0"
               title={`Card Preview — ${previewCard}`}
             />

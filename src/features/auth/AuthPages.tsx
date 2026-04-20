@@ -8,6 +8,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authApi, getErrorMessage } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { Button, DarkAlert } from "../../components/ui";
+import Navbar from "../../components/layout/navbar";
 import {
   HiOutlineCreditCard,
   HiOutlineMail,
@@ -39,7 +40,9 @@ function IconInput({
 }) {
   return (
     <div className="relative w-full">
-      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+      <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+        <Icon className="text-sm" />
+      </span>
       <input
         id={id}
         name={name}
@@ -49,9 +52,9 @@ function IconInput({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
-        className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
-        focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
-        transition-all duration-200 caret-white"
+        className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
+        focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
+        transition-all duration-200 caret-brand-600"
       />
     </div>
   );
@@ -62,29 +65,20 @@ function IconInput({
 // ===========================================================
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-surface-900 flex items-center justify-center p-4">
-      {/* Subtle radial glow behind the card */}
-      <div
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%)",
-        }}
-      />
-
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <div className="relative w-full max-w-md animate-fade-in">
         {/* Brand mark */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
-            <HiOutlineCreditCard className="text-white text-lg" />
+          <div className="icon-badge w-9 h-9">
+            <HiOutlineCreditCard className="text-lg" />
           </div>
-          <span className="font-bold text-white text-lg tracking-tight">
-            NFC Card
+          <span className="font-bold text-gray-900 text-lg tracking-tight">
+            E-Card
           </span>
         </div>
 
         {/* Glass-dark card */}
-        <div className="bg-surface-800 rounded-3xl border border-surface-600 p-8 shadow-2xl shadow-black/40">
+        <div className="card-soft p-8 rounded-3xl border-[#DE3A16]">
           {children}
         </div>
       </div>
@@ -125,11 +119,14 @@ export function LoginPage() {
   };
 
   return (
+     <div className="min-h-screen bg-white flex flex-col">
+          {/* Navbar */}
+            <Navbar />
     <AuthLayout>
       {/* Heading */}
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-        <p className="text-gray-500 text-sm mt-1">
+      <div className="mb-7 pt-20">
+        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+        <p className="text-gray-600 text-sm mt-1">
           Sign in to manage your digital card
         </p>
       </div>
@@ -141,12 +138,14 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="email"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Email address
           </label>
           <div className="relative">
-            <HiOutlineMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+            <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+              <HiOutlineMail className="text-sm" />
+            </span>
             <input
               id="email"
               name="email"
@@ -156,9 +155,9 @@ export function LoginPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
-                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
-                transition-all duration-200 caret-white"
+              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
+                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
+                transition-all duration-200 caret-brand-600"
             />
           </div>
         </div>
@@ -167,12 +166,14 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="password"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Password
           </label>
           <div className="relative">
-            <HiOutlineLockClosed className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 text-lg pointer-events-none z-10" />
+            <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+              <HiOutlineLockClosed className="text-sm" />
+            </span>
             <input
               id="password"
               name="password"
@@ -182,9 +183,9 @@ export function LoginPage() {
               placeholder="Enter your password"
               required
               autoComplete="current-password"
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 cursor-text
-                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-surface-700/80
-                transition-all duration-200 caret-white"
+              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
+                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
+                transition-all duration-200 caret-brand-600"
             />
           </div>
         </div>
@@ -201,21 +202,22 @@ export function LoginPage() {
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-surface-600" />
-        <span className="text-xs text-gray-600">or</span>
-        <div className="flex-1 h-px bg-surface-600" />
+        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <span className="text-xs text-gray-500">or</span>
+        <div className="flex-1 h-px bg-[#DE3A16]" />
       </div>
 
       <p className="text-center text-sm text-gray-600">
         Don't have an account?{" "}
         <Link
           to="/register"
-          className="text-brand-400 font-semibold hover:text-brand-300 transition-colors"
+          className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
         >
           Create one
         </Link>
       </p>
     </AuthLayout>
+    </div>
   );
 }
 
@@ -270,10 +272,13 @@ export function RegisterPage() {
   // Helper for icon-prefixed inputs
 
   return (
+     <div className="min-h-screen bg-white flex flex-col">
+          {/* Navbar */}
+            <Navbar />
     <AuthLayout>
-      <div className="mb-7">
-        <h1 className="text-2xl font-bold text-white">Create your card</h1>
-        <p className="text-gray-500 text-sm mt-1">
+      <div className="mb-7 pt-20">
+        <h1 className="text-2xl font-bold text-gray-900">Create your card</h1>
+        <p className="text-gray-600 text-sm mt-1">
           Set up your digital business card in seconds
         </p>
       </div>
@@ -285,7 +290,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="name"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Full name
           </label>
@@ -305,7 +310,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="register-email"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Email address
           </label>
@@ -326,7 +331,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="register-password"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Password
           </label>
@@ -347,10 +352,10 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="cardId"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
             Card ID{" "}
-            <span className="normal-case text-gray-600 font-normal tracking-normal">
+            <span className="normal-case text-gray-500 font-normal tracking-normal">
               (optional)
             </span>
           </label>
@@ -362,7 +367,7 @@ export function RegisterPage() {
             onChange={(e) => setCardId(e.target.value.toUpperCase())}
             placeholder="CARD_XXXXXX"
           />
-          <p className="text-xs text-gray-600 px-1">
+          <p className="text-xs text-gray-500 px-1">
             Enter your physical card ID to activate it immediately
           </p>
         </div>
@@ -378,20 +383,21 @@ export function RegisterPage() {
       </form>
 
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-surface-600" />
-        <span className="text-xs text-gray-600">or</span>
-        <div className="flex-1 h-px bg-surface-600" />
+        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <span className="text-xs text-gray-500">or</span>
+        <div className="flex-1 h-px bg-[#DE3A16]" />
       </div>
 
       <p className="text-center text-sm text-gray-600">
         Already have an account?{" "}
         <Link
           to="/login"
-          className="text-brand-400 font-semibold hover:text-brand-300 transition-colors"
+          className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
         >
           Sign in
         </Link>
       </p>
     </AuthLayout>
+    </div>
   );
 }

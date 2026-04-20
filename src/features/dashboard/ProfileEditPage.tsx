@@ -41,8 +41,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-surface-800 border border-surface-600 rounded-3xl p-6 space-y-4">
-      <h2 className="font-semibold text-white text-base">{title}</h2>
+    <section className="card-soft rounded-3xl p-6 space-y-4 border-[#DE3A16]">
+      <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
       {children}
     </section>
   );
@@ -50,7 +50,7 @@ function Section({
 
 // ── Dark textarea wrapper ────────────────────────────────────
 const DARK_INPUT_CLS =
-  "w-full px-4 py-3 rounded-xl border border-surface-600 bg-surface-800 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 transition-all duration-200";
+  "w-full px-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 transition-all duration-200";
 
 function DarkTextarea({
   label,
@@ -71,7 +71,7 @@ function DarkTextarea({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
         {label}
       </label>
       <textarea
@@ -83,11 +83,11 @@ function DarkTextarea({
         className={`${DARK_INPUT_CLS} resize-none`}
       />
       {maxLength && (
-        <p className="text-xs text-gray-600 text-right">
+        <p className="text-xs text-gray-500 text-right">
           {value.length}/{maxLength}
         </p>
       )}
-      {hint && <p className="text-xs text-gray-600">{hint}</p>}
+      {hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }
@@ -106,7 +106,7 @@ function DarkSelect({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
         {label}
       </label>
       <select value={value} onChange={onChange} className={DARK_INPUT_CLS}>
@@ -114,7 +114,7 @@ function DarkSelect({
           <option
             key={o.value}
             value={o.value}
-            className="bg-surface-800 text-white"
+            className="bg-white text-gray-900"
           >
             {o.label}
           </option>
@@ -284,30 +284,32 @@ export function ProfileEditPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-surface-600 border-t-brand-500" />
-          <p className="mt-3 text-sm text-gray-500">Loading profile…</p>
+          <p className="mt-3 text-sm text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-900">
+    <div className="min-h-screen bg-white">
       {/* ── Sticky Header ────────────────────────────────── */}
-      <nav className="bg-surface-800 border-b border-surface-600 sticky top-0 z-10">
+      <nav className="bg-white border-b border-[#DE3A16] sticky top-0 z-10 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard")}
-            className="w-9 h-9 rounded-xl bg-surface-700 border border-surface-600 flex items-center justify-center text-gray-400 hover:text-white hover:border-surface-500 transition-all"
+            className="icon-badge w-9 h-9 rounded-xl"
             aria-label="Back to dashboard"
           >
             <HiOutlineChevronLeft className="text-lg" />
           </button>
           <div className="flex items-center gap-2">
-            <HiOutlineCreditCard className="text-brand-400 text-lg" />
-            <h1 className="font-bold text-white">Edit Profile</h1>
+            <span className="icon-badge w-9 h-9 rounded-xl">
+              <HiOutlineCreditCard className="text-lg" />
+            </span>
+            <h1 className="font-bold text-gray-900">Edit Profile</h1>
           </div>
         </div>
       </nav>
@@ -334,7 +336,7 @@ export function ProfileEditPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden
-                bg-surface-700 border-2 border-surface-500 hover:border-brand-500/60
+                bg-white border-2 border-[#DE3A16] hover:border-brand-500/60
                 flex items-center justify-center transition-all group"
             >
               {formData.imageUrl ? (
@@ -371,7 +373,7 @@ export function ProfileEditPage() {
                   Remove photo
                 </button>
               )}
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-500">
                 JPG, PNG or GIF · max 2 MB
               </p>
             </div>
@@ -435,20 +437,20 @@ export function ProfileEditPage() {
             onChange={(e) => updateField("whatsapp", e.target.value)}
             placeholder="250788000000"
           />
-          <p className="text-xs text-gray-600 -mt-2 px-1">
+          <p className="text-xs text-gray-500 -mt-2 px-1">
             Digits only, with country code. No + sign.
           </p>
         </Section>
 
         {/* ── Social Links ─────────────────────────────── */}
-        <section className="bg-surface-800 border border-surface-600 rounded-3xl p-6 space-y-4">
+        <section className="card-soft rounded-3xl p-6 space-y-4 border-[#DE3A16]">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-white text-base">Links</h2>
+            <h2 className="font-semibold text-gray-900 text-base">Links</h2>
             <button
               type="button"
               onClick={addLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-700 border border-surface-600
-                text-gray-300 hover:text-white hover:border-surface-500 text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#DE3A16]
+                text-gray-700 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
             >
               <HiOutlinePlus className="text-base" /> Add Link
             </button>
@@ -463,10 +465,10 @@ export function ProfileEditPage() {
           {formData.links.map((link, index) => (
             <div
               key={index}
-              className="p-4 bg-surface-700 border border-surface-600 rounded-2xl space-y-3"
+              className="card-soft p-4 rounded-2xl space-y-3 border-[#DE3A16]"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                   Link {index + 1}
                 </span>
                 <button

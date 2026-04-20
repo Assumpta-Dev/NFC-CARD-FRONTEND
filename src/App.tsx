@@ -11,75 +11,75 @@
 // in every component down the tree.
 //
 // BrowserRouter is used (not HashRouter) so URLs look clean:
-//   ✅ /card/CARD_DEMO1
-//   ❌ /#/card/CARD_DEMO1
+//   ✅ /c/CARD_DEMO1
+//   ❌ /#/c/CARD_DEMO1
 // The web server must be configured to serve index.html for all
 // routes (SPA fallback) — Vite's dev server does this automatically.
 // ===========================================================
 
 // React import removed — react-jsx transform (tsconfig jsx: react-jsx) handles JSX automatically
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./hooks/useQueryClient";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-// Page imports — each feature folder owns its pages
+// Feature صفحات
 import { LoginPage, RegisterPage } from "./features/auth/AuthPages";
 import { CardPublicView } from "./features/card/CardPublicView";
 import { UserDashboard } from "./features/dashboard/UserDashboard";
 import { ProfileEditPage } from "./features/dashboard/ProfileEditPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
 
+// New landing صفحات
+import HomePage from "./pages/home";
+import PricingPage from "./pages/pricing";
+import SupportPage from "./pages/support";
+
 export default function App() {
   return (
-    // QueryClientProvider must wrap the app to provide React Query context
     <QueryClientProvider client={queryClient}>
-      {/* AuthProvider must wrap the router so useAuth() works in route guards */}
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* ── Public Routes ─────────────────────────────────────
-              These routes are accessible to everyone — no auth needed.
-              ─────────────────────────────────────────────────────── */}
+            {/* ===================================================== */}
+            {/* PUBLIC ROUTES (NO AUTH REQUIRED) */}
+            {/* ===================================================== */}
 
-            {/* Root redirect — send visitors straight to login or dashboard */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Landing Page (FIRST PAGE USERS SEE) */}
+            <Route path="/" element={<HomePage />} />
 
-            {/* Authentication pages */}
+            {/* Auth صفحات */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 
-            {/* Public card view — the main NFC/QR scan destination
-              URL pattern matches the card ID embedded in the NFC chip/QR:
-              yourdomain.com/card/CARD_8F3K2L */}
+            {/* Pricing & Support */}
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/support" element={<SupportPage />} />
+
+            {/* Public Card View (NFC / QR destination) */}
+            <Route path="/c/:cardId" element={<CardPublicView />} />
             <Route path="/card/:cardId" element={<CardPublicView />} />
 
-            {/* ── Protected Routes ──────────────────────────────────
-              ProtectedRoute redirects to /login if not authenticated.
-              Outlet renders the matched child route.
-              ─────────────────────────────────────────────────────── */}
+            {/* ===================================================== */}
+            {/* PROTECTED ROUTES (AUTH REQUIRED) */}
+            {/* ===================================================== */}
             <Route element={<ProtectedRoute />}>
-              {/* User dashboard — scan analytics, card management */}
               <Route path="/dashboard" element={<UserDashboard />} />
-
-              {/* Profile editor — edit digital card content and links */}
               <Route path="/profile" element={<ProfileEditPage />} />
             </Route>
 
-            {/* ── Admin-Only Routes ─────────────────────────────────
-              Double protection: requireAuth + requireAdmin role check.
-              Non-admin users are redirected to /dashboard.
-              ─────────────────────────────────────────────────────── */}
+            {/* ===================================================== */}
+            {/* ADMIN ROUTES */}
+            {/* ===================================================== */}
             <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
               <Route path="/admin" element={<AdminDashboard />} />
             </Route>
 
-            {/* ── 404 Fallback ──────────────────────────────────────
-              Catches any URL that doesn't match the above patterns.
-              Redirects to login rather than showing a blank page.
-              ─────────────────────────────────────────────────────── */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            {/* ===================================================== */}
+            {/* 404 FALLBACK */}
+            {/* ===================================================== */}
+            <Route path="*" element={<HomePage />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

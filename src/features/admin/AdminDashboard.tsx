@@ -34,6 +34,8 @@ import {
   HiOutlineLogout,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
+  HiOutlineQrcode,
+  HiOutlineX,
 } from "react-icons/hi";
 import { MdOutlineBarChart } from "react-icons/md";
 import {
@@ -45,6 +47,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { CardQrCodePanel } from "../card/CardQrCodePanel";
+import { getPublicCardPath } from "../card/publicCardUrl";
 
 // Simple tab state to switch between Cards and Users views
 type Tab = "overview" | "analytics" | "cards" | "users";
@@ -68,6 +72,7 @@ export function AdminDashboard() {
   const [assigningCard, setAssigningCard] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [qrPreviewCardId, setQrPreviewCardId] = useState<string | null>(null);
 
   // New analytics state
   const [dailyScans, setDailyScans] = useState<DailyScanCount[]>([]);
@@ -239,34 +244,36 @@ export function AdminDashboard() {
           DARK HERO HEADER — OVOU-inspired admin section
           Stats are displayed prominently inside the dark zone
           ════════════════════════════════════════════════════ */}
-      <div className="bg-gray-900 text-white">
+      <div className="bg-white border-b border-[#DE3A16]">
         <div className="max-w-4xl mx-auto px-4 pt-5 pb-8">
           {/* Top bar: logo + actions */}
           <div className="flex items-center justify-between mb-7">
-            <div className="flex items-center gap-2">
-              <HiOutlineCog className="text-brand-400 text-xl" />
-              <span className="font-bold text-white tracking-tight">
+            <div className="flex items-center gap-3">
+              <span className="icon-badge w-10 h-10 rounded-xl">
+                <HiOutlineCog className="text-xl" />
+              </span>
+              <span className="font-bold text-gray-900 tracking-tight">
                 Admin Panel
               </span>
             </div>
             <div className="flex items-center gap-0.5">
               <Link
                 to="/profile"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
               >
                 <HiOutlinePencil className="text-base" />
                 <span className="hidden sm:inline">Edit Profile</span>
               </Link>
               <Link
                 to="/dashboard"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
               >
                 <HiOutlineEye className="text-base" />
                 <span className="hidden sm:inline">User Dashboard</span>
               </Link>
               <button
                 onClick={() => navigate("/login")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
               >
                 <HiOutlineLogout className="text-base" />
                 <span className="hidden sm:inline">Sign out</span>
@@ -278,11 +285,11 @@ export function AdminDashboard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">
             System Overview
           </p>
-          <h1 className="text-2xl font-bold text-white leading-tight">
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
             Welcome back, Admin
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage your NFC card system - Admin Panel
+          <p className="text-gray-600 text-sm mt-1">
+            Manage your E-Card system - Admin Panel
           </p>
 
           {/* Tab navigation pills */}
@@ -294,8 +301,8 @@ export function AdminDashboard() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all capitalize ${
                     activeTab === tab
-                      ? "bg-white text-gray-900"
-                      : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+                      ? "bg-[#DE3A16] text-white"
+                      : "bg-white text-gray-600 border border-[#DE3A16] hover:bg-[#DE3A16] hover:text-white"
                   }`}
                 >
                   {tab}
@@ -306,16 +313,18 @@ export function AdminDashboard() {
 
           {/* ── Stats Block inside dark header (OVOU-inspired) ── */}
           {activeTab === "overview" && stats && (
-            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/10 border border-white/10 rounded-2xl overflow-hidden">
+            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
               {/* Stat 1: Total Users */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <HiOutlineUserGroup className="text-blue-400 text-sm" />
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="icon-badge w-8 h-8 rounded-lg">
+                    <HiOutlineUserGroup className="text-sm" />
+                  </span>
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Users
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {stats.totalUsers.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">Registered</p>
@@ -323,13 +332,15 @@ export function AdminDashboard() {
 
               {/* Stat 2: Total Cards */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <HiOutlineCreditCard className="text-brand-400 text-sm" />
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="icon-badge w-8 h-8 rounded-lg">
+                    <HiOutlineCreditCard className="text-sm" />
+                  </span>
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Cards
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {stats.totalCards.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">Total</p>
@@ -337,13 +348,15 @@ export function AdminDashboard() {
 
               {/* Stat 3: Active Cards */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <HiOutlineCheckCircle className="text-green-400 text-sm" />
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="icon-badge w-8 h-8 rounded-lg">
+                    <HiOutlineCheckCircle className="text-sm" />
+                  </span>
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Active
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {stats.activeCards.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">Cards</p>
@@ -351,13 +364,15 @@ export function AdminDashboard() {
 
               {/* Stat 4: Total Scans */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <MdOutlineBarChart className="text-purple-400 text-sm" />
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="icon-badge w-8 h-8 rounded-lg">
+                    <MdOutlineBarChart className="text-sm" />
+                  </span>
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
                     Scans
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-white tabular-nums">
+                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
                   {stats.totalScans.toLocaleString()}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">All time</p>
@@ -383,10 +398,10 @@ export function AdminDashboard() {
                 Create New Cards
               </h2>
               <p className="text-sm text-gray-500 mb-4">
-                Generate unique card IDs for new physical NFC/QR cards. Print or
-                program the NFC chip with the URL:{" "}
+                Generate unique card IDs for new physical E-Card/QR cards. Print or
+                program the E-Card with the URL:{" "}
                 <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">
-                  yourdomain.com/card/CARD_XXXXXX
+                  yourdomain.com/c/CARD_XXXXXX
                 </code>
               </p>
               <div className="flex items-end gap-3">
@@ -712,14 +727,30 @@ export function AdminDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             {card.status === "ACTIVE" ? (
-                              <button
-                                onClick={() => navigate(`/card/${card.cardId}`)}
-                                className="text-brand-500 hover:text-brand-700 hover:underline text-xs font-medium transition-colors"
-                              >
-                                View Card →
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => navigate(getPublicCardPath(card.cardId))}
+                                  className="text-brand-500 hover:text-brand-700 hover:underline text-xs font-medium transition-colors"
+                                >
+                                  View Card →
+                                </button>
+                                <button
+                                  onClick={() => setQrPreviewCardId(card.cardId)}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-brand-600"
+                                >
+                                  <HiOutlineQrcode className="text-sm" />
+                                  QR
+                                </button>
+                              </div>
                             ) : (
                               <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setQrPreviewCardId(card.cardId)}
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-brand-600"
+                                >
+                                  <HiOutlineQrcode className="text-sm" />
+                                  QR
+                                </button>
                                 {assigningCard === card.cardId ? (
                                   <div className="flex items-center gap-2">
                                     <select
@@ -919,6 +950,40 @@ export function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {qrPreviewCardId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                  Card QR
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-gray-900">
+                  {qrPreviewCardId}
+                </h2>
+              </div>
+              <button
+                onClick={() => setQrPreviewCardId(null)}
+                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close QR preview"
+              >
+                <HiOutlineX className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-5">
+              <CardQrCodePanel
+                cardId={qrPreviewCardId}
+                title="Scan Entry Point"
+                description="QR and NFC should both point to this card link only. The public page then resolves activation or profile display from the card ID."
+                previewInNewTab={false}
+                className="border-0 p-0 shadow-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

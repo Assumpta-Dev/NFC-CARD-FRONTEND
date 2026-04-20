@@ -38,8 +38,8 @@ export function Button({
       "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 focus:ring-brand-400",
     danger: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-400",
     ghost: "bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300",
-    // Dark variant: for use on dark-background pages
-    dark: "bg-surface-700 hover:bg-surface-600 text-gray-200 border border-surface-600 focus:ring-brand-500/30 focus:ring-offset-surface-900",
+    // Warm neutral variant used on beige-background pages
+    dark: "bg-white hover:bg-gray-50 text-gray-800 border border-[#DE3A16] focus:ring-brand-500/30 focus:ring-offset-white",
   };
 
   return (
@@ -117,8 +117,7 @@ export function Input({
 }
 
 // ===========================================================
-// DARK INPUT — For dark-background pages (auth, profile edit)
-// Labels are small-caps; inputs use surface-800 background.
+// Warm light input for auth and profile edit pages.
 // ===========================================================
 interface DarkInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -137,13 +136,13 @@ export function DarkInput({
     <div className="space-y-1.5">
       <label
         htmlFor={inputId}
-        className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+        className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
       >
         {label}
       </label>
       <input
         id={inputId}
-        className={`w-full px-4 py-3 rounded-xl border text-white placeholder-gray-600 bg-surface-800
+        className={`w-full px-4 py-3 rounded-xl border text-gray-900 placeholder-gray-400 bg-white
           focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-200
           ${
             error
@@ -163,10 +162,10 @@ export function DarkInput({
 // ===========================================================
 export function PageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-900">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="text-center">
         <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-surface-600 border-t-brand-500" />
-        <p className="mt-3 text-sm text-gray-500">Loading...</p>
+        <p className="mt-3 text-sm text-gray-600">Loading...</p>
       </div>
     </div>
   );

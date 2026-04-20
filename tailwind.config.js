@@ -17,15 +17,14 @@ export default {
           800: '#93250f',
           900: '#78210f',
         },
-        // Deep dark surface palette for OVOU-inspired dark theme
-        // Used across auth, card public view, and profile edit pages
+        // Warm light surface palette used across auth, card public view, and profile edit pages
         surface: {
-          950: '#07070f',  // deepest (used sparingly)
-          900: '#0a0a14',  // page background
-          800: '#12121e',  // card / section container
-          700: '#1a1a2a',  // elevated elements, hover targets
-          600: '#222236',  // borders, dividers
-          500: '#2e2e46',  // muted / disabled elements
+          950: '#f7efdf',
+          900: '#ffffff',
+          800: '#faf3e7',
+          700: '#f1e4cf',
+          600: '#dfccb0',
+          500: '#c9b08b',
         },
       },
       // Animations for card flip reveal and page transitions
