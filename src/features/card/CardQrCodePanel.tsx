@@ -5,6 +5,7 @@ import { getPublicCardPath, getPublicCardUrl } from "./publicCardUrl";
 
 interface CardQrCodePanelProps {
   cardId: string;
+  onQrReady?: (url: string) => void; // 👈 ADD THIS LINE
   title?: string;
   description?: string;
   previewInNewTab?: boolean;
@@ -13,6 +14,7 @@ interface CardQrCodePanelProps {
 
 export function CardQrCodePanel({
   cardId,
+  onQrReady, // ✅ ADD THIS PROP
   title = "QR Code",
   description = "Use this same URL for QR print, NFC writing, preview, and sharing.",
   previewInNewTab = true,
@@ -38,6 +40,7 @@ export function CardQrCodePanel({
       .then((url) => {
         if (active) {
           setQrDataUrl(url);
+          onQrReady?.(url); // 👈 ADD THIS LINE
         }
       })
       .catch(() => {
@@ -85,7 +88,9 @@ export function CardQrCodePanel({
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Public Link
             </p>
-            <p className="mt-1 break-all font-mono text-xs text-gray-800">{publicUrl}</p>
+            <p className="mt-1 break-all font-mono text-xs text-gray-800">
+              {publicUrl}
+            </p>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">

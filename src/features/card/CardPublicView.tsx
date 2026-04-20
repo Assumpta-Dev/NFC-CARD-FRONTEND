@@ -23,6 +23,9 @@ import {
   FaLinkedin, FaTwitter, FaInstagram, FaGithub,
   FaYoutube, FaTiktok, FaFacebook, FaLink, FaWhatsapp,
 } from 'react-icons/fa';
+import QRCode from 'qrcode';
+
+
 
 // ── Icon map: link type → branded React icon ────────────────
 const LINK_ICONS: Record<string, JSX.Element> = {
@@ -70,6 +73,7 @@ export function CardPublicView() {
   const [cardStatus, setCardStatus] = useState<'active' | 'unassigned' | 'notfound' | 'loading'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [publicCardId, setPublicCardId] = useState('');
+  const [qrUrl, setQrUrl] = useState("");
 
   useEffect(() => {
     if (!cardId) { setCardStatus('notfound'); return; }
@@ -86,6 +90,20 @@ export function CardPublicView() {
       .catch((err) => {
         setErrorMessage(getErrorMessage(err));
         setCardStatus('notfound');
+      });
+  }, [cardId]);
+  // Generate QR code for the public URL
+  useEffect(() => {
+    if (!cardId) return;
+
+    const publicUrl = `${window.location.origin}/c/${cardId}`;
+
+    QRCode.toDataURL(publicUrl)
+      .then((url) => {
+        setQrUrl(url);
+      })
+      .catch(() => {
+        setQrUrl("");
       });
   }, [cardId]);
 
@@ -144,10 +162,8 @@ export function CardPublicView() {
   return (
     <div className="min-h-screen bg-white pb-10">
       <div className="relative w-full max-w-sm mx-auto px-4 pt-8 animate-slide-up">
-
         {/* ── Profile Header Card ─────────────────────────── */}
         <div className="card-soft p-6 text-center mb-4 rounded-3xl border-[#DE3A16]">
-
           {/* Avatar */}
           <div className="relative w-24 h-24 mx-auto mb-4">
             {profile.imageUrl ? (
@@ -168,9 +184,13 @@ export function CardPublicView() {
           </div>
 
           {/* Identity */}
-          <h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            {profile.fullName}
+          </h1>
           {profile.jobTitle && (
-            <p className="text-brand-400 font-medium text-sm mt-1">{profile.jobTitle}</p>
+            <p className="text-brand-400 font-medium text-sm mt-1">
+              {profile.jobTitle}
+            </p>
           )}
           {profile.company && (
             <p className="text-gray-600 text-sm mt-0.5">{profile.company}</p>
@@ -178,13 +198,13 @@ export function CardPublicView() {
 
           {/* Save Contact CTA — primary action */}
           <a
-            href={`/api/c/${cardId}/vcard`}
-            download
+            href={qrUrl}
+            download={`${cardId}-qr.png`}
             className="mt-5 flex items-center justify-center gap-2 w-full py-3.5 bg-brand-500 hover:bg-brand-600
-              text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg shadow-brand-500/25 text-sm"
+  text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg shadow-brand-500/25 text-sm"
           >
             <HiOutlineUserAdd className="text-lg" />
-            Save Contact
+            Save Contact (QR)
           </a>
         </div>
 
@@ -192,7 +212,9 @@ export function CardPublicView() {
         {profile.bio && (
           <div className="card-soft p-5 mb-4 rounded-3xl border-[#DE3A16]">
             <p className="section-label mb-3">About</p>
-            <p className="text-gray-700 text-sm leading-relaxed">{profile.bio}</p>
+            <p className="text-gray-700 text-sm leading-relaxed">
+              {profile.bio}
+            </p>
           </div>
         )}
 
@@ -205,21 +227,24 @@ export function CardPublicView() {
               <ContactRow
                 href={`tel:${profile.phone}`}
                 icon={<HiOutlinePhone className="text-green-400 text-lg" />}
-                label="Phone" value={profile.phone}
+                label="Phone"
+                value={profile.phone}
               />
             )}
             {profile.email && (
               <ContactRow
                 href={`mailto:${profile.email}`}
                 icon={<HiOutlineMail className="text-blue-400 text-lg" />}
-                label="Email" value={profile.email}
+                label="Email"
+                value={profile.email}
               />
             )}
             {profile.whatsapp && (
               <ContactRow
                 href={`https://wa.me/${profile.whatsapp}`}
                 icon={<FaWhatsapp className="text-emerald-400 text-lg" />}
-                label="WhatsApp" value={`+${profile.whatsapp}`}
+                label="WhatsApp"
+                value={`+${profile.whatsapp}`}
                 target="_blank"
               />
             )}
@@ -227,7 +252,8 @@ export function CardPublicView() {
               <ContactRow
                 href={profile.website}
                 icon={<HiOutlineGlobe className="text-purple-400 text-lg" />}
-                label="Website" value={profile.website.replace(/^https?:\/\//, '')}
+                label="Website"
+                value={profile.website.replace(/^https?:\/\//, "")}
                 target="_blank"
               />
             )}
@@ -248,9 +274,11 @@ export function CardPublicView() {
                   className="flex flex-col items-center gap-2 group"
                   aria-label={link.label}
                 >
-                  <div className="icon-badge w-13 h-13 w-[52px] h-[52px]
+                  <div
+                    className="icon-badge w-13 h-13 w-[52px] h-[52px]
                     rounded-2xl flex items-center justify-center
-                    group-hover:scale-105 transition-all duration-200">
+                    group-hover:scale-105 transition-all duration-200"
+                  >
                     {LINK_ICONS[link.type] ?? LINK_ICONS.custom}
                   </div>
                   <span className="text-xs text-gray-600 group-hover:text-gray-800 transition-colors max-w-[56px] truncate text-center">
