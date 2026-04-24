@@ -110,7 +110,13 @@ export function LoginPage() {
     try {
       const { token, user } = await authApi.login({ email, password });
       login(token, user!);
-      navigate(from, { replace: true });
+      const redirectPath =
+        from !== "/dashboard"
+          ? from
+          : user?.role === "BUSINESS"
+            ? "/dashboard/menu"
+            : from;
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -232,6 +238,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cardId, setCardId] = useState("");
+  const [role, setRole] = useState<"USER" | "BUSINESS">("USER");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -259,9 +266,13 @@ export function RegisterPage() {
         email,
         password,
         cardId: cardId || undefined,
+        role,
       });
       login(result.token, result.user!);
-      navigate("/dashboard", { replace: true });
+      navigate(
+        result.user?.role === "BUSINESS" ? "/dashboard/menu" : "/dashboard",
+        { replace: true },
+      );
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -286,13 +297,37 @@ export function RegisterPage() {
       {error && <DarkAlert message={error} className="mb-5" />}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full name */}
+        <div className="flex gap-2 rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => setRole("USER")}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+              role === "USER"
+                ? "bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.3)]"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Individual
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("BUSINESS")}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+              role === "BUSINESS"
+                ? "bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.3)]"
+                : "text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            Business
+          </button>
+        </div>
+
         <div className="space-y-1.5">
           <label
             htmlFor="name"
             className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
           >
-            Full name
+            {role === "BUSINESS" ? "Business name" : "Full name"}
           </label>
           <IconInput
             id="name"
@@ -300,7 +335,7 @@ export function RegisterPage() {
             icon={HiOutlineUser}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Jane Smith"
+            placeholder={role === "BUSINESS" ? "Mama Kitchen" : "Jane Smith"}
             autoComplete="name"
             required
           />

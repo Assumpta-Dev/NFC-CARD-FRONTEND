@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PageSpinner } from './ui';
 
 interface ProtectedRouteProps {
-  requiredRole?: 'USER' | 'ADMIN';
+  requiredRole?: 'USER' | 'ADMIN' | 'BUSINESS';
 }
 
 export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
@@ -33,7 +33,7 @@ export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
   }
 
   // Role check — if a specific role is required and user doesn't have it
-  if (requiredRole && user?.role !== requiredRole) {
+  if (requiredRole && user?.role !== requiredRole && user?.role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />;
   }
 

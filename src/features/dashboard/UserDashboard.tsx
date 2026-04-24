@@ -12,7 +12,7 @@ import {
 import { cardApi, userApi, getErrorMessage } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { ScanAnalytics, UserAnalyticsSummary, RecentScan } from "../../types";
-import { PageSpinner, Alert, Button } from "../../components/ui";
+import { PageSpinner, Alert } from "../../components/ui";
 import {
   HiOutlineCreditCard,
   HiOutlineClipboard,
@@ -26,6 +26,8 @@ import {
   HiOutlineShieldCheck,
   HiOutlineEye,
   HiOutlineX,
+  HiOutlineCurrencyDollar,
+  HiOutlineOfficeBuilding,
 } from "react-icons/hi";
 import { MdOutlineBarChart } from "react-icons/md";
 import { CardQrCodePanel } from "../card/CardQrCodePanel";
@@ -154,7 +156,7 @@ export function UserDashboard() {
           DARK HERO HEADER — OVOU-inspired analytics section
           Stats are displayed prominently inside the dark zone
           ════════════════════════════════════════════════════ */}
-      <div className="bg-white border-b border-[#DE3A16]">
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 pt-5 pb-8">
           {/* Top bar: logo + actions */}
           <div className="flex items-center justify-between mb-7">
@@ -166,10 +168,10 @@ export function UserDashboard() {
                 E-Card
               </span>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1">
               <Link
                 to="/profile"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 <HiOutlinePencil className="text-base" />
                 <span className="hidden sm:inline">Edit Profile</span>
@@ -177,15 +179,31 @@ export function UserDashboard() {
               {user?.role === "ADMIN" && (
                 <Link
                   to="/admin"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-brand-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-brand-600 hover:bg-brand-50 transition-colors"
                 >
                   <HiOutlineShieldCheck className="text-base" />
                   <span className="hidden sm:inline">Admin</span>
                 </Link>
               )}
+              {user?.role === "BUSINESS" && (
+                  <Link
+                  to="/dashboard/menu"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  <HiOutlineOfficeBuilding className="text-base" />
+                  <span className="hidden sm:inline">Menu</span>
+                </Link>
+              )}
+              <Link
+                to="/dashboard/payments"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <HiOutlineCurrencyDollar className="text-base" />
+                <span className="hidden sm:inline">Payments</span>
+              </Link>
               <button
                 onClick={logout}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
               >
                 <HiOutlineLogout className="text-base" />
                 <span className="hidden sm:inline">Sign out</span>
@@ -206,64 +224,73 @@ export function UserDashboard() {
 
           {/* ── User Summary Stats ── */}
           {userSummary && (
-            <div className="mt-6 grid grid-cols-3 gap-4">
-              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <span className="icon-badge w-9 h-9 rounded-xl">
-                    <HiOutlineCreditCard className="text-lg" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Today
-                  </p>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="card-soft p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <HiOutlineCreditCard className="text-brand-400 text-lg" />
+                  <span className="text-xs text-gray-400 font-medium">Today</span>
                 </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+                <p className="text-xl font-bold text-gray-900">
                   {userSummary.today.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Scans</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
               </div>
 
-              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <span className="icon-badge w-9 h-9 rounded-xl">
-                    <MdOutlineBarChart className="text-lg" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    This Week
-                  </p>
+              <div className="card-soft p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <MdOutlineBarChart className="text-brand-400 text-lg" />
+                  <span className="text-xs text-gray-400 font-medium">This Week</span>
                 </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+                <p className="text-xl font-bold text-gray-900">
                   {userSummary.week.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Scans</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
               </div>
 
-              <div className="card-soft p-4 text-center rounded-xl border border-[#e9d7d2] shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-                <div className="flex items-center justify-center gap-1 mb-2">
-                  <span className="icon-badge w-9 h-9 rounded-xl">
-                    <HiOutlineCheck className="text-lg" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Total
-                  </p>
+              <div className="card-soft p-4 text-center">
+                <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                  <HiOutlineCheck className="text-brand-400 text-lg" />
+                  <span className="text-xs text-gray-400 font-medium">Total</span>
                 </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+                <p className="text-xl font-bold text-gray-900">
                   {userSummary.total.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Scans</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
               </div>
             </div>
           )}
 
+          {/* Business menu banner — shown only for BUSINESS role */}
+          {user?.role === "BUSINESS" && (
+            <div className="mt-5 flex items-center justify-between rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="icon-badge w-9 h-9">
+                  <HiOutlineOfficeBuilding className="text-lg" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Business Account</p>
+                  <p className="text-xs text-gray-500">Manage your menu and linked cards</p>
+                </div>
+              </div>
+              <Link
+                to="/dashboard/menu"
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                Manage Menu
+              </Link>
+            </div>
+          )}
+
           {/* Time filter pills */}
-          <div className="flex gap-2 mt-5">
-            {(["7d", "30d", "all"] as TimeFilter[]).map((f) => (
+          <div className="flex gap-2 mt-4">
+            {(["7d", "30d", "all"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setTimeFilter(f)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                   timeFilter === f
-                    ? "bg-[#DE3A16] text-white"
-                    : "bg-white text-gray-600 border border-[#DE3A16] hover:bg-[#DE3A16] hover:text-white"
+                    ? "bg-brand-500 text-white shadow-sm"
+                    : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-50"
                 }`}
               >
                 {f === "all" ? "All-Time" : f.toUpperCase()}
@@ -271,55 +298,26 @@ export function UserDashboard() {
             ))}
           </div>
 
-          {/* ── Stats Block inside dark header (OVOU-inspired) ── */}
+          {/* ── Stats Block ── */}
           {analytics && (
-            <div className="mt-6 grid grid-cols-3 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-              {/* Stat 1: Period Total */}
+            <div className="mt-6 grid grid-cols-3 divide-x divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-sm">
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <MdOutlineBarChart className="text-brand-400 text-sm" />
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    {timeFilter === "7d"
-                      ? "7-Day"
-                      : timeFilter === "30d"
-                        ? "30-Day"
-                        : "All-Time"}
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {displayTotal.toLocaleString()}
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">
+                  {timeFilter === "7d" ? "7-Day" : timeFilter === "30d" ? "30-Day" : "Total"} Scans
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">Scans</p>
+                <p className="text-xl font-bold text-gray-900">{displayTotal.toLocaleString()}</p>
               </div>
-
-              {/* Stat 2: Scans Today */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <HiOutlineCreditCard className="text-green-400 text-sm" />
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Today
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {analytics.scansToday.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">Scans</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Today</p>
+                <p className="text-xl font-bold text-gray-900">{analytics.scansToday.toLocaleString()}</p>
               </div>
-
-              {/* Stat 3: Device split */}
               <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <HiOutlineDeviceMobile className="text-purple-400 text-sm" />
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Mobile
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Device Shift</p>
+                <p className="text-xl font-bold text-gray-900">
                   {analytics.deviceBreakdown.mobile > 0
                     ? `${Math.round((analytics.deviceBreakdown.mobile / (analytics.deviceBreakdown.mobile + analytics.deviceBreakdown.desktop)) * 100)}%`
                     : "—"}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">of traffic</p>
               </div>
             </div>
           )}
@@ -344,127 +342,81 @@ export function UserDashboard() {
           </div>
         )}
 
-        {/* ── Scan Activity Chart ──────────────────────────── */}
+        {/* ── Scan Activity Chart ────────────────────────── */}
         {analytics && filteredBreakdown.length > 0 && (
           <div className="card p-5">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 className="font-semibold text-gray-900">Scan Activity</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {timeFilter === "7d"
-                    ? "Last 7 days"
-                    : timeFilter === "30d"
-                      ? "Last 30 days"
-                      : "All time"}
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">
+                  {timeFilter === "7d" ? "7 days" : timeFilter === "30d" ? "30 days" : "All time"}
                 </p>
               </div>
-              {/* Device breakdown legend */}
               <div className="flex items-center gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
-                  <HiOutlineDeviceMobile className="text-purple-400 text-base" />
+                  <HiOutlineDeviceMobile className="text-brand-400" />
                   {analytics.deviceBreakdown.mobile}
                 </span>
                 <span className="flex items-center gap-1">
-                  <HiOutlineDesktopComputer className="text-brand-400 text-base" />
+                  <HiOutlineDesktopComputer className="text-gray-400" />
                   {analytics.deviceBreakdown.desktop}
                 </span>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={170}>
-              <LineChart
-                data={filteredBreakdown}
-                margin={{ top: 4, right: 8, left: -22, bottom: 4 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#f0f0f0"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="date"
+              <LineChart data={filteredBreakdown}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis 
+                  dataKey="date" 
                   tickFormatter={formatDate}
-                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                  tick={{ fontSize: 10, fill: "#9ca3af" }}
                   axisLine={false}
                   tickLine={false}
-                  interval="preserveStartEnd"
                 />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                <YAxis 
+                  tick={{ fontSize: 10, fill: "#9ca3af" }}
                   axisLine={false}
                   tickLine={false}
-                  allowDecimals={false}
+                  width={30}
                 />
-                <Tooltip
+                <Tooltip 
                   labelFormatter={(l) => new Date(l).toLocaleDateString()}
-                  formatter={(v: number) => [v, "Scans"]}
-                  contentStyle={{
-                    borderRadius: "12px",
-                    border: "1px solid #e5e7eb",
-                    fontSize: 12,
-                    boxShadow: "0 4px 12px rgba(0,0,0,.06)",
-                  }}
-                  cursor={{
-                    stroke: "#f05535",
-                    strokeWidth: 1,
-                    strokeDasharray: "4 2",
-                  }}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid #f3f4f6', fontSize: 11 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="count"
                   stroke="#f05535"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 5, fill: "#f05535", strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        {/* ── Cards List with Pagination ──────────────────── */}
+        {/* ── Cards List ─────────────────────────────────── */}
         {cards.length > 0 && (
-          <div className="card overflow-hidden">
-            {/* Card list header */}
+          <div className="card">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-gray-900">Your Cards</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {cards.length} card{cards.length !== 1 ? "s" : ""} registered
-                </p>
-              </div>
-              <Link
-                to="/profile"
-                className="flex items-center gap-1.5 text-sm text-brand-600 font-medium hover:text-brand-700 transition-colors"
-              >
-                <HiOutlinePencil className="text-base" />
-                <span className="hidden sm:inline">Edit Profile</span>
-              </Link>
+              <h2 className="font-semibold text-gray-900">Your Cards</h2>
+              <span className="text-xs text-gray-400 font-medium">{cards.length} Total</span>
             </div>
 
             <div className="divide-y divide-gray-50">
               {pagedCards.map((card) => (
                 <div
                   key={card.id}
-                  className={`px-5 py-4 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-50/80 ${
-                    selectedCardId === card.cardId
-                      ? "bg-brand-50 hover:bg-brand-50"
-                      : ""
+                  className={`px-5 py-4 flex items-center justify-between cursor-pointer transition-colors ${
+                    selectedCardId === card.cardId ? "bg-brand-50" : "hover:bg-gray-50"
                   }`}
                   onClick={() => setSelectedCardId(card.cardId)}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Active indicator dot */}
-                    <div
-                      className={`flex-shrink-0 w-2 h-2 rounded-full ${card.status === "ACTIVE" ? "bg-green-400" : "bg-gray-300"}`}
-                    />
-                    <div className="min-w-0">
-                      <p className="font-mono font-semibold text-gray-900 text-sm truncate">
-                        {card.cardId}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {card._count.scans.toLocaleString()} scans
-                      </p>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${card.status === "ACTIVE" ? "bg-green-500" : "bg-gray-300"}`} />
+                    <div>
+                      <p className="font-mono font-bold text-gray-900 text-sm">{card.cardId}</p>
+                      <p className="text-xs text-gray-400">{card._count.scans} Scans</p>
                     </div>
                   </div>
 
@@ -513,13 +465,10 @@ export function UserDashboard() {
               ))}
             </div>
 
-            {/* ── Pagination controls ─────────────────────────
-                Shown when there is more than one page of cards.
-                Includes: prev arrow, page number buttons, next arrow.
-                ─────────────────────────────────────────────── */}
+            {/* ── Pagination controls ───────────────────────── */}
             {totalCardPages > 1 && (
-              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-400">
+              <div className="px-5 py-4 border-t border-gray-50 flex items-center justify-between bg-gray-50/30">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                   {(cardPage - 1) * CARDS_PER_PAGE + 1}–
                   {Math.min(cardPage * CARDS_PER_PAGE, cards.length)} of{" "}
                   {cards.length}
@@ -529,10 +478,10 @@ export function UserDashboard() {
                   <button
                     onClick={() => setCardPage((p) => Math.max(1, p - 1))}
                     disabled={cardPage === 1}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"
                     aria-label="Previous page"
                   >
-                    <HiOutlineChevronLeft className="text-gray-600 text-base" />
+                    <HiOutlineChevronLeft className="text-gray-600 text-sm" />
                   </button>
 
                   {/* Numbered page buttons */}
@@ -540,12 +489,11 @@ export function UserDashboard() {
                     <button
                       key={page}
                       onClick={() => setCardPage(page)}
-                      className={`min-w-[28px] h-7 px-2 rounded-lg text-xs font-medium transition-all ${
+                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
                         cardPage === page
                           ? "bg-brand-500 text-white shadow-sm"
                           : "text-gray-500 hover:bg-gray-100"
                       }`}
-                      aria-current={cardPage === page ? "page" : undefined}
                     >
                       {page}
                     </button>
@@ -557,144 +505,23 @@ export function UserDashboard() {
                       setCardPage((p) => Math.min(totalCardPages, p + 1))
                     }
                     disabled={cardPage === totalCardPages}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                    className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"
                     aria-label="Next page"
                   >
-                    <HiOutlineChevronRight className="text-gray-600 text-base" />
+                    <HiOutlineChevronRight className="text-gray-600 text-sm" />
                   </button>
                 </div>
-
-                {/* ── Recent Scans ───────────────────────────── */}
-                {recentScans.length > 0 && (
-                  <div className="card p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="font-semibold text-gray-900">
-                          Recent Scans
-                        </h2>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Your latest card interactions
-                        </p>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        onClick={async () => {
-                          try {
-                            const blob = await userApi.exportScansCsv();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `my-scans-${new Date().toISOString().split("T")[0]}.csv`;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-                          } catch (err) {
-                            setError(getErrorMessage(err));
-                          }
-                        }}
-                      >
-                        Export CSV
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      {recentScans.map((scan, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              {scan.device === "mobile" ? (
-                                <HiOutlineDeviceMobile className="text-blue-600 text-sm" />
-                              ) : (
-                                <HiOutlineDesktopComputer className="text-blue-600 text-sm" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900 text-sm">
-                                {scan.card.cardId}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(scan.timestamp).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500 capitalize">
-                              {scan.device}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {scan.ip.replace(/\.\d+$/, ".***")}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── User Trend Chart ───────────────────────────── */}
-                {userTrend.length > 0 && (
-                  <div className="card p-6">
-                    <h2 className="font-semibold text-gray-900 mb-4">
-                      Your Scan Trend
-                    </h2>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={userTrend}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="date"
-                            tick={{ fontSize: 12 }}
-                            tickFormatter={(date) =>
-                              new Date(date).toLocaleDateString()
-                            }
-                          />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip
-                            labelFormatter={(date) =>
-                              new Date(date).toLocaleDateString()
-                            }
-                            formatter={(value) => [value, "Scans"]}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="count"
-                            stroke="#10b981"
-                            strokeWidth={2}
-                            dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
         )}
 
-        {selectedCard?.status === "ACTIVE" && (
-          <CardQrCodePanel
-            cardId={selectedCard.cardId}
-            title="Card Access"
-            description="This single public link is the source for your QR code, NFC tap destination, browser preview, and sharing."
-          />
-        )}
-
-        {/* ── Recent Scans ───────────────────────────── */}
+        {/* ── Recent Scans ───────────────────────────────── */}
         {recentScans.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-semibold text-gray-900">Recent Scans</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Your latest card interactions
-                </p>
-              </div>
-              <Button
-                variant="secondary"
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold text-gray-900">Recent Scans</h2>
+              <button
                 onClick={async () => {
                   try {
                     const blob = await userApi.exportScansCsv();
@@ -710,40 +537,28 @@ export function UserDashboard() {
                     setError(getErrorMessage(err));
                   }
                 }}
+                className="text-xs font-semibold text-brand-600 hover:underline"
               >
                 Export CSV
-              </Button>
+              </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {recentScans.map((scan, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
-                >
+                <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      {scan.device === "mobile" ? (
-                        <HiOutlineDeviceMobile className="text-blue-600 text-sm" />
-                      ) : (
-                        <HiOutlineDesktopComputer className="text-blue-600 text-sm" />
-                      )}
+                    <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center">
+                      <HiOutlineDeviceMobile className="text-gray-400 text-lg" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">
-                        {scan.card.cardId}
-                      </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-mono font-bold text-gray-900 text-sm">{scan.card.cardId}</p>
+                      <p className="text-[10px] text-gray-400">
                         {new Date(scan.timestamp).toLocaleString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-gray-500 capitalize">
-                      {scan.device}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {scan.ip.replace(/\.\d+$/, ".***")}
-                    </p>
+                    <p className="text-[10px] text-gray-500 font-medium uppercase">{scan.device}</p>
+                    <p className="text-[10px] text-gray-400 font-mono">{scan.ip.replace(/\.\d+$/, ".***")}</p>
                   </div>
                 </div>
               ))}
@@ -751,80 +566,62 @@ export function UserDashboard() {
           </div>
         )}
 
-        {/* ── User Trend Chart ───────────────────────────── */}
+        {/* ── User Trend Chart ─────────────────────────── */}
         {userTrend.length > 0 && (
-          <div className="card p-6">
-            <h2 className="font-semibold text-gray-900 mb-4">
-              Your Scan Trend
-            </h2>
+          <div className="card p-5">
+            <h2 className="font-semibold text-gray-900 mb-4">Scan Trend</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={userTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(date) =>
-                      new Date(date).toLocaleDateString()
-                    }
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 10, fill: "#9ca3af" }} 
+                    tickFormatter={(date) => new Date(date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                   />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    labelFormatter={(date) =>
-                      new Date(date).toLocaleDateString()
-                    }
-                    formatter={(value) => [value, "Scans"]}
-                  />
+                  <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <Line
                     type="monotone"
                     dataKey="count"
-                    stroke="#10b981"
+                    stroke="#f05535"
                     strokeWidth={2}
-                    dot={{ fill: "#10b981", strokeWidth: 2, r: 4 }}
+                    dot={{ fill: "#f05535", r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
+
+        {selectedCard?.status === "ACTIVE" && (
+          <div className="card p-2 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border-gray-100/60 overflow-hidden">
+            <CardQrCodePanel
+              cardId={selectedCard.cardId}
+              title="Card Access"
+              description="This single public link is the source for your QR code, NFC tap destination, browser preview, and sharing."
+            />
+          </div>
+        )}
       </main>
 
-      {/* ════════════════════════════════════════════════════
-          INLINE CARD PREVIEW MODAL
-          Opens the card view inside an iframe overlay so the
-          user never leaves the dashboard or opens a new tab.
-          Navigate back with the Back button or close (×).
-          ════════════════════════════════════════════════════ */}
+      {/* ── Inline Card Preview Modal ── */}
       {previewCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="relative w-full max-w-sm h-[88vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-            {/* Modal header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-white flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+              <span className="text-xs font-bold text-gray-400">Card Preview</span>
               <button
                 onClick={() => setPreviewCard(null)}
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-                aria-label="Back to dashboard"
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
               >
-                <HiOutlineChevronLeft className="text-lg" />
-                <span>Back</span>
-              </button>
-              <span className="text-xs font-mono text-gray-400 truncate mx-2">
-                {previewCard}
-              </span>
-              <button
-                onClick={() => setPreviewCard(null)}
-                className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-                aria-label="Close preview"
-              >
-                <HiOutlineX className="text-xl" />
+                <HiOutlineX className="text-lg" />
               </button>
             </div>
-
-            {/* Card rendered in an iframe — isolated from dashboard state */}
             <iframe
               src={getPublicCardPath(previewCard)}
               className="flex-1 w-full border-0"
-              title={`Card Preview — ${previewCard}`}
+              title="Preview"
             />
           </div>
         </div>

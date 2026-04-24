@@ -18,6 +18,7 @@
 
 import axios, { AxiosError } from "axios";
 import {
+  ApiPagination,
   ApiResponse,
   AuthState,
   Profile,
@@ -32,6 +33,14 @@ import {
   TopUser,
   RecentScan,
   PaginatedUsers,
+  BusinessProfile,
+  BusinessCardLink,
+  BusinessMenu,
+  Payment,
+  PaginatedBusinesses,
+  AdminBusinessSummary,
+  PaginatedAdminPayments,
+  AdminPayment,
 } from "../types";
 
 // ===========================================================
@@ -55,6 +64,17 @@ import {
 //   5. Run: npm run dev (listens on :5000)
 // ===========================================================
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const NORMALIZED_BASE_URL = BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
+
+function buildApiUrl(path: string) {
+  const normalizedPath = path.replace(/^\//, "");
+
+  if (/^https?:\/\//i.test(NORMALIZED_BASE_URL)) {
+    return new URL(normalizedPath, NORMALIZED_BASE_URL).toString();
+  }
+
+  return `${NORMALIZED_BASE_URL}${normalizedPath}`;
+}
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -191,6 +211,7 @@ export const authApi = {
     email: string;
     password: string;
     cardId?: string;
+    role?: "USER" | "BUSINESS";
   }) => {
     const res = await apiClient.post<
       ApiResponse<{ token: string; user: AuthState["user"] }>
@@ -305,6 +326,9 @@ export const cardApi = {
     );
     return res.data.data;
   },
+
+  getVCardDownloadUrl: (cardId: string) =>
+    buildApiUrl(`c/${encodeURIComponent(cardId)}/vcard`),
 
   /**
    * ENDPOINT: GET /api/cards/my (PROTECTED — requires auth)
@@ -527,6 +551,165 @@ export const profileApi = {
         headers: { "Content-Type": "multipart/form-data" },
       },
     );
+    return res.data.data;
+  },
+};
+
+// ===========================================================
+// BUSINESS API CALLS - Integration with Backend Business Routes
+// Backend: /src/controllers/business.controller.ts
+// Permission: Requires BUSINESS or ADMIN role
+// ===========================================================
+export const businessApi = {
+  getMyBusiness: async () => {
+    const res = await apiClient.get<ApiResponse<BusinessProfile>>("/business");
+    return res.data.data;
+  },
+
+  getMyBusinessCards: async () => {
+    const res = await apiClient.get<ApiResponse<BusinessCardLink[]>>(
+      "/business/card",
+    );
+    return res.data.data;
+  },
+
+  upsertBusinessProfile: async (
+    data: {
+      name: string;
+      category: string;
+      description?: string;
+      location?: string;
+      phone?: string;
+      email?: string;
+      website?: string;
+      imageUrl?: string;
+    },
+    file?: File | null,
+  ) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("category", data.category);
+    if (data.description) formData.append("description", data.description);
+    if (data.location) formData.append("location", data.location);
+    if (data.phone) formData.append("phone", data.phone);
+    if (data.email) formData.append("email", data.email);
+    if (data.website) formData.append("website", data.website);
+    if (data.imageUrl) formData.append("imageUrl", data.imageUrl);
+    if (file) formData.append("photo", file);
+
+    const res = await apiClient.post<ApiResponse<BusinessProfile>>(
+      "/business",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    return res.data.data;
+  },
+
+  linkCardToBusiness: async (cardId: string) => {
+    const res = await apiClient.post<ApiResponse<BusinessCardLink>>(
+      "/business/card",
+      { cardId },
+    );
+    return res.data.data;
+  },
+};
+
+// ===========================================================
+// MENU API CALLS - Integration with Backend Menu Routes
+// Backend is mounted at /api/menu in backend/src/index.ts
+// Permission: Requires BUSINESS or ADMIN role
+// ===========================================================
+export const menuApi = {
+  getMenus: async (page: number = 1, limit: number = 20) => {
+    const res = await apiClient.get<ApiResponse<BusinessMenu[]> & {
+      pagination: ApiPagination;
+    }>("/menu", {
+      params: { page, limit },
+    });
+
+    return {
+      menus: res.data.data,
+      pagination: res.data.pagination,
+    };
+  },
+
+  createMenu: async (title: string) => {
+    const res = await apiClient.post<ApiResponse<BusinessMenu>>("/menu", {
+      title,
+    });
+    return res.data.data;
+  },
+
+  addMenuItem: async (
+    menuId: string,
+    data: {
+      name: string;
+      price: number;
+      description?: string;
+    },
+    file?: File | null,
+  ) => {
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("price", String(data.price));
+    if (data.description) formData.append("description", data.description);
+    if (file) formData.append("photo", file);
+
+    const res = await apiClient.post<ApiResponse<BusinessMenu["items"][number]>>(
+      `/menu/${menuId}/items`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    return res.data.data;
+  },
+
+  deleteMenuItem: async (menuId: string, itemId: string) => {
+    const res = await apiClient.delete<ApiResponse<{ message?: string }>>(
+      `/menu/${menuId}/items/${itemId}`,
+    );
+    return res.data.message || res.data.data?.message || "Menu item deleted";
+  },
+};
+
+// ===========================================================
+// PAYMENT API CALLS - Integration with Backend Payment Routes
+// Backend: /src/controllers/payment.controller.ts
+// Permission: Requires authentication
+// ===========================================================
+export const paymentApi = {
+  initiatePayment: async (data: {
+    plan: Payment["plan"];
+    billingCycle: Payment["billingCycle"];
+    amount: number;
+    phone: string;
+    provider: Payment["method"];
+    method: Payment["method"];
+  }) => {
+    const res = await apiClient.post<
+      ApiResponse<{ message: string; paymentId: string }>
+    >("/payments/initiate", data);
+    return res.data.data;
+  },
+
+  getMyPayments: async (page: number = 1, limit: number = 10) => {
+    const res = await apiClient.get<ApiResponse<Payment[]> & {
+      pagination: ApiPagination;
+    }>("/payments/my", {
+      params: { page, limit },
+    });
+
+    return {
+      payments: res.data.data,
+      pagination: res.data.pagination,
+    };
+  },
+
+  getPaymentById: async (id: string) => {
+    const res = await apiClient.get<ApiResponse<Payment>>(`/payments/${id}`);
     return res.data.data;
   },
 };
@@ -881,6 +1064,39 @@ export const adminApi = {
     );
     return res.data.data;
   },
+
+  getAllBusinesses: async (page: number = 1, size: number = 25) => {
+    const res = await apiClient.get<ApiResponse<PaginatedBusinesses>>(
+      "/admin/businesses",
+      {
+        params: { page, size },
+      },
+    );
+    return res.data.data;
+  },
+
+  getBusinessById: async (id: string) => {
+    const res =
+      await apiClient.get<ApiResponse<BusinessProfile & {
+        user: AdminBusinessSummary["user"];
+      }>>(`/admin/businesses/${id}`);
+    return res.data.data;
+  },
+
+  getAllPayments: async (
+    page: number = 1,
+    size: number = 25,
+    status?: AdminPayment["status"],
+  ) => {
+    const params: Record<string, string | number> = { page, size };
+    if (status) params.status = status;
+
+    const res = await apiClient.get<ApiResponse<PaginatedAdminPayments>>(
+      "/admin/payments",
+      { params },
+    );
+    return res.data.data;
+  },
 };
 
 // ===========================================================
@@ -1066,6 +1282,9 @@ export function getErrorMessage(error: unknown): string {
     // Backend returned a structured error response (preferred)
     if (error.response?.data?.error) {
       return error.response.data.error;
+    }
+    if (error.response?.data?.message) {
+      return error.response.data.message;
     }
     // Fallback to Axios message (network error, timeout, CORS, etc.)
     return error.message || "An error occurred";

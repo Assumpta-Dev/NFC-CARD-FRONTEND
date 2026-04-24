@@ -31,10 +31,16 @@ import { UserDashboard } from "./features/dashboard/UserDashboard";
 import { ProfileEditPage } from "./features/dashboard/ProfileEditPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
 
-// New landing صفحات
+// New feature pages
+import { PaymentsPage } from "./features/payments/PaymentsPage";
+import { CheckoutPage } from "./features/payments/CheckoutPage";
+import { BusinessMenuPage } from "./features/dashboard/BusinessMenuPage";
+
+// New landing pages
 import HomePage from "./pages/home";
 import PricingPage from "./pages/pricing";
 import SupportPage from "./pages/support";
+import ContactSalesPage from "./pages/contact-sales";
 
 export default function App() {
   return (
@@ -56,6 +62,7 @@ export default function App() {
             {/* Pricing & Support */}
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/support" element={<SupportPage />} />
+            <Route path="/contact-sales" element={<ContactSalesPage />} />
 
             {/* Public Card View (NFC / QR destination) */}
             <Route path="/c/:cardId" element={<CardPublicView />} />
@@ -67,6 +74,13 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/profile" element={<ProfileEditPage />} />
+              <Route path="/dashboard/payments" element={<PaymentsPage />} />
+              <Route path="/dashboard/checkout" element={<CheckoutPage />} />
+            </Route>
+
+            {/* Business menu — accessible to BUSINESS and ADMIN */}
+            <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
+              <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
             </Route>
 
             {/* ===================================================== */}

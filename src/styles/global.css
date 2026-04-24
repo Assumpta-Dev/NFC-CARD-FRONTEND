@@ -52,30 +52,22 @@
            transition-all duration-200;
   }
 
-  /* White card — dashboard and admin use */
+  /* Modern card */
   .card {
-    @apply bg-white rounded-2xl border border-gray-100 overflow-hidden
-           shadow-[0_14px_34px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.04)]
-           transition-all duration-300 ease-out;
+    @apply bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm;
   }
 
   .card-soft {
-    @apply bg-white rounded-2xl border border-gray-100
-           shadow-[0_14px_34px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.04)]
-           transition-all duration-300 ease-out;
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
   }
 
   .card-soft-hover {
-    @apply bg-white rounded-2xl border border-gray-100
-           shadow-[0_14px_34px_rgba(15,23,42,0.08),0_2px_10px_rgba(15,23,42,0.04)]
-           hover:shadow-[0_22px_46px_rgba(15,23,42,0.12),0_6px_18px_rgba(15,23,42,0.06)]
-           hover:-translate-y-0.5 transition-all duration-300 ease-out;
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm
+           hover:shadow-md hover:-translate-y-0.5 transition-all duration-200;
   }
 
   .icon-badge {
-    @apply inline-flex items-center justify-center rounded-xl
-           bg-transparent text-[#DE3A16] border-0 shadow-none
-           transition-all duration-300 ease-out;
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-50 text-brand-600;
   }
 
   /* Status badges */
