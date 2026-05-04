@@ -915,9 +915,8 @@ export function AdminDashboard() {
                   </table>
                 </div>
 
-                {/* Pagination for users */}
-                {totalUserPages > 1 && (
-                  <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                {/* Pagination for users — always shown so the list stays compact */}
+                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
                       {(userPage - 1) * ITEMS_PER_PAGE + 1}–
                       {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of{" "}
@@ -944,7 +943,6 @@ export function AdminDashboard() {
                       </button>
                     </div>
                   </div>
-                )}
               </>
             )}
           </div>

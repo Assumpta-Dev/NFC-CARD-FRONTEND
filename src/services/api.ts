@@ -79,7 +79,7 @@ function buildApiUrl(path: string) {
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
-  timeout: 10000, // 10 second timeout prevents hanging requests
+  timeout: 30000, // 30 second timeout — gives slow connections enough time to load
 });
 
 // ===========================================================
@@ -1279,19 +1279,19 @@ export const userApi = {
  */
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    // Backend returned a structured error response (preferred)
+    // Silently ignore timeout/network errors — let the UI handle loading state
+    if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
+      return "";
+    }
     if (error.response?.data?.error) {
       return error.response.data.error;
     }
     if (error.response?.data?.message) {
       return error.response.data.message;
     }
-    // Fallback to Axios message (network error, timeout, CORS, etc.)
     return error.message || "An error occurred";
   }
-  // JavaScript Error object
   if (error instanceof Error) return error.message;
-  // Shouldn't happen but fallback just in case
   return "An unexpected error occurred";
 }
 

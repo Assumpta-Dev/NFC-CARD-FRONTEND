@@ -112,6 +112,12 @@ export function CardPublicView() {
   const [qrUrl, setQrUrl] = useState("");
 
   useEffect(() => {
+    if (!cardId) return;
+    const publicUrl = `${window.location.origin}/c/${cardId}`;
+    QRCode.toDataURL(publicUrl).then(setQrUrl).catch(() => setQrUrl(""));
+  }, [cardId]);
+
+  useEffect(() => {
     if (!cardId) {
       setErrorMessage("This card ID is missing.");
       setIsLoading(false);
@@ -129,15 +135,6 @@ export function CardPublicView() {
         setErrorMessage(getErrorMessage(err));
       })
       .finally(() => setIsLoading(false));
-  }, [cardId]);
-
-  useEffect(() => {
-    if (!cardId) return;
-
-    const publicUrl = `${window.location.origin}/c/${cardId}`;
-    QRCode.toDataURL(publicUrl)
-      .then(setQrUrl)
-      .catch(() => setQrUrl(""));
   }, [cardId]);
 
   if (isLoading) return <PageSpinner />;
@@ -206,22 +203,6 @@ export function CardPublicView() {
     ? profile.phone || profile.email || profile.whatsapp || profile.website
     : businessProfile?.phone || businessProfile?.email || businessProfile?.website;
 
-  const primaryAction = profile
-    ? {
-        href: cardApi.getVCardDownloadUrl(cardData.cardId),
-        download: undefined,
-        label: "Save Contact",
-        icon: <HiOutlineUserAdd className="text-lg" />,
-      }
-    : qrUrl
-      ? {
-          href: qrUrl,
-          download: `${cardData.cardId}-qr.png`,
-          label: "Download QR",
-          icon: <HiOutlineQrcode className="text-lg" />,
-        }
-      : null;
-
   return (
     <div className="min-h-screen bg-white pb-10">
       <div className="relative mx-auto w-full max-w-sm animate-slide-up px-4 pt-8">
@@ -259,14 +240,15 @@ export function CardPublicView() {
             </p>
           )}
 
-          {primaryAction && (
+          {/* Download QR — available for all card types */}
+          {qrUrl && (profile || businessProfile) && (
             <a
-              href={primaryAction.href}
-              download={primaryAction.download}
+              href={qrUrl}
+              download={`${cardData.cardId}-qr.png`}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all duration-200 hover:bg-brand-600"
             >
-              {primaryAction.icon}
-              {primaryAction.label}
+              <HiOutlineQrcode className="text-lg" />
+              Save Contact
             </a>
           )}
         </div>

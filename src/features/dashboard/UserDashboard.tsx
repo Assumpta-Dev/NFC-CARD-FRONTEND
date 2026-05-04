@@ -55,6 +55,9 @@ export function UserDashboard() {
   const [previewCard, setPreviewCard] = useState<string | null>(null);
   // Pagination state for the cards list
   const [cardPage, setCardPage] = useState(1);
+  // Pagination state for recent scans
+  const [scanPage, setScanPage] = useState(1);
+  const SCANS_PER_PAGE = 5;
 
   // New user analytics state
   const [userSummary, setUserSummary] = useState<UserAnalyticsSummary | null>(
@@ -543,7 +546,7 @@ export function UserDashboard() {
               </button>
             </div>
             <div className="space-y-4">
-              {recentScans.map((scan, index) => (
+              {recentScans.slice((scanPage - 1) * SCANS_PER_PAGE, scanPage * SCANS_PER_PAGE).map((scan, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 bg-gray-50 rounded-lg flex items-center justify-center">
@@ -563,6 +566,32 @@ export function UserDashboard() {
                 </div>
               ))}
             </div>
+            {/* Pagination for recent scans */}
+            {recentScans.length > SCANS_PER_PAGE && (
+              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  {(scanPage - 1) * SCANS_PER_PAGE + 1}–{Math.min(scanPage * SCANS_PER_PAGE, recentScans.length)} of {recentScans.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setScanPage((p) => Math.max(1, p - 1))}
+                    disabled={scanPage === 1}
+                    className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"
+                    aria-label="Previous page"
+                  >
+                    <HiOutlineChevronLeft className="text-gray-600 text-sm" />
+                  </button>
+                  <button
+                    onClick={() => setScanPage((p) => Math.min(Math.ceil(recentScans.length / SCANS_PER_PAGE), p + 1))}
+                    disabled={scanPage === Math.ceil(recentScans.length / SCANS_PER_PAGE)}
+                    className="p-2 rounded-xl hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"
+                    aria-label="Next page"
+                  >
+                    <HiOutlineChevronRight className="text-gray-600 text-sm" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
