@@ -97,7 +97,14 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Read success message passed from ResetPasswordPage after successful reset
+  useEffect(() => {
+    const msg = (location.state as { successMessage?: string } | null)?.successMessage;
+    if (msg) setSuccess(msg);
+  }, [location.state]);
 
   const from =
     (location.state as { from?: { pathname: string } })?.from?.pathname ||
@@ -138,6 +145,11 @@ export function LoginPage() {
       </div>
 
       {error && <DarkAlert message={error} className="mb-5" />}
+      {success && (
+        <div className="mb-5 rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700 text-center">
+          ✅ {success}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email with icon prefix */}
@@ -220,6 +232,15 @@ export function LoginPage() {
           className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
         >
           Create one
+        </Link>
+      </p>
+
+      <p className="text-center text-sm text-gray-500 mt-2">
+        <Link
+          to="/forgot-password"
+          className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
+        >
+          Forgot your password?
         </Link>
       </p>
     </AuthLayout>
@@ -433,6 +454,237 @@ export function RegisterPage() {
         </Link>
       </p>
     </AuthLayout>
+    </div>
+  );
+}
+
+// ===========================================================
+// FORGOT PASSWORD PAGE
+// ===========================================================
+export function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      await authApi.forgotPassword(email);
+      // Always show success — backend never reveals if email exists
+      setSuccess(true);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <Navbar />
+      <AuthLayout>
+        <div className="mb-7 pt-20">
+          <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Enter your email and we'll send you a reset link
+          </p>
+        </div>
+
+        {error && <DarkAlert message={error} className="mb-5" />}
+
+        {success ? (
+          <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-700 text-center">
+            ✅ If that email is registered, a reset link has been sent. Check your inbox.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="forgot-email"
+                className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+              >
+                Email address
+              </label>
+              <div className="relative">
+                <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+                  <HiOutlineMail className="text-sm" />
+                </span>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                  className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
+                    focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
+                    transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              fullWidth
+              className="mt-2 py-3 text-base rounded-xl"
+            >
+              Send reset link
+            </Button>
+          </form>
+        )}
+
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-[#DE3A16]" />
+          <span className="text-xs text-gray-500">or</span>
+          <div className="flex-1 h-px bg-[#DE3A16]" />
+        </div>
+
+        <p className="text-center text-sm text-gray-600">
+          Remember your password?{" "}
+          <Link
+            to="/login"
+            className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
+          >
+            Sign in
+          </Link>
+        </p>
+      </AuthLayout>
+    </div>
+  );
+}
+
+// ===========================================================
+// RESET PASSWORD PAGE
+// ===========================================================
+// Reached via the link in the reset email: /reset-password?token=xxx
+export function ResetPasswordPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useState(() => new URLSearchParams(window.location.search));
+
+  const token = searchParams.get("token") ?? "";
+
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setError("Password must contain at least one number");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (!token) {
+      setError("Invalid or missing reset token. Please request a new link.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authApi.resetPassword(token, password);
+      // Redirect to login with a success message in state
+      navigate("/login", {
+        replace: true,
+        state: { successMessage: "Password reset successfully. You can now sign in." },
+      });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <Navbar />
+      <AuthLayout>
+        <div className="mb-7 pt-20">
+          <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Choose a strong password for your account
+          </p>
+        </div>
+
+        {error && <DarkAlert message={error} className="mb-5" />}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="new-password"
+              className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            >
+              New password
+            </label>
+            <div className="relative">
+              <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+                <HiOutlineLockClosed className="text-sm" />
+              </span>
+              <input
+                id="new-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Min 8 chars, include a number"
+                required
+                autoComplete="new-password"
+                className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
+                  transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="confirm-password"
+              className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            >
+              Confirm password
+            </label>
+            <div className="relative">
+              <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+                <HiOutlineLockClosed className="text-sm" />
+              </span>
+              <input
+                id="confirm-password"
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Repeat your new password"
+                required
+                autoComplete="new-password"
+                className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
+                  focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
+                  transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            fullWidth
+            className="mt-2 py-3 text-base rounded-xl"
+          >
+            Reset password
+          </Button>
+        </form>
+      </AuthLayout>
     </div>
   );
 }

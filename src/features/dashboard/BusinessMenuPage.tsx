@@ -1,16 +1,19 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HiOutlineLink,
   HiOutlineOfficeBuilding,
   HiOutlinePhotograph,
   HiOutlinePlus,
   HiOutlineTrash,
+  HiOutlineClipboardList,
+  HiOutlineCheck,
+  HiOutlineX,
 } from "react-icons/hi";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Alert, Button, Input, PageSpinner } from "../../components/ui";
-import { businessApi, getErrorMessage, menuApi } from "../../services/api";
-import { BusinessCardLink, BusinessMenu, BusinessProfile } from "../../types";
+import { businessApi, getErrorMessage, menuApi, orderApi } from "../../services/api";
+import { BusinessCardLink, BusinessMenu, BusinessProfile, Order } from "../../types";
 import { getPublicCardUrl } from "../card/publicCardUrl";
 
 type BusinessFormState = {
@@ -69,10 +72,52 @@ export function BusinessMenuPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Orders state — auto-refreshes every 10s
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const ordersIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Pagination — menu items
+  const ITEMS_PER_PAGE = 5;
+  const [itemPage, setItemPage] = useState(1);
+
+  // Pagination — orders
+  const ORDERS_PER_PAGE = 5;
+  const [orderPage, setOrderPage] = useState(1);
+
+  const loadOrders = async () => {
+    try {
+      const { orders: data } = await orderApi.getBusinessOrders();
+      setOrders(data);
+    } catch { /* silent */ }
+  };
+
+  const handleConfirmOrder = async (orderId: string) => {
+    setOrdersLoading(true);
+    try {
+      await orderApi.confirmOrder(orderId);
+      await loadOrders();
+    } catch (err) { setError(getErrorMessage(err)); }
+    finally { setOrdersLoading(false); }
+  };
+
+  const handleRejectOrder = async (orderId: string) => {
+    setOrdersLoading(true);
+    try {
+      await orderApi.rejectOrder(orderId);
+      await loadOrders();
+    } catch (err) { setError(getErrorMessage(err)); }
+    finally { setOrdersLoading(false); }
+  };
+
   const selectedMenu = menus.find((menu) => menu.id === selectedMenuId) || null;
 
   useEffect(() => {
     void initializePage();
+    // Load orders immediately and poll every 10s for new incoming orders
+    void loadOrders();
+    ordersIntervalRef.current = setInterval(loadOrders, 10_000);
+    return () => { if (ordersIntervalRef.current) clearInterval(ordersIntervalRef.current); };
   }, []);
 
   useEffect(() => {
@@ -80,10 +125,10 @@ export function BusinessMenuPage() {
       setSelectedMenuId("");
       return;
     }
-
     if (!menus.some((menu) => menu.id === selectedMenuId)) {
       setSelectedMenuId(menus[0].id);
     }
+    setItemPage(1); // reset to first page when menu changes
   }, [menus, selectedMenuId]);
 
   const initializePage = async () => {
@@ -657,60 +702,166 @@ export function BusinessMenuPage() {
           )}
 
           <div className="space-y-4 p-5">
-            {selectedMenu?.items?.map((item) => (
-              <div
-                key={item.id}
-                className="flex gap-4 rounded-xl border border-gray-100 bg-gray-50/30 p-4 transition-shadow hover:shadow-md"
-              >
-                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-100">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <HiOutlinePhotograph className="text-2xl text-gray-400" />
+            {(() => {
+              const allItems = selectedMenu?.items ?? [];
+              const totalItemPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+              const pagedItems = allItems.slice((itemPage - 1) * ITEMS_PER_PAGE, itemPage * ITEMS_PER_PAGE);
+              return (
+                <>
+                  {pagedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex gap-4 rounded-xl border border-gray-100 bg-gray-50/30 p-4 transition-shadow hover:shadow-md"
+                    >
+                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-100">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <HiOutlinePhotograph className="text-2xl text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="truncate font-bold text-gray-900">{item.name}</h3>
+                          <span className="font-semibold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
+                        </div>
+                        {item.description && (
+                          <p className="mt-1 text-xs text-gray-500">{item.description}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem(selectedMenu!.id, item.id)}
+                        className="rounded-lg border border-gray-200 bg-white p-2 text-gray-400 shadow-sm transition-colors hover:border-red-300 hover:text-red-600"
+                      >
+                        <HiOutlineTrash />
+                      </button>
+                    </div>
+                  ))}
+
+                  {!selectedMenu && (
+                    <div className="py-10 text-center text-gray-500">Create or select a menu to manage its items.</div>
                   )}
-                </div>
 
-                <div className="flex-grow min-w-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="truncate font-bold text-gray-900">
-                      {item.name}
-                    </h3>
-                    <span className="font-semibold text-[#DE3A16]">
-                      RWF {item.price.toLocaleString()}
-                    </span>
-                  </div>
-                  {item.description && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      {item.description}
-                    </p>
+                  {selectedMenu && allItems.length === 0 && (
+                    <div className="py-10 text-center text-gray-500">No items found for this menu.</div>
                   )}
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleDeleteItem(selectedMenu.id, item.id)}
-                  className="rounded-lg border border-gray-200 bg-white p-2 text-gray-400 shadow-sm transition-colors hover:border-red-300 hover:text-red-600"
-                >
-                  <HiOutlineTrash />
-                </button>
-              </div>
-            ))}
+                  {totalItemPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                      <span className="text-xs text-gray-500">Page {itemPage} of {totalItemPages}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setItemPage((p) => Math.max(1, p - 1))}
+                          disabled={itemPage === 1}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => setItemPage((p) => Math.min(totalItemPages, p + 1))}
+                          disabled={itemPage === totalItemPages}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        </div>
+        {/* Orders Panel */}
+        <div className="card-soft overflow-hidden rounded-2xl border border-[#e9d7d2] bg-white">
+          <div className="flex items-center gap-3 border-b border-gray-100 p-5">
+            <HiOutlineClipboardList className="text-xl text-[#DE3A16]" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Incoming Orders</h2>
+              <p className="text-sm text-gray-500">Verify TxId against your MoMo SMS then confirm or reject.</p>
+            </div>
+          </div>
 
-            {!selectedMenu && (
-              <div className="py-10 text-center text-gray-500">
-                Create or select a menu to manage its items.
-              </div>
-            )}
-
-            {selectedMenu && (!selectedMenu.items || selectedMenu.items.length === 0) && (
-              <div className="py-10 text-center text-gray-500">
-                No items found for this menu.
-              </div>
-            )}
+          <div className="divide-y divide-gray-50">
+            {(() => {
+              const totalOrderPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
+              const pagedOrders = orders.slice((orderPage - 1) * ORDERS_PER_PAGE, orderPage * ORDERS_PER_PAGE);
+              return (
+                <>
+                  {orders.length === 0 && (
+                    <div className="py-10 text-center text-sm text-gray-500">No orders yet. They will appear here when customers order.</div>
+                  )}
+                  {pagedOrders.map((order) => (
+                    <div key={order.id} className="p-5">
+                      <div className="mb-2 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">{order.customerName}</p>
+                          <p className="text-xs text-gray-500">{order.phone} &middot; {new Date(order.createdAt).toLocaleString()}</p>
+                        </div>
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                          order.status === "PAID" ? "bg-green-100 text-green-700" :
+                          order.status === "REJECTED" ? "bg-red-100 text-red-600" :
+                          order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600" :
+                          "bg-gray-100 text-gray-500"
+                        }`}>{order.status.replace("_", " ")}</span>
+                      </div>
+                      <div className="mb-2 space-y-1">
+                        {(order.items as any[]).map((item, i) => (
+                          <p key={i} className="text-xs text-gray-600">{item.name} &times; {item.qty} &mdash; RWF {(item.price * item.qty).toLocaleString()}</p>
+                        ))}
+                      </div>
+                      <p className="mb-3 text-sm font-bold text-[#DE3A16]">Total: RWF {order.total.toLocaleString()}</p>
+                      {order.txId && (
+                        <div className="mb-3 rounded-xl bg-[#fdf3f0] px-4 py-2">
+                          <p className="text-xs font-semibold text-gray-500">TxId from customer</p>
+                          <p className="font-mono text-sm font-bold text-gray-900">{order.txId}</p>
+                        </div>
+                      )}
+                      {order.status === "WAITING_VERIFICATION" && (
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleConfirmOrder(order.id)}
+                            disabled={ordersLoading}
+                            className="flex items-center gap-1 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            <HiOutlineCheck /> Confirm Payment
+                          </button>
+                          <button
+                            onClick={() => handleRejectOrder(order.id)}
+                            disabled={ordersLoading}
+                            className="flex items-center gap-1 rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-60"
+                          >
+                            <HiOutlineX /> Reject
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {totalOrderPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-gray-100 px-5 py-4">
+                      <span className="text-xs text-gray-500">Page {orderPage} of {totalOrderPages} &middot; {orders.length} orders</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
+                          disabled={orderPage === 1}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
+                          disabled={orderPage === totalOrderPages}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       </main>

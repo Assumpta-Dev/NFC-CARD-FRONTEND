@@ -6,6 +6,22 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React runtime
+          react: ["react", "react-dom", "react-router-dom"],
+          // Charting library — largest chunk
+          recharts: ["recharts"],
+          // Icons — large due to many icon sets
+          icons: ["react-icons"],
+          // HTTP + query
+          network: ["axios", "@tanstack/react-query"],
+        },
+      },
+    },
+  },
   server: {
     port: 3000,
     // Proxy API calls to backend during development

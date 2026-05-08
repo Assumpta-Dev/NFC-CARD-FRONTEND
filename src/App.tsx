@@ -25,8 +25,9 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Feature صفحات
-import { LoginPage, RegisterPage } from "./features/auth/AuthPages";
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from "./features/auth/AuthPages";
 import { CardPublicView } from "./features/card/CardPublicView";
+import { OrderTrackingPage } from "./features/card/OrderTrackingPage";
 import { UserDashboard } from "./features/dashboard/UserDashboard";
 import { ProfileEditPage } from "./features/dashboard/ProfileEditPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
@@ -58,6 +59,9 @@ export default function App() {
             {/* Auth صفحات */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            {/* Password reset flow — public, no auth required */}
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Pricing & Support */}
             <Route path="/pricing" element={<PricingPage />} />
@@ -67,6 +71,8 @@ export default function App() {
             {/* Public Card View (NFC / QR destination) */}
             <Route path="/c/:cardId" element={<CardPublicView />} />
             <Route path="/card/:cardId" element={<CardPublicView />} />
+            {/* Order tracking — public, customer uses this to track their order */}
+            <Route path="/order/:orderId" element={<OrderTrackingPage />} />
 
             {/* ===================================================== */}
             {/* PROTECTED ROUTES (AUTH REQUIRED) */}

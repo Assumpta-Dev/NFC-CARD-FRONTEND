@@ -85,6 +85,7 @@ export interface BusinessMenu {
 }
 
 export interface PublicBusinessProfile {
+  id: string;
   name: string;
   category: string;
   description: string | null;
@@ -189,6 +190,38 @@ export interface Payment {
 
 export interface PaginatedPayments {
   payments: Payment[];
+  pagination: ApiPagination;
+}
+
+// ===========================================================
+// ORDERS
+// ===========================================================
+export type OrderStatus = "PENDING" | "WAITING_VERIFICATION" | "PAID" | "REJECTED";
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+  imageUrl: string | null;
+}
+
+export interface Order {
+  id: string;
+  businessId: string;
+  customerName: string;
+  phone: string;
+  total: number;
+  status: OrderStatus;
+  txId: string | null;
+  items: OrderItem[];
+  createdAt: string;
+  updatedAt: string;
+  business?: { name: string };
+}
+
+export interface PaginatedOrders {
+  orders: Order[];
   pagination: ApiPagination;
 }
 

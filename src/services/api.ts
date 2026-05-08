@@ -248,6 +248,16 @@ export const authApi = {
    *   ✓ IP-based rate limiting prevents bot attacks
    *   ✓ Token expires: backend sets exp claim in JWT
    */
+  forgotPassword: async (email: string) => {
+    const res = await apiClient.post<ApiResponse<null>>("/auth/forgot-password", { email });
+    return res.data;
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const res = await apiClient.post<ApiResponse<null>>("/auth/reset-password", { token, password });
+    return res.data;
+  },
+
   login: async (data: { email: string; password: string }) => {
     const res = await apiClient.post<
       ApiResponse<{ token: string; user: AuthState["user"] }>
@@ -1294,6 +1304,52 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "An unexpected error occurred";
 }
+
+// ===========================================================
+// ORDER API CALLS
+// ===========================================================
+export const orderApi = {
+  // Public — customer places order from business card page
+  placeOrder: async (data: {
+    businessId: string;
+    customerName: string;
+    phone: string;
+    items: { id: string; name: string; price: number; qty: number; imageUrl: string | null }[];
+  }) => {
+    const res = await apiClient.post<ApiResponse<import("../types").Order>>("/orders", data);
+    return res.data.data;
+  },
+
+  // Public — customer submits TxId after paying
+  submitTxId: async (orderId: string, txId: string) => {
+    const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/txid`, { txId });
+    return res.data.data;
+  },
+
+  // Public — poll order status (returns full order for tracking page)
+  getOrderStatus: async (orderId: string) => {
+    const res = await apiClient.get<ApiResponse<import("../types").Order>>(`/orders/${orderId}/status`);
+    return res.data.data;
+  },
+
+  // Business — get all orders for my business
+  getBusinessOrders: async (page = 1, limit = 20) => {
+    const res = await apiClient.get<ApiResponse<import("../types").Order[]> & { pagination: import("../types").ApiPagination }>("/orders/business", { params: { page, limit } });
+    return { orders: res.data.data, pagination: res.data.pagination };
+  },
+
+  // Business — confirm payment
+  confirmOrder: async (orderId: string) => {
+    const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/confirm`);
+    return res.data.data;
+  },
+
+  // Business — reject order
+  rejectOrder: async (orderId: string) => {
+    const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/reject`);
+    return res.data.data;
+  },
+};
 
 export default apiClient;
 

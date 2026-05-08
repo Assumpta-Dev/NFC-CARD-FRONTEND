@@ -8,7 +8,7 @@
 //   - business card
 // ===========================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import QRCode from "qrcode";
 import {
@@ -26,14 +26,19 @@ import {
   HiOutlineChevronRight,
   HiOutlineGlobe,
   HiOutlineMail,
+  HiOutlineMinus,
   HiOutlinePhone,
+  HiOutlinePlus,
   HiOutlineQrcode,
   HiOutlineSearch,
+  HiOutlineShoppingCart,
   HiOutlineUserAdd,
+  HiOutlineX,
 } from "react-icons/hi";
 import { PageSpinner } from "../../components/ui";
-import { cardApi, getErrorMessage } from "../../services/api";
+import { cardApi, getErrorMessage, orderApi } from "../../services/api";
 import {
+  OrderItem,
   PublicBusinessProfile,
   PublicCardResponse,
   PublicProfile,
@@ -110,6 +115,80 @@ export function CardPublicView() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [qrUrl, setQrUrl] = useState("");
+
+  // ===========================================================
+  // CART & ORDER STATE — only active for business cards
+  // ===========================================================
+  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<"form" | "payment" | "txid" | "waiting" | "done">("form");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [txId, setTxId] = useState("");
+  const [orderId, setOrderId] = useState("");
+  const [orderStatus, setOrderStatus] = useState("");
+  const [orderError, setOrderError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
+
+  const addToCart = useCallback((item: { id: string; name: string; price: number; imageUrl: string | null }) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === item.id);
+      if (existing) return prev.map((i) => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
+      return [...prev, { ...item, qty: 1 }];
+    });
+  }, []);
+
+  const updateQty = useCallback((id: string, delta: number) => {
+    setCart((prev) => prev.map((i) => i.id === id ? { ...i, qty: i.qty + delta } : i).filter((i) => i.qty > 0));
+  }, []);
+
+  // Poll order status every 4s while waiting for business to confirm
+  useEffect(() => {
+    if (checkoutStep !== "waiting" || !orderId) return;
+    const interval = setInterval(async () => {
+      try {
+        const result = await orderApi.getOrderStatus(orderId);
+        if (result.status === "PAID" || result.status === "REJECTED") {
+          setOrderStatus(result.status);
+          setCheckoutStep("done");
+        }
+      } catch { /* silent */ }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [checkoutStep, orderId]);
+
+  const handlePlaceOrder = async (businessId: string) => {
+    if (!customerName.trim() || !customerPhone.trim()) { setOrderError("Name and phone are required"); return; }
+    setOrderError(""); setIsSubmitting(true);
+    try {
+      const order = await orderApi.placeOrder({ businessId, customerName: customerName.trim(), phone: customerPhone.trim(), items: cart });
+      setOrderId(order.id);
+      setCheckoutStep("payment");
+      // Store orderId in sessionStorage so customer can return to tracking page
+      sessionStorage.setItem("lastOrderId", order.id);
+    } catch (err) { setOrderError(getErrorMessage(err)); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleSubmitTxId = async () => {
+    if (!txId.trim()) { setOrderError("Please enter your transaction ID"); return; }
+    setOrderError(""); setIsSubmitting(true);
+    try {
+      await orderApi.submitTxId(orderId, txId.trim());
+      setCheckoutStep("waiting");
+    } catch (err) { setOrderError(getErrorMessage(err)); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const resetOrder = () => {
+    setShowCart(false); setCheckoutStep("form"); setCustomerName("");
+    setCustomerPhone(""); setTxId(""); setOrderId(""); setOrderStatus(""); setOrderError("");
+  };
+
+  const resetAll = () => { setCart([]); resetOrder(); };
 
   useEffect(() => {
     if (!cardId) return;
@@ -271,32 +350,50 @@ export function CardPublicView() {
                   {menu.title}
                 </h3>
                 <div className="mt-3 space-y-3">
-                  {menu.items?.map((item) => (
-                    <div key={item.id} className="flex gap-3 text-sm">
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
-                        />
-                      )}
-                      <div className="flex-grow">
-                        <div className="flex justify-between gap-3">
-                          <span className="font-semibold text-gray-900">
-                            {item.name}
-                          </span>
-                          <span className="font-bold text-[#DE3A16]">
-                            RWF {item.price.toLocaleString()}
-                          </span>
-                        </div>
-                        {item.description && (
-                          <p className="mt-0.5 text-xs leading-tight text-gray-500">
-                            {item.description}
-                          </p>
+                  {menu.items?.map((item) => {
+                    const cartItem = cart.find((c) => c.id === item.id);
+                    return (
+                      <div key={item.id} className="flex gap-3 text-sm">
+                        {item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="h-14 w-14 flex-shrink-0 rounded-xl object-cover"
+                          />
                         )}
+                        <div className="flex flex-grow flex-col justify-between">
+                          <div className="flex justify-between gap-2">
+                            <span className="font-semibold text-gray-900">{item.name}</span>
+                            <span className="font-bold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
+                          </div>
+                          {item.description && (
+                            <p className="mt-0.5 text-xs leading-tight text-gray-500">{item.description}</p>
+                          )}
+                          {/* Add to cart controls */}
+                          <div className="mt-2 flex items-center gap-2">
+                            {cartItem ? (
+                              <div className="flex items-center gap-2 rounded-xl border border-[#DE3A16] px-2 py-1">
+                                <button onClick={() => updateQty(item.id, -1)} className="text-[#DE3A16]">
+                                  <HiOutlineMinus className="text-sm" />
+                                </button>
+                                <span className="min-w-[16px] text-center text-sm font-bold text-gray-900">{cartItem.qty}</span>
+                                <button onClick={() => updateQty(item.id, 1)} className="text-[#DE3A16]">
+                                  <HiOutlinePlus className="text-sm" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, imageUrl: item.imageUrl })}
+                                className="flex items-center gap-1 rounded-xl bg-[#DE3A16] px-3 py-1 text-xs font-semibold text-white"
+                              >
+                                <HiOutlinePlus className="text-xs" /> Add
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -376,6 +473,139 @@ export function CardPublicView() {
           Powered by E-Card Platform
         </p>
       </div>
+
+      {/* Floating cart button — only for business cards with items in cart */}
+      {businessProfile && cartCount > 0 && (
+        <button
+          onClick={() => setShowCart(true)}
+          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-[#DE3A16] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#DE3A16]/40"
+        >
+          <HiOutlineShoppingCart className="text-lg" />
+          {cartCount} item{cartCount > 1 ? "s" : ""} &middot; RWF {cartTotal.toLocaleString()}
+        </button>
+      )}
+
+      {/* Checkout modal — slides up from bottom */}
+      {showCart && businessProfile && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl">
+
+            {/* STEP 1 — cart review + customer details */}
+            {checkoutStep === "form" && (
+              <>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900">Your Order</h2>
+                  <button onClick={resetAll}><HiOutlineX className="text-xl text-gray-400" /></button>
+                </div>
+                <div className="mb-4 max-h-48 space-y-3 overflow-y-auto">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3">
+                      {item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />}
+                      <div className="flex-grow">
+                        <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                        <p className="text-xs text-gray-500">RWF {item.price.toLocaleString()} &times; {item.qty}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => updateQty(item.id, -1)} className="rounded-lg border p-1 text-gray-500"><HiOutlineMinus className="text-xs" /></button>
+                        <span className="w-5 text-center text-sm font-bold">{item.qty}</span>
+                        <button onClick={() => updateQty(item.id, 1)} className="rounded-lg border p-1 text-gray-500"><HiOutlinePlus className="text-xs" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mb-4 flex justify-between border-t pt-3 text-sm font-bold">
+                  <span>Total</span>
+                  <span className="text-[#DE3A16]">RWF {cartTotal.toLocaleString()}</span>
+                </div>
+                <div className="mb-3 space-y-3">
+                  <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Your name" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none" />
+                  <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Your MTN/Airtel number" type="tel" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none" />
+                </div>
+                {orderError && <p className="mb-3 text-xs text-red-500">{orderError}</p>}
+                <button onClick={() => handlePlaceOrder(businessProfile.id)} disabled={isSubmitting} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white disabled:opacity-60">
+                  {isSubmitting ? "Placing order..." : "Place Order"}
+                </button>
+              </>
+            )}
+
+            {/* STEP 2 — MoMo payment instruction */}
+            {checkoutStep === "payment" && (
+              <>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900">Pay Now</h2>
+                  <button onClick={resetAll}><HiOutlineX className="text-xl text-gray-400" /></button>
+                </div>
+                <div className="mb-4 rounded-2xl bg-[#fdf3f0] p-4 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Dial this USSD code on your phone</p>
+                  <p className="mt-2 break-all text-lg font-bold text-[#DE3A16]">*182*8*1*{(businessProfile.phone ?? "").replace(/^0/, "")}*{cartTotal}#</p>
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(`*182*8*1*${(businessProfile.phone ?? "").replace(/^0/, "")}*${cartTotal}#`)}
+                    className="mt-2 text-xs font-semibold text-[#DE3A16] underline"
+                  >
+                    Copy Code
+                  </button>
+                </div>
+                <p className="mb-4 text-center text-sm text-gray-600">
+                  Pay <span className="font-bold text-gray-900">RWF {cartTotal.toLocaleString()}</span> via MTN MoMo, then enter the TxId from your confirmation SMS.
+                </p>
+                <button onClick={() => setCheckoutStep("txid")} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white">
+                  I Have Paid &rarr; Enter TxId
+                </button>
+              </>
+            )}
+
+            {/* STEP 3 — enter TxId from SMS */}
+            {checkoutStep === "txid" && (
+              <>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-gray-900">Enter Transaction ID</h2>
+                  <button onClick={resetAll}><HiOutlineX className="text-xl text-gray-400" /></button>
+                </div>
+                <p className="mb-4 text-sm text-gray-600">Enter the TxId from the MoMo SMS you received after paying.</p>
+                <input value={txId} onChange={(e) => setTxId(e.target.value)} placeholder="e.g. 2345567889" className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none" />
+                {orderError && <p className="mb-3 text-xs text-red-500">{orderError}</p>}
+                <button onClick={handleSubmitTxId} disabled={isSubmitting} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white disabled:opacity-60">
+                  {isSubmitting ? "Submitting..." : "Submit TxId"}
+                </button>
+              </>
+            )}
+
+            {/* STEP 4 — waiting for business to verify */}
+            {checkoutStep === "waiting" && (
+              <div className="py-8 text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DE3A16] border-t-transparent" />
+                <h2 className="text-lg font-bold text-gray-900">Waiting for confirmation...</h2>
+                <p className="mt-2 text-sm text-gray-500">The restaurant is verifying your payment. This usually takes a moment.</p>
+                <button onClick={() => navigate(`/order/${orderId}`)} className="mt-5 w-full rounded-2xl border border-[#DE3A16] py-3 text-sm font-semibold text-[#DE3A16]">
+                  Track My Order
+                </button>
+              </div>
+            )}
+
+            {/* STEP 5 — done (paid or rejected) */}
+            {checkoutStep === "done" && (
+              <div className="py-6 text-center">
+                {orderStatus === "PAID" ? (
+                  <>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✅</div>
+                    <h2 className="text-lg font-bold text-gray-900">Payment Confirmed!</h2>
+                    <p className="mt-2 text-sm text-gray-500">Your order has been confirmed. Enjoy your meal!</p>
+                    <button onClick={() => navigate(`/order/${orderId}`)} className="mt-4 w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white">View Receipt &amp; Download</button>
+                  </>
+                ) : (
+                  <>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-3xl">❌</div>
+                    <h2 className="text-lg font-bold text-gray-900">Payment Rejected</h2>
+                    <p className="mt-2 text-sm text-gray-500">The business could not verify your payment. Please contact them directly.</p>
+                  </>
+                )}
+                <button onClick={resetAll} className="mt-3 w-full rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-600">Close</button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
