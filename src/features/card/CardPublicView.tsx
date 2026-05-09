@@ -353,40 +353,46 @@ export function CardPublicView() {
                   {menu.items?.map((item) => {
                     const cartItem = cart.find((c) => c.id === item.id);
                     return (
-                      <div key={item.id} className="flex gap-3 text-sm">
+                      <div key={item.id} className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-3 text-sm transition-shadow hover:shadow-md">
+                        {/* Image — larger, left-anchored, zoom on hover */}
                         {item.imageUrl && (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="h-14 w-14 flex-shrink-0 rounded-xl object-cover"
-                          />
-                        )}
-                        <div className="flex flex-grow flex-col justify-between">
-                          <div className="flex justify-between gap-2">
-                            <span className="font-semibold text-gray-900">{item.name}</span>
-                            <span className="font-bold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
+                          <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl">
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="h-full w-full object-cover transition-transform duration-300 ease-out hover:scale-110"
+                            />
                           </div>
-                          {item.description && (
-                            <p className="mt-0.5 text-xs leading-tight text-gray-500">{item.description}</p>
-                          )}
-                          {/* Add to cart controls */}
-                          <div className="mt-2 flex items-center gap-2">
+                        )}
+                        {/* Content + cart controls in same column */}
+                        <div className="flex min-w-0 flex-1 flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-semibold text-gray-900 leading-snug">{item.name}</span>
+                              <span className="flex-shrink-0 font-bold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
+                            </div>
+                            {item.description && (
+                              <p className="mt-0.5 text-xs leading-relaxed text-gray-500">{item.description}</p>
+                            )}
+                          </div>
+                          {/* Cart controls — pinned to bottom of content column */}
+                          <div className="mt-2">
                             {cartItem ? (
-                              <div className="flex items-center gap-2 rounded-xl border border-[#DE3A16] px-2 py-1">
-                                <button onClick={() => updateQty(item.id, -1)} className="text-[#DE3A16]">
+                              <div className="inline-flex items-center gap-2 rounded-xl border border-[#DE3A16] px-2 py-1">
+                                <button onClick={() => updateQty(item.id, -1)} className="text-[#DE3A16] transition-opacity hover:opacity-70">
                                   <HiOutlineMinus className="text-sm" />
                                 </button>
-                                <span className="min-w-[16px] text-center text-sm font-bold text-gray-900">{cartItem.qty}</span>
-                                <button onClick={() => updateQty(item.id, 1)} className="text-[#DE3A16]">
+                                <span className="min-w-[18px] text-center text-sm font-bold text-gray-900">{cartItem.qty}</span>
+                                <button onClick={() => updateQty(item.id, 1)} className="text-[#DE3A16] transition-opacity hover:opacity-70">
                                   <HiOutlinePlus className="text-sm" />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => addToCart({ id: item.id, name: item.name, price: item.price, imageUrl: item.imageUrl })}
-                                className="flex items-center gap-1 rounded-xl bg-[#DE3A16] px-3 py-1 text-xs font-semibold text-white"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-[#DE3A16]/20 transition-all hover:bg-brand-700"
                               >
-                                <HiOutlinePlus className="text-xs" /> Add
+                                <HiOutlinePlus className="text-xs" /> Add to cart
                               </button>
                             )}
                           </div>

@@ -713,22 +713,31 @@ export function BusinessMenuPage() {
                       key={item.id}
                       className="flex gap-4 rounded-xl border border-gray-100 bg-gray-50/30 p-4 transition-shadow hover:shadow-md"
                     >
-                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-100">
+                      {/* Image — larger, zoom on hover, clipped */}
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100">
                         {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="h-full w-full object-cover transition-transform duration-300 ease-out hover:scale-110"
+                          />
                         ) : (
-                          <HiOutlinePhotograph className="text-2xl text-gray-400" />
+                          <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                            <HiOutlinePhotograph className="text-2xl text-gray-400" />
+                          </div>
                         )}
                       </div>
+                      {/* Content column */}
                       <div className="flex-grow min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <h3 className="truncate font-bold text-gray-900">{item.name}</h3>
-                          <span className="font-semibold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
+                          <span className="flex-shrink-0 font-semibold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
                         </div>
                         {item.description && (
                           <p className="mt-1 text-xs text-gray-500">{item.description}</p>
                         )}
                       </div>
+                      {/* Delete button aligned with image */}
                       <button
                         type="button"
                         onClick={() => handleDeleteItem(selectedMenu!.id, item.id)}
