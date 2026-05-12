@@ -593,6 +593,7 @@ export const businessApi = {
       email?: string;
       website?: string;
       imageUrl?: string;
+      paymentCode?: string;
     },
     file?: File | null,
   ) => {
@@ -605,6 +606,7 @@ export const businessApi = {
     if (data.email) formData.append("email", data.email);
     if (data.website) formData.append("website", data.website);
     if (data.imageUrl) formData.append("imageUrl", data.imageUrl);
+    if (data.paymentCode) formData.append("paymentCode", data.paymentCode);
     if (file) formData.append("photo", file);
 
     const res = await apiClient.post<ApiResponse<BusinessProfile>>(
@@ -1348,6 +1350,12 @@ export const orderApi = {
   rejectOrder: async (orderId: string) => {
     const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/reject`);
     return res.data.data;
+  },
+
+  // Business — export all orders as CSV
+  exportOrdersCsv: async () => {
+    const res = await apiClient.get("/orders/business/export", { responseType: "blob" });
+    return res.data;
   },
 };
 

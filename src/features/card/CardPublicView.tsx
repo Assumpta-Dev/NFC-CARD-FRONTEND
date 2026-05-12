@@ -119,16 +119,36 @@ export function CardPublicView() {
   // ===========================================================
   // CART & ORDER STATE — only active for business cards
   // ===========================================================
-  const [cart, setCart] = useState<OrderItem[]>([]);
-  const [showCart, setShowCart] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<"form" | "payment" | "txid" | "waiting" | "done">("form");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [txId, setTxId] = useState("");
-  const [orderId, setOrderId] = useState("");
-  const [orderStatus, setOrderStatus] = useState("");
+  // ===========================================================
+  // PERSIST checkout state in sessionStorage so page reload
+  // (e.g. card re-scan) doesn't lose an in-progress order.
+  // Key is scoped to the cardId so different cards don't clash.
+  // ===========================================================
+  const SESSION_KEY = `checkout_${cardId ?? ""}`;
+
+  const loadSession = () => {
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? "null"); } catch { return null; }
+  };
+
+  const saved = loadSession();
+
+  const [cart, setCart] = useState<OrderItem[]>(saved?.cart ?? []);
+  const [showCart, setShowCart] = useState(saved?.checkoutStep && saved.checkoutStep !== "form" ? true : false);
+  const [checkoutStep, setCheckoutStep] = useState<"form" | "payment" | "txid" | "waiting" | "done">(saved?.checkoutStep ?? "form");
+  const [customerName, setCustomerName] = useState(saved?.customerName ?? "");
+  const [customerPhone, setCustomerPhone] = useState(saved?.customerPhone ?? "");
+  const [txId, setTxId] = useState(saved?.txId ?? "");
+  const [orderId, setOrderId] = useState(saved?.orderId ?? "");
+  const [orderStatus, setOrderStatus] = useState(saved?.orderStatus ?? "");
   const [orderError, setOrderError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Sync state to sessionStorage whenever key fields change
+  useEffect(() => {
+    if (!cardId) return;
+    const state = { cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+  }, [cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus]);
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
@@ -173,6 +193,12 @@ export function CardPublicView() {
     finally { setIsSubmitting(false); }
   };
 
+  const handlePaidNoCode = () => {
+    // No payment code — name & phone already captured in step 1.
+    // Business owner sees them in the orders panel and confirms manually.
+    setCheckoutStep("waiting");
+  };
+
   const handleSubmitTxId = async () => {
     if (!txId.trim()) { setOrderError("Please enter your transaction ID"); return; }
     setOrderError(""); setIsSubmitting(true);
@@ -184,6 +210,7 @@ export function CardPublicView() {
   };
 
   const resetOrder = () => {
+    sessionStorage.removeItem(SESSION_KEY);
     setShowCart(false); setCheckoutStep("form"); setCustomerName("");
     setCustomerPhone(""); setTxId(""); setOrderId(""); setOrderStatus(""); setOrderError("");
   };
@@ -481,13 +508,24 @@ export function CardPublicView() {
       </div>
 
       {/* Floating cart button — only for business cards with items in cart */}
-      {businessProfile && cartCount > 0 && (
+      {businessProfile && cartCount > 0 && checkoutStep === "form" && (
         <button
           onClick={() => setShowCart(true)}
           className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-[#DE3A16] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#DE3A16]/40"
         >
           <HiOutlineShoppingCart className="text-lg" />
           {cartCount} item{cartCount > 1 ? "s" : ""} &middot; RWF {cartTotal.toLocaleString()}
+        </button>
+      )}
+
+      {/* Resume in-progress order — shown when modal is closed but order is active */}
+      {businessProfile && !showCart && checkoutStep !== "form" && (
+        <button
+          onClick={() => setShowCart(true)}
+          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-bold text-white shadow-lg"
+        >
+          <HiOutlineShoppingCart className="text-lg" />
+          {checkoutStep === "waiting" ? "Order pending confirmation..." : checkoutStep === "done" ? "View order result" : "Resume your order"}
         </button>
       )}
 
@@ -543,24 +581,39 @@ export function CardPublicView() {
                 </div>
                 <div className="mb-4 rounded-2xl bg-[#fdf3f0] p-4 text-center">
                   <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Dial this USSD code on your phone</p>
-                  <p className="mt-2 break-all text-lg font-bold text-[#DE3A16]">*182*8*1*{(businessProfile.phone ?? "").replace(/^0/, "")}*{cartTotal}#</p>
+                  {businessProfile.paymentCode ? (
+                    <p className="mt-2 break-all text-lg font-bold text-[#DE3A16]">*182*8*1*{businessProfile.paymentCode}*{cartTotal}#</p>
+                  ) : (
+                    <p className="mt-2 break-all text-lg font-bold text-[#DE3A16]">*182*1*1*{(businessProfile.phone ?? "").replace(/^0/, "")}*{cartTotal}#</p>
+                  )}
                   <button
-                    onClick={() => navigator.clipboard?.writeText(`*182*8*1*${(businessProfile.phone ?? "").replace(/^0/, "")}*${cartTotal}#`)}
+                    onClick={() => navigator.clipboard?.writeText(
+                      businessProfile.paymentCode
+                        ? `*182*8*1*${businessProfile.paymentCode}*${cartTotal}#`
+                        : `*182*1*1*${(businessProfile.phone ?? "").replace(/^0/, "")}*${cartTotal}#`
+                    )}
                     className="mt-2 text-xs font-semibold text-[#DE3A16] underline"
                   >
                     Copy Code
                   </button>
                 </div>
                 <p className="mb-4 text-center text-sm text-gray-600">
-                  Pay <span className="font-bold text-gray-900">RWF {cartTotal.toLocaleString()}</span> via MTN MoMo, then enter the TxId from your confirmation SMS.
+                  Pay <span className="font-bold text-gray-900">RWF {cartTotal.toLocaleString()}</span> via MTN MoMo,{" "}
+                  {businessProfile.paymentCode ? "then enter the TxId from your confirmation SMS." : "then tap the button below."}
                 </p>
-                <button onClick={() => setCheckoutStep("txid")} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white">
-                  I Have Paid &rarr; Enter TxId
-                </button>
+                {businessProfile.paymentCode ? (
+                  <button onClick={() => setCheckoutStep("txid")} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white">
+                    I Have Paid &rarr; Enter TxId
+                  </button>
+                ) : (
+                  <button onClick={handlePaidNoCode} disabled={isSubmitting} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white disabled:opacity-60">
+                    {isSubmitting ? "Please wait..." : "I Have Paid →"}
+                  </button>
+                )}
               </>
             )}
 
-            {/* STEP 3 — enter TxId from SMS */}
+            {/* STEP 3 — enter TxId from SMS (only when business has paymentCode) */}
             {checkoutStep === "txid" && (
               <>
                 <div className="mb-4 flex items-center justify-between">
@@ -581,7 +634,7 @@ export function CardPublicView() {
               <div className="py-8 text-center">
                 <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DE3A16] border-t-transparent" />
                 <h2 className="text-lg font-bold text-gray-900">Waiting for confirmation...</h2>
-                <p className="mt-2 text-sm text-gray-500">The restaurant is verifying your payment. This usually takes a moment.</p>
+                <p className="mt-2 text-sm text-gray-500">We are verifying your payment. Please wait as this usually takes a moment!</p>
                 <button onClick={() => navigate(`/order/${orderId}`)} className="mt-5 w-full rounded-2xl border border-[#DE3A16] py-3 text-sm font-semibold text-[#DE3A16]">
                   Track My Order
                 </button>

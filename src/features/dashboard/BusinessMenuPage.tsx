@@ -9,6 +9,7 @@ import {
   HiOutlineClipboardList,
   HiOutlineCheck,
   HiOutlineX,
+  HiOutlineDownload,
 } from "react-icons/hi";
 import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Alert, Button, Input, PageSpinner } from "../../components/ui";
@@ -24,6 +25,7 @@ type BusinessFormState = {
   phone: string;
   email: string;
   website: string;
+  paymentCode: string;
 };
 
 type ItemFormState = {
@@ -40,6 +42,7 @@ const EMPTY_BUSINESS_FORM: BusinessFormState = {
   phone: "",
   email: "",
   website: "",
+  paymentCode: "",
 };
 
 const EMPTY_ITEM_FORM: ItemFormState = {
@@ -110,6 +113,18 @@ export function BusinessMenuPage() {
     finally { setOrdersLoading(false); }
   };
 
+  const handleExportOrders = async () => {
+    try {
+      const blob = await orderApi.exportOrdersCsv();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "orders.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { setError(getErrorMessage(err)); }
+  };
+
   const selectedMenu = menus.find((menu) => menu.id === selectedMenuId) || null;
 
   useEffect(() => {
@@ -170,6 +185,7 @@ export function BusinessMenuPage() {
       phone: profile.phone || "",
       email: profile.email || "",
       website: profile.website || "",
+      paymentCode: profile.paymentCode || "",
     });
   };
 
@@ -238,6 +254,7 @@ export function BusinessMenuPage() {
           phone: businessForm.phone.trim(),
           email: businessForm.email.trim(),
           website: businessForm.website.trim(),
+          paymentCode: businessForm.paymentCode.trim(),
         },
         businessPhoto,
       );
@@ -431,6 +448,14 @@ export function BusinessMenuPage() {
                 updateBusinessField("phone", event.target.value)
               }
               placeholder="0788123456"
+            />
+            <Input
+              label="MoMo Payment Code"
+              value={businessForm.paymentCode}
+              onChange={(event) =>
+                updateBusinessField("paymentCode", event.target.value)
+              }
+              placeholder="e.g. 182839"
             />
             <Input
               label="Email"
@@ -786,10 +811,17 @@ export function BusinessMenuPage() {
         <div className="card-soft overflow-hidden rounded-2xl border border-[#e9d7d2] bg-white">
           <div className="flex items-center gap-3 border-b border-gray-100 p-5">
             <HiOutlineClipboardList className="text-xl text-[#DE3A16]" />
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-semibold text-gray-900">Incoming Orders</h2>
               <p className="text-sm text-gray-500">Verify TxId against your MoMo SMS then confirm or reject.</p>
             </div>
+            <button
+              onClick={handleExportOrders}
+              disabled={orders.length === 0}
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-[#DE3A16] hover:text-[#DE3A16] disabled:opacity-40"
+            >
+              <HiOutlineDownload className="text-sm" /> Export CSV
+            </button>
           </div>
 
           <div className="divide-y divide-gray-50">
@@ -827,7 +859,7 @@ export function BusinessMenuPage() {
                           <p className="font-mono text-sm font-bold text-gray-900">{order.txId}</p>
                         </div>
                       )}
-                      {order.status === "WAITING_VERIFICATION" && (
+                      {(order.status === "WAITING_VERIFICATION" || order.status === "PENDING") && (
                         <div className="flex gap-3">
                           <button
                             onClick={() => handleConfirmOrder(order.id)}

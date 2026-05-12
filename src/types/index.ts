@@ -94,6 +94,7 @@ export interface PublicBusinessProfile {
   email: string | null;
   website: string | null;
   imageUrl: string | null;
+  paymentCode: string | null;
   menus?: BusinessMenu[];
 }
 
