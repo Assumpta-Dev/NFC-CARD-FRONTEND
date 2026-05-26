@@ -87,7 +87,7 @@ export function CheckoutPage() {
 
   return (
     <DashboardLayout>
-      <div className="border-b border-[#DE3A16] bg-white">
+      <div className="shadow-[0_2px_16px_rgba(0,0,0,0.08)] bg-white">
         <div className="mx-auto max-w-5xl px-4 pb-10 pt-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Upgrade your Account
@@ -185,7 +185,7 @@ export function CheckoutPage() {
           })}
         </div>
 
-        <div className="card-soft rounded-2xl border border-[#e9d7d2] bg-white p-6">
+        <div className="card-soft rounded-2xl bg-white p-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">

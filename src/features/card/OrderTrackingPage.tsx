@@ -240,7 +240,7 @@ export function OrderTrackingPage() {
   if (error || !order) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white p-6">
-        <div className="card-soft w-full max-w-sm rounded-3xl border-[#DE3A16] p-8 text-center">
+        <div className="card-soft w-full max-w-sm rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-8 text-center">
           <div className="icon-badge mx-auto mb-4 h-16 w-16 rounded-3xl">
             <HiOutlineExclamationCircle className="text-3xl" />
           </div>
@@ -266,7 +266,7 @@ export function OrderTrackingPage() {
         </div>
 
         {/* Order header card */}
-        <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-6 text-center">
+        <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-6 text-center">
           <div className="icon-badge mx-auto mb-4 h-14 w-14 rounded-2xl">
             <HiOutlineClipboardList className="text-2xl" />
           </div>
@@ -278,7 +278,7 @@ export function OrderTrackingPage() {
         </div>
 
         {/* Customer info */}
-        <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5">
+        <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5">
           <p className="section-label mb-3">Customer</p>
           <p className="text-sm font-semibold text-gray-900">{order.customerName}</p>
           <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
@@ -290,7 +290,7 @@ export function OrderTrackingPage() {
         </div>
 
         {/* Order items */}
-        <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5">
+        <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5">
           <p className="section-label mb-3">Items Ordered</p>
           <div className="space-y-3">
             {items.map((item, i) => (
@@ -314,7 +314,7 @@ export function OrderTrackingPage() {
 
         {/* PENDING — USSD code */}
         {order.status === "PENDING" && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5 text-center">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 text-center">
             <p className="section-label mb-3">Pay Now</p>
             <p className="mb-2 text-xs text-gray-500">Dial this USSD code on your phone</p>
             <p className="break-all text-lg font-bold text-[#DE3A16]">
@@ -328,7 +328,7 @@ export function OrderTrackingPage() {
 
         {/* WAITING_VERIFICATION — polite spinner */}
         {order.status === "WAITING_VERIFICATION" && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-6 text-center">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-6 text-center">
             <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#DE3A16] border-t-transparent" />
             <p className="font-semibold text-gray-900">Please wait</p>
             <p className="mt-1 text-sm text-gray-500">
@@ -345,7 +345,7 @@ export function OrderTrackingPage() {
 
         {/* PAID — inline receipt preview + print button */}
         {order.status === "PAID" && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5">
             {/* Confirmed banner */}
             <div className="mb-4 flex items-center gap-3 rounded-2xl bg-green-50 p-3">
               <HiOutlineCheckCircle className="flex-shrink-0 text-2xl text-green-600" />
@@ -372,7 +372,7 @@ export function OrderTrackingPage() {
 
         {/* REJECTED */}
         {order.status === "REJECTED" && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5 text-center">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
               <HiOutlineXCircle className="text-3xl text-red-500" />
             </div>

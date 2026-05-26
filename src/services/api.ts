@@ -79,7 +79,7 @@ function buildApiUrl(path: string) {
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
-  timeout: 30000, // 30 second timeout — gives slow connections enough time to load
+  // No timeout — keep trying, never cut the user off mid-request
 });
 
 // ===========================================================
@@ -598,15 +598,19 @@ export const businessApi = {
     file?: File | null,
   ) => {
     const formData = new FormData();
+    const appendOptionalField = (key: string, value?: string) => {
+      if (value !== undefined) formData.append(key, value);
+    };
+
     formData.append("name", data.name);
     formData.append("category", data.category);
-    if (data.description) formData.append("description", data.description);
-    if (data.location) formData.append("location", data.location);
-    if (data.phone) formData.append("phone", data.phone);
-    if (data.email) formData.append("email", data.email);
-    if (data.website) formData.append("website", data.website);
-    if (data.imageUrl) formData.append("imageUrl", data.imageUrl);
-    if (data.paymentCode) formData.append("paymentCode", data.paymentCode);
+    appendOptionalField("description", data.description);
+    appendOptionalField("location", data.location);
+    appendOptionalField("phone", data.phone);
+    appendOptionalField("email", data.email);
+    appendOptionalField("website", data.website);
+    appendOptionalField("imageUrl", data.imageUrl);
+    appendOptionalField("paymentCode", data.paymentCode);
     if (file) formData.append("photo", file);
 
     const res = await apiClient.post<ApiResponse<BusinessProfile>>(
@@ -1291,16 +1295,10 @@ export const userApi = {
  */
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    // Silently ignore timeout/network errors — let the UI handle loading state
-    if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
-      return "";
-    }
-    if (error.response?.data?.error) {
-      return error.response.data.error;
-    }
-    if (error.response?.data?.message) {
-      return error.response.data.message;
-    }
+    if (error.code === "ECONNABORTED") return "Request timed out. Please try again.";
+    if (error.code === "ERR_NETWORK") return "Network error. Please check your connection.";
+    if (error.response?.data?.error) return error.response.data.error;
+    if (error.response?.data?.message) return error.response.data.message;
     return error.message || "An error occurred";
   }
   if (error instanceof Error) return error.message;

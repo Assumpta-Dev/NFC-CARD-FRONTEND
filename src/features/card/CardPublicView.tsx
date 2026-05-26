@@ -133,7 +133,7 @@ export function CardPublicView() {
   const saved = loadSession();
 
   const [cart, setCart] = useState<OrderItem[]>(saved?.cart ?? []);
-  const [showCart, setShowCart] = useState(saved?.checkoutStep && saved.checkoutStep !== "form" ? true : false);
+  const [showCart, setShowCart] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<"form" | "payment" | "txid" | "waiting" | "done">(saved?.checkoutStep ?? "form");
   const [customerName, setCustomerName] = useState(saved?.customerName ?? "");
   const [customerPhone, setCustomerPhone] = useState(saved?.customerPhone ?? "");
@@ -149,6 +149,13 @@ export function CardPublicView() {
     const state = { cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
   }, [cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus]);
+
+  // Re-open modal after card data loads if there was an in-progress order
+  useEffect(() => {
+    if (cardData && saved?.checkoutStep && saved.checkoutStep !== "form") {
+      setShowCart(true);
+    }
+  }, [cardData]);
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
@@ -257,7 +264,7 @@ export function CardPublicView() {
   if (cardData.type === "unassigned") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white p-6">
-        <div className="card-soft w-full max-w-sm animate-slide-up rounded-3xl border-[#DE3A16] p-8 text-center">
+        <div className="card-soft w-full max-w-sm animate-slide-up rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-8 text-center">
           <div className="icon-badge mx-auto mb-5 h-16 w-16 rounded-3xl">
             <HiOutlineUserAdd className="text-3xl" />
           </div>
@@ -293,6 +300,15 @@ export function CardPublicView() {
   const businessProfile: PublicBusinessProfile | null =
     cardData.type === "business" ? cardData.business : null;
 
+  if (cardData.type === "business" && !businessProfile) {
+    return (
+      <CenteredMessage
+        title="Business Profile Not Ready"
+        message="This card is active, but the business profile has not been completed yet."
+      />
+    );
+  }
+
   if (cardData.type === "personal" && !profile) {
     return (
       <CenteredMessage
@@ -309,19 +325,38 @@ export function CardPublicView() {
     ? profile.phone || profile.email || profile.whatsapp || profile.website
     : businessProfile?.phone || businessProfile?.email || businessProfile?.website;
 
+  // Resolve background image for both personal and business cards
+  const bgImage = (cardData.type === "personal" ? profile?.imageUrl : businessProfile?.imageUrl) ?? null;
+
   return (
-    <div className="min-h-screen bg-white pb-10">
-      <div className="relative mx-auto w-full max-w-sm animate-slide-up px-4 pt-8">
-        <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-6 text-center">
-          <div className="relative mx-auto mb-4 h-24 w-24">
+    <div className="relative min-h-screen pb-10" style={{ backgroundColor: "#ffffff" }}>
+      {/* Full-screen background image — only rendered when profile has a photo */}
+      {bgImage && (
+        <div
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url('${bgImage}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "fixed",
+          }}
+        />
+      )}
+
+      {/* Scrollable content */}
+      <div className="relative z-10 mx-auto w-full max-w-sm px-4 pt-8">
+        {/* Profile card */}
+        <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-6 text-center animate-pop-in hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
+          <div className="relative mx-auto mb-4 h-24 w-24 animate-pop-in">
             {profile?.imageUrl || businessProfile?.imageUrl ? (
               <img
                 src={profile ? profile.imageUrl! : businessProfile!.imageUrl!}
                 alt={profile ? profile.fullName : businessProfile!.name}
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-brand-500/40 ring-offset-2 ring-offset-white"
+                className="h-24 w-24 rounded-full object-cover shadow-[0_0_0_3px_rgba(222,58,22,0.3),0_2px_12px_rgba(0,0,0,0.15)]"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border border-[#DE3A16] bg-white">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-[0_2px_12px_rgba(0,0,0,0.10)]">
                 <span className="text-3xl font-bold text-[#DE3A16]">
                   {profile
                     ? profile.fullName.charAt(0).toUpperCase()
@@ -360,7 +395,7 @@ export function CardPublicView() {
         </div>
 
         {(profile?.bio || businessProfile?.description) && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
             <p className="section-label mb-3">About</p>
             <p className="text-sm leading-relaxed text-gray-700">
               {profile ? profile.bio : businessProfile?.description}
@@ -369,7 +404,7 @@ export function CardPublicView() {
         )}
 
         {businessProfile?.menus?.length ? (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] p-5">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-2 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
             <p className="section-label mb-3">Menu</p>
             {businessProfile.menus.map((menu) => (
               <div key={menu.id} className="mb-4 last:mb-0">
@@ -380,7 +415,7 @@ export function CardPublicView() {
                   {menu.items?.map((item) => {
                     const cartItem = cart.find((c) => c.id === item.id);
                     return (
-                      <div key={item.id} className="flex gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-3 text-sm transition-shadow hover:shadow-md">
+                      <div key={item.id} className="flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                         {/* Image — larger, left-anchored, zoom on hover */}
                         {item.imageUrl && (
                           <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl">
@@ -434,7 +469,7 @@ export function CardPublicView() {
         ) : null}
 
         {hasContacts && (
-          <div className="card-soft mb-4 rounded-3xl border-[#DE3A16] px-2 py-3">
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] px-2 py-3 animate-slide-up-3 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
             <p className="section-label mb-2 px-2">Contact</p>
 
             {(profile?.phone || businessProfile?.phone) && (
@@ -478,7 +513,7 @@ export function CardPublicView() {
         )}
 
         {profile?.links?.length ? (
-          <div className="card-soft mb-5 rounded-3xl border-[#DE3A16] p-5">
+          <div className="card-soft mb-5 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-4 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
             <p className="section-label mb-4">Social Network</p>
             <div className="flex flex-wrap gap-3">
               {profile.links.map((link, index) => (

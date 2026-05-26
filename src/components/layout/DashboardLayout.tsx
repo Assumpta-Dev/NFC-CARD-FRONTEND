@@ -18,8 +18,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-[#DE3A16] sticky top-0 z-50">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white sticky top-0 z-50 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link

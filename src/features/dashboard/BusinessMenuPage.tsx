@@ -383,7 +383,7 @@ export function BusinessMenuPage() {
 
   return (
     <DashboardLayout>
-      <div className="border-b border-[#DE3A16] bg-white">
+      <div className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
         <div className="mx-auto max-w-5xl px-4 pb-8 pt-8">
           <div className="flex items-center gap-3">
             <span className="icon-badge h-10 w-10 rounded-xl">
@@ -406,7 +406,7 @@ export function BusinessMenuPage() {
 
         <form
           onSubmit={handleSaveBusiness}
-          className="card-soft rounded-2xl border border-[#e9d7d2] bg-white p-6"
+          className="card-soft rounded-2xl bg-white p-6"
         >
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
@@ -518,7 +518,7 @@ export function BusinessMenuPage() {
         </form>
 
         <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
-          <div className="card-soft rounded-2xl border border-[#e9d7d2] bg-white p-6">
+          <div className="card-soft rounded-2xl bg-white p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -584,7 +584,7 @@ export function BusinessMenuPage() {
             </div>
           </div>
 
-          <div className="card-soft rounded-2xl border border-[#e9d7d2] bg-white p-6">
+          <div className="card-soft rounded-2xl bg-white p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
@@ -645,7 +645,7 @@ export function BusinessMenuPage() {
           </div>
         </div>
 
-        <div className="card-soft rounded-2xl border border-[#e9d7d2] bg-white">
+        <div className="card-soft rounded-2xl bg-white">
           <div className="flex items-center justify-between border-b border-gray-100 p-5">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -808,7 +808,7 @@ export function BusinessMenuPage() {
           </div>
         </div>
         {/* Orders Panel */}
-        <div className="card-soft overflow-hidden rounded-2xl border border-[#e9d7d2] bg-white">
+        <div className="card-soft overflow-hidden rounded-2xl bg-white">
           <div className="flex items-center gap-3 border-b border-gray-100 p-5">
             <HiOutlineClipboardList className="text-xl text-[#DE3A16]" />
             <div className="flex-1">

@@ -15,7 +15,57 @@ import {
   HiOutlineLockClosed,
   HiOutlineUser,
   HiOutlineIdentification,
+  HiOutlineEye,
+  HiOutlineEyeOff,
 } from "react-icons/hi";
+
+// Reusable password input with show/hide toggle
+function PasswordInput({
+  id,
+  name,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required = false,
+}: {
+  id?: string;
+  name?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  autoComplete?: string;
+  required?: boolean;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-full">
+      <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
+        <HiOutlineLockClosed className="text-sm" />
+      </span>
+      <input
+        id={id}
+        name={name}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        autoComplete={autoComplete}
+        className="w-full pl-14 pr-12 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white transition-all duration-200 caret-brand-600"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+        tabIndex={-1}
+        aria-label={show ? "Hide password" : "Show password"}
+      >
+        {show ? <HiOutlineEyeOff className="text-lg" /> : <HiOutlineEye className="text-lg" />}
+      </button>
+    </div>
+  );
+}
 
 function IconInput({
   icon: Icon,
@@ -78,7 +128,7 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Glass-dark card */}
-        <div className="card-soft p-8 rounded-3xl border-[#DE3A16]">
+        <div className="card-soft p-8 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
           {children}
         </div>
       </div>
@@ -188,24 +238,15 @@ export function LoginPage() {
           >
             Password
           </label>
-          <div className="relative">
-            <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
-              <HiOutlineLockClosed className="text-sm" />
-            </span>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              autoComplete="current-password"
-              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
-                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
-                transition-all duration-200 caret-brand-600"
-            />
-          </div>
+          <PasswordInput
+            id="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            autoComplete="current-password"
+            required
+          />
         </div>
 
         <Button
@@ -220,9 +261,9 @@ export function LoginPage() {
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <div className="flex-1 h-px bg-gray-200" />
         <span className="text-xs text-gray-500">or</span>
-        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
 
       <p className="text-center text-sm text-gray-600">
@@ -391,13 +432,11 @@ export function RegisterPage() {
           >
             Password
           </label>
-          <IconInput
+          <PasswordInput
             id="register-password"
             name="password"
-            icon={HiOutlineLockClosed}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            type="password"
             placeholder="Min 8 chars, include a number"
             autoComplete="new-password"
             required
@@ -439,9 +478,9 @@ export function RegisterPage() {
       </form>
 
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <div className="flex-1 h-px bg-gray-200" />
         <span className="text-xs text-gray-500">or</span>
-        <div className="flex-1 h-px bg-[#DE3A16]" />
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
 
       <p className="text-center text-sm text-gray-600">
@@ -539,9 +578,9 @@ export function ForgotPasswordPage() {
         )}
 
         <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-[#DE3A16]" />
+          <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-500">or</span>
-          <div className="flex-1 h-px bg-[#DE3A16]" />
+          <div className="flex-1 h-px bg-gray-200" />
         </div>
 
         <p className="text-center text-sm text-gray-600">
@@ -630,23 +669,15 @@ export function ResetPasswordPage() {
             >
               New password
             </label>
-            <div className="relative">
-              <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
-                <HiOutlineLockClosed className="text-sm" />
-              </span>
-              <input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 8 chars, include a number"
-                required
-                autoComplete="new-password"
-                className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
-                  transition-all duration-200"
-              />
-            </div>
+            <PasswordInput
+              id="new-password"
+              name="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Min 8 chars, include a number"
+              autoComplete="new-password"
+              required
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -656,23 +687,15 @@ export function ResetPasswordPage() {
             >
               Confirm password
             </label>
-            <div className="relative">
-              <span className="icon-badge absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg pointer-events-none z-10">
-                <HiOutlineLockClosed className="text-sm" />
-              </span>
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                placeholder="Repeat your new password"
-                required
-                autoComplete="new-password"
-                className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
-                  focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
-                  transition-all duration-200"
-              />
-            </div>
+            <PasswordInput
+              id="confirm-password"
+              name="confirm-password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Repeat your new password"
+              autoComplete="new-password"
+              required
+            />
           </div>
 
           <Button

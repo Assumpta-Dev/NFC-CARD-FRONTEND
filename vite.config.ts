@@ -7,25 +7,21 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
+    target: 'esnext',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React runtime
-          react: ["react", "react-dom", "react-router-dom"],
-          // Charting library — largest chunk
+          react:    ["react", "react-dom", "react-router-dom"],
           recharts: ["recharts"],
-          // Icons — large due to many icon sets
-          icons: ["react-icons"],
-          // HTTP + query
-          network: ["axios", "@tanstack/react-query"],
+          icons:    ["react-icons"],
+          network:  ["axios"],
         },
       },
     },
   },
   server: {
     port: 3000,
-    // Proxy API calls to backend during development
-    // This avoids CORS issues in dev without changing production config
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

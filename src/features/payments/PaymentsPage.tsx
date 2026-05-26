@@ -54,7 +54,7 @@ export function PaymentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="border-b border-[#DE3A16] bg-white">
+      <div className="shadow-[0_2px_16px_rgba(0,0,0,0.08)] bg-white">
         <div className="mx-auto max-w-4xl px-4 pb-8 pt-8">
           <div className="flex items-center gap-3">
             <span className="icon-badge h-10 w-10 rounded-xl">
@@ -74,7 +74,7 @@ export function PaymentsPage() {
         {error && <Alert message={error} />}
         {success && <Alert message={success} type="success" />}
 
-        <div className="card-soft rounded-2xl border border-[#e9d7d2] bg-white p-6">
+        <div className="card-soft rounded-2xl bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <HiOutlineCreditCard className="text-2xl text-[#DE3A16]" />
@@ -139,7 +139,7 @@ export function PaymentsPage() {
           </div>
         </div>
 
-        <div className="card-soft overflow-hidden rounded-2xl border border-[#e9d7d2] bg-white">
+        <div className="card-soft overflow-hidden rounded-2xl bg-white">
           <div className="border-b border-gray-100 px-6 py-5">
             <h2 className="font-semibold text-gray-900">Payment History</h2>
           </div>

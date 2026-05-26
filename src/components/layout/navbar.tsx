@@ -7,7 +7,7 @@ import { HiOutlineCreditCard } from "react-icons/hi";
 
 export default function Navbar() {
   return (
-    <nav className="w-full bg-white border-b border-[#DE3A16] px-6 py-4 fixed top-0 z-50">
+    <nav className="w-full bg-white px-6 py-4 fixed top-0 z-50 shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">

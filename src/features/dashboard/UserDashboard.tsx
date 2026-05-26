@@ -154,7 +154,7 @@ export function UserDashboard() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* ════════════════════════════════════════════════════
           DARK HERO HEADER — OVOU-inspired analytics section
           Stats are displayed prominently inside the dark zone

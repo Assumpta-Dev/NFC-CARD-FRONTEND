@@ -41,7 +41,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="card-soft rounded-3xl p-6 space-y-4 border-[#DE3A16]">
+    <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
       <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
       {children}
     </section>
@@ -149,17 +149,16 @@ export function ProfileEditPage() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Image must be smaller than 2 MB");
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be smaller than 5 MB");
       return;
     }
-
     try {
       setIsSaving(true);
       setError("");
       const { imageUrl } = await profileApi.uploadPhoto(file);
       updateField("imageUrl", imageUrl);
-      setSuccess("Profile photo updated successfully!");
+      setSuccess("Photo uploaded! Click Save Profile to apply.");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -238,12 +237,25 @@ export function ProfileEditPage() {
     setIsSaving(true);
 
     try {
-      // Step 1: Validate and extract valid links (must have both label and URL)
-      const validLinks = formData.links.filter((l) => l.url && l.label);
+      // Only send links that have both a URL and a label (backend requires both)
+      const validLinks = formData.links
+        .filter((l) => l.url.trim() && l.label.trim())
+        .map((l, i) => ({ ...l, order: i }));
 
-      // Step 2: Send update to backend
+      // Convert empty strings to null so backend doesn't store empty strings
+      const toNull = (v: string | null | undefined) =>
+        v && v.trim() ? v.trim() : null;
+
       const updatedProfile = await profileApi.updateProfile({
-        ...formData,
+        fullName: formData.fullName.trim() || undefined,
+        jobTitle: toNull(formData.jobTitle),
+        company: toNull(formData.company),
+        phone: toNull(formData.phone),
+        email: toNull(formData.email),
+        website: toNull(formData.website),
+        bio: toNull(formData.bio),
+        imageUrl: formData.imageUrl && formData.imageUrl.trim() ? formData.imageUrl.trim() : null,
+        whatsapp: toNull(formData.whatsapp),
         links: validLinks,
       });
 
@@ -264,9 +276,7 @@ export function ProfileEditPage() {
 
       // Step 4: Show success message with details
       // useEffect will auto-dismiss after 5 seconds
-      setSuccess(
-        `✓ Profile saved successfully! Updated ${validLinks.length} link${validLinks.length !== 1 ? "s" : ""}.`,
-      );
+      setSuccess("✓ Profile saved successfully!");
 
       // Auto-scroll to top to show success message
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -296,7 +306,7 @@ export function ProfileEditPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Sticky Header ────────────────────────────────── */}
-      <nav className="bg-white border-b border-[#DE3A16] sticky top-0 z-10 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <nav className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)] sticky top-0 z-10 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard")}
@@ -336,7 +346,7 @@ export function ProfileEditPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden
-                bg-white border-2 border-[#DE3A16] hover:border-brand-500/60
+                bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:border-brand-500/60
                 flex items-center justify-center transition-all group"
             >
               {formData.imageUrl ? (
@@ -374,7 +384,7 @@ export function ProfileEditPage() {
                 </button>
               )}
               <p className="text-xs text-gray-500">
-                JPG, PNG or GIF · max 2 MB
+                JPG, PNG or GIF · max 5 MB
               </p>
             </div>
           </div>
@@ -384,7 +394,6 @@ export function ProfileEditPage() {
             value={formData.fullName}
             onChange={(e) => updateField("fullName", e.target.value)}
             placeholder="Jane Smith"
-            required
           />
           <DarkInput
             label="Job Title"
@@ -422,14 +431,12 @@ export function ProfileEditPage() {
             value={formData.email || ""}
             onChange={(e) => updateField("email", e.target.value)}
             placeholder="you@example.com"
-            type="email"
           />
           <DarkInput
             label="Website"
             value={formData.website || ""}
             onChange={(e) => updateField("website", e.target.value)}
             placeholder="https://yourwebsite.com"
-            type="url"
           />
           <DarkInput
             label="WhatsApp Number"
@@ -443,7 +450,7 @@ export function ProfileEditPage() {
         </Section>
 
         {/* ── Social Links ─────────────────────────────── */}
-        <section className="card-soft rounded-3xl p-6 space-y-4 border-[#DE3A16]">
+        <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900 text-base">Links</h2>
             <button
@@ -465,7 +472,7 @@ export function ProfileEditPage() {
           {formData.links.map((link, index) => (
             <div
               key={index}
-              className="card-soft p-4 rounded-2xl space-y-3 border-[#DE3A16]"
+              className="card-soft p-4 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
@@ -496,7 +503,6 @@ export function ProfileEditPage() {
                 value={link.url}
                 onChange={(e) => updateLink(index, "url", e.target.value)}
                 placeholder="https://linkedin.com/in/yourprofile"
-                type="url"
               />
             </div>
           ))}

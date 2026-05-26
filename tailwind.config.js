@@ -29,8 +29,14 @@ export default {
       },
       // Animations for card flip reveal and page transitions
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-in-out',
-        'slide-up': 'slideUp 0.5s ease-out',
+        'fade-in':    'fadeIn 0.4s ease-in-out',
+        'slide-up':   'slideUp 0.5s ease-out',
+        'slide-up-1': 'slideUp 0.5s ease-out 0.1s both',
+        'slide-up-2': 'slideUp 0.5s ease-out 0.2s both',
+        'slide-up-3': 'slideUp 0.5s ease-out 0.3s both',
+        'slide-up-4': 'slideUp 0.5s ease-out 0.4s both',
+        'slide-up-5': 'slideUp 0.5s ease-out 0.5s both',
+        'pop-in':     'popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
       },
       keyframes: {
         fadeIn: {
@@ -38,8 +44,12 @@ export default {
           '100%': { opacity: '1' },
         },
         slideUp: {
-          '0%':   { opacity: '0', transform: 'translateY(20px)' },
+          '0%':   { opacity: '0', transform: 'translateY(24px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        popIn: {
+          '0%':   { opacity: '0', transform: 'scale(0.85)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
       },
     },

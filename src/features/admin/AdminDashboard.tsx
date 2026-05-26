@@ -239,12 +239,12 @@ export function AdminDashboard() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* ════════════════════════════════════════════════════
           DARK HERO HEADER — OVOU-inspired admin section
           Stats are displayed prominently inside the dark zone
           ════════════════════════════════════════════════════ */}
-      <div className="bg-white border-b border-[#DE3A16]">
+      <div className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
         <div className="max-w-4xl mx-auto px-4 pt-5 pb-8">
           {/* Top bar: logo + actions */}
           <div className="flex items-center justify-between mb-7">
