@@ -142,11 +142,13 @@ export function CardPublicView() {
   const [orderStatus, setOrderStatus] = useState(saved?.orderStatus ?? "");
   const [orderError, setOrderError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderType, setOrderType] = useState<"table" | "room">(saved?.orderType ?? "table");
+  const [tableRoom, setTableRoom] = useState<string>(saved?.tableRoom ?? "");
 
   // Sync state to sessionStorage whenever key fields change
   useEffect(() => {
     if (!cardId) return;
-    const state = { cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus };
+    const state = { cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus, orderType, tableRoom };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
   }, [cart, checkoutStep, customerName, customerPhone, txId, orderId, orderStatus]);
 
@@ -189,12 +191,14 @@ export function CardPublicView() {
 
   const handlePlaceOrder = async (businessId: string) => {
     if (!customerName.trim() || !customerPhone.trim()) { setOrderError("Name and phone are required"); return; }
+    if (!tableRoom.trim()) { setOrderError(orderType === "table" ? "Table number is required" : "Room number is required"); return; }
     setOrderError(""); setIsSubmitting(true);
+    const locationTag = orderType === "table" ? `Table ${tableRoom.trim()}` : `Room ${tableRoom.trim()}`;
+    const nameWithLocation = `${customerName.trim()} (${locationTag})`;
     try {
-      const order = await orderApi.placeOrder({ businessId, customerName: customerName.trim(), phone: customerPhone.trim(), items: cart });
+      const order = await orderApi.placeOrder({ businessId, customerName: nameWithLocation, phone: customerPhone.trim(), items: cart });
       setOrderId(order.id);
       setCheckoutStep("payment");
-      // Store orderId in sessionStorage so customer can return to tracking page
       sessionStorage.setItem("lastOrderId", order.id);
     } catch (err) { setOrderError(getErrorMessage(err)); }
     finally { setIsSubmitting(false); }
@@ -220,6 +224,7 @@ export function CardPublicView() {
     sessionStorage.removeItem(SESSION_KEY);
     setShowCart(false); setCheckoutStep("form"); setCustomerName("");
     setCustomerPhone(""); setTxId(""); setOrderId(""); setOrderStatus(""); setOrderError("");
+    setTableRoom(""); setOrderType("table");
   };
 
   const resetAll = () => { setCart([]); resetOrder(); };
@@ -576,7 +581,9 @@ export function CardPublicView() {
                   <h2 className="text-lg font-bold text-gray-900">Your Order</h2>
                   <button onClick={resetAll}><HiOutlineX className="text-xl text-gray-400" /></button>
                 </div>
-                <div className="mb-4 max-h-48 space-y-3 overflow-y-auto">
+
+                {/* Cart items */}
+                <div className="mb-4 max-h-40 space-y-3 overflow-y-auto">
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-center gap-3">
                       {item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />}
@@ -592,14 +599,61 @@ export function CardPublicView() {
                     </div>
                   ))}
                 </div>
+
                 <div className="mb-4 flex justify-between border-t pt-3 text-sm font-bold">
                   <span>Total</span>
                   <span className="text-[#DE3A16]">RWF {cartTotal.toLocaleString()}</span>
                 </div>
-                <div className="mb-3 space-y-3">
-                  <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Your name" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none" />
-                  <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Your MTN/Airtel number" type="tel" className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none" />
+
+                {/* Table / Room tabs */}
+                <div className="mb-3 flex rounded-xl bg-gray-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setOrderType("table")}
+                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                      orderType === "table"
+                        ? "bg-[#DE3A16] text-white shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    🍽 Dine In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderType("room")}
+                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                      orderType === "room"
+                        ? "bg-[#DE3A16] text-white shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                    }`}
+                  >
+                    🛏 Room Service
+                  </button>
                 </div>
+
+                {/* Customer details */}
+                <div className="mb-3 space-y-3">
+                  <input
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                  />
+                  <input
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="Your MTN/Airtel number"
+                    type="tel"
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                  />
+                  <input
+                    value={tableRoom}
+                    onChange={(e) => setTableRoom(e.target.value)}
+                    placeholder={orderType === "table" ? "Table number (e.g. 5)" : "Room number (e.g. 204)"}
+                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                  />
+                </div>
+
                 {orderError && <p className="mb-3 text-xs text-red-500">{orderError}</p>}
                 <button onClick={() => handlePlaceOrder(businessProfile.id)} disabled={isSubmitting} className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white disabled:opacity-60">
                   {isSubmitting ? "Placing order..." : "Place Order"}

@@ -280,7 +280,14 @@ export function OrderTrackingPage() {
         {/* Customer info */}
         <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5">
           <p className="section-label mb-3">Customer</p>
-          <p className="text-sm font-semibold text-gray-900">{order.customerName}</p>
+          <p className="text-sm font-semibold text-gray-900">
+            {order.customerName.replace(/\s*\(.*\)$/, "")}
+          </p>
+          {/\(.*\)$/.test(order.customerName) && (
+            <span className="inline-block mt-1 rounded-full bg-[#fdf3f0] px-2.5 py-0.5 text-xs font-semibold text-[#DE3A16]">
+              {order.customerName.match(/\((.*)\)$/)?.[1]}
+            </span>
+          )}
           <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
             <HiOutlinePhone className="text-sm" /> {order.phone}
           </p>

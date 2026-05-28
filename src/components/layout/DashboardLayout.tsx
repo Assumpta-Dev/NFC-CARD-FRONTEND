@@ -8,6 +8,7 @@ import {
   HiOutlineCurrencyDollar,
   HiOutlineLogout,
   HiOutlineChevronLeft,
+  HiOutlineClipboardList,
 } from "react-icons/hi";
 
 interface DashboardLayoutProps {
@@ -65,6 +66,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               >
                 <HiOutlineOfficeBuilding className="text-base" />
                 <span className="hidden sm:inline">Menu</span>
+              </Link>
+            )}
+
+            {user?.role === "BUSINESS" && (
+              <Link
+                to="/dashboard/orders"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
+              >
+                <HiOutlineClipboardList className="text-base" />
+                <span className="hidden sm:inline">Orders</span>
               </Link>
             )}
 

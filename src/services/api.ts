@@ -1355,6 +1355,12 @@ export const orderApi = {
     const res = await apiClient.get("/orders/business/export", { responseType: "blob" });
     return res.data;
   },
+
+  // Business — delete a completed or rejected order
+  deleteOrder: async (orderId: string) => {
+    const res = await apiClient.delete<ApiResponse<{ message: string }>>(`/orders/${orderId}`);
+    return res.data;
+  },
 };
 
 export default apiClient;

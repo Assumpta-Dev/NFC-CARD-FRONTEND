@@ -36,6 +36,7 @@ import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { PaymentsPage } from "./features/payments/PaymentsPage";
 import { CheckoutPage } from "./features/payments/CheckoutPage";
 import { BusinessMenuPage } from "./features/dashboard/BusinessMenuPage";
+import { BusinessOrdersPage } from "./features/dashboard/BusinessOrdersPage";
 
 // New landing pages
 import HomePage from "./pages/home";
@@ -87,6 +88,7 @@ export default function App() {
             {/* Business menu — accessible to BUSINESS and ADMIN */}
             <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
               <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
+              <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
             </Route>
 
             {/* ===================================================== */}
