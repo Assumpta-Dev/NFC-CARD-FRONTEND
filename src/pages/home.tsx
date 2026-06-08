@@ -226,12 +226,9 @@ export default function HomePage() {
           <div className="mt-12 flex flex-col gap-4 border-t border-slate-800 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} E-Card. All rights reserved.</p>
             <div className="flex flex-wrap items-center gap-4 text-slate-400">
-              <Link to="/" className="transition hover:text-[#DE3A16]">
-                Terms
-              </Link>
-              <Link to="/" className="transition hover:text-[#DE3A16]">
-                Privacy
-              </Link>
+              <span className="text-slate-500">Powered by <span className="text-[#DE3A16] font-medium">Icumu Tech Ltd</span></span>
+              <Link to="/" className="transition hover:text-[#DE3A16]">Terms</Link>
+              <Link to="/" className="transition hover:text-[#DE3A16]">Privacy</Link>
             </div>
           </div>
         </div>

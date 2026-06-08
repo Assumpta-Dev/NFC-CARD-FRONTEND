@@ -27,7 +27,7 @@ export default function SupportPage() {
 
         <div className="card-soft-hover p-4 rounded-lg border-[#DE3A16]">
           <h2 className="font-semibold">Contact support</h2>
-          <p className="text-sm text-gray-600">Email: support@ecard.com</p>
+          <p className="text-sm text-gray-600">Email: icumutechltd@gmail.com</p>
         </div>
       </div>
     </div>

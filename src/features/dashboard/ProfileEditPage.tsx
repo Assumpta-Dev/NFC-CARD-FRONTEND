@@ -1,9 +1,5 @@
 // ===========================================================
-// PROFILE EDIT PAGE — OVOU-inspired dark theme
-// ===========================================================
-// Lets authenticated users update their digital card content.
-// All form logic is unchanged; only the visual theme is updated
-// to match the dark OVOU aesthetic across the app.
+// PROFILE EDIT PAGE
 // ===========================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -32,14 +28,7 @@ const LINK_TYPES = [
 
 type FormData = Omit<Profile, "id" | "userId">;
 
-// ── Dark section wrapper ─────────────────────────────────────
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
       <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
@@ -48,18 +37,11 @@ function Section({
   );
 }
 
-// ── Dark textarea wrapper ────────────────────────────────────
 const DARK_INPUT_CLS =
   "w-full px-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 transition-all duration-200";
 
 function DarkTextarea({
-  label,
-  value,
-  onChange,
-  placeholder,
-  rows = 3,
-  maxLength,
-  hint,
+  label, value, onChange, placeholder, rows = 3, maxLength, hint,
 }: {
   label: string;
   value: string;
@@ -71,9 +53,7 @@ function DarkTextarea({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
-        {label}
-      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">{label}</label>
       <textarea
         value={value}
         onChange={onChange}
@@ -82,22 +62,14 @@ function DarkTextarea({
         maxLength={maxLength}
         className={`${DARK_INPUT_CLS} resize-none`}
       />
-      {maxLength && (
-        <p className="text-xs text-gray-500 text-right">
-          {value.length}/{maxLength}
-        </p>
-      )}
+      {maxLength && <p className="text-xs text-gray-500 text-right">{value.length}/{maxLength}</p>}
       {hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }
 
-// ── Dark select wrapper ──────────────────────────────────────
 function DarkSelect({
-  label,
-  value,
-  onChange,
-  options,
+  label, value, onChange, options,
 }: {
   label: string;
   value: string;
@@ -106,18 +78,10 @@ function DarkSelect({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
-        {label}
-      </label>
+      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">{label}</label>
       <select value={value} onChange={onChange} className={DARK_INPUT_CLS}>
         {options.map((o) => (
-          <option
-            key={o.value}
-            value={o.value}
-            className="bg-white text-gray-900"
-          >
-            {o.label}
-          </option>
+          <option key={o.value} value={o.value} className="bg-white text-gray-900">{o.label}</option>
         ))}
       </select>
     </div>
@@ -127,6 +91,7 @@ function DarkSelect({
 export function ProfileEditPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
@@ -137,6 +102,7 @@ export function ProfileEditPage() {
     website: "",
     bio: "",
     imageUrl: "",
+    coverImageUrl: "",
     whatsapp: "",
     links: [],
   });
@@ -146,19 +112,36 @@ export function ProfileEditPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const updateField = (field: keyof FormData, value: string) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be smaller than 5 MB");
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) { setError("Image must be smaller than 5 MB"); return; }
     try {
       setIsSaving(true);
       setError("");
       const { imageUrl } = await profileApi.uploadPhoto(file);
       updateField("imageUrl", imageUrl);
       setSuccess("Photo uploaded! Click Save Profile to apply.");
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setError("Cover image must be smaller than 5 MB"); return; }
+    try {
+      setIsSaving(true);
+      setError("");
+      const { coverImageUrl } = await profileApi.uploadCoverPhoto(file);
+      updateField("coverImageUrl", coverImageUrl);
+      setSuccess("Cover photo uploaded! Click Save Profile to apply.");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -179,6 +162,7 @@ export function ProfileEditPage() {
           website: profile.website || "",
           bio: profile.bio || "",
           imageUrl: profile.imageUrl || "",
+          coverImageUrl: profile.coverImageUrl || "",
           whatsapp: profile.whatsapp || "",
           links: profile.links || [],
         });
@@ -187,26 +171,17 @@ export function ProfileEditPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Auto-dismiss success message after 5 seconds
   useEffect(() => {
     if (success) {
-      const timer = setTimeout(() => {
-        setSuccess("");
-      }, 5000);
+      const timer = setTimeout(() => setSuccess(""), 5000);
       return () => clearTimeout(timer);
     }
   }, [success]);
 
-  const updateField = (field: keyof FormData, value: string) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
   const addLink = () =>
     setFormData((prev) => ({
       ...prev,
-      links: [
-        ...prev.links,
-        { type: "custom", label: "", url: "", order: prev.links.length },
-      ],
+      links: [...prev.links, { type: "custom", label: "", url: "", order: prev.links.length }],
     }));
 
   const updateLink = (index: number, field: keyof CardLink, value: string) => {
@@ -215,8 +190,7 @@ export function ProfileEditPage() {
       newLinks[index] = { ...newLinks[index], [field]: value };
       if (field === "type") {
         const found = LINK_TYPES.find((t) => t.value === value);
-        if (found && !newLinks[index].label)
-          newLinks[index].label = found.label;
+        if (found && !newLinks[index].label) newLinks[index].label = found.label;
       }
       return { ...prev, links: newLinks };
     });
@@ -225,9 +199,7 @@ export function ProfileEditPage() {
   const removeLink = (index: number) =>
     setFormData((prev) => ({
       ...prev,
-      links: prev.links
-        .filter((_, i) => i !== index)
-        .map((l, i) => ({ ...l, order: i })),
+      links: prev.links.filter((_, i) => i !== index).map((l, i) => ({ ...l, order: i })),
     }));
 
   const handleSave = async (e: React.FormEvent) => {
@@ -237,14 +209,11 @@ export function ProfileEditPage() {
     setIsSaving(true);
 
     try {
-      // Only send links that have both a URL and a label (backend requires both)
       const validLinks = formData.links
         .filter((l) => l.url.trim() && l.label.trim())
         .map((l, i) => ({ ...l, order: i }));
 
-      // Convert empty strings to null so backend doesn't store empty strings
-      const toNull = (v: string | null | undefined) =>
-        v && v.trim() ? v.trim() : null;
+      const toNull = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
 
       const updatedProfile = await profileApi.updateProfile({
         fullName: formData.fullName.trim() || undefined,
@@ -259,8 +228,6 @@ export function ProfileEditPage() {
         links: validLinks,
       });
 
-      // Step 3: Update local state with the returned profile data
-      // This ensures the form reflects exactly what the backend saved
       setFormData({
         fullName: updatedProfile.fullName || "",
         jobTitle: updatedProfile.jobTitle || "",
@@ -270,22 +237,15 @@ export function ProfileEditPage() {
         website: updatedProfile.website || "",
         bio: updatedProfile.bio || "",
         imageUrl: updatedProfile.imageUrl || "",
+        coverImageUrl: updatedProfile.coverImageUrl || "",
         whatsapp: updatedProfile.whatsapp || "",
         links: updatedProfile.links || [],
       });
 
-      // Step 4: Show success message with details
-      // useEffect will auto-dismiss after 5 seconds
       setSuccess("✓ Profile saved successfully!");
-
-      // Auto-scroll to top to show success message
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      // Show error message to user
-      const errorMsg = getErrorMessage(err);
-      setError(errorMsg);
-
-      // Keep error visible until user manually closes it
+      setError(getErrorMessage(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setIsSaving(false);
@@ -305,14 +265,9 @@ export function ProfileEditPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ── Sticky Header ────────────────────────────────── */}
-      <nav className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)] sticky top-0 z-10 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <nav className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)] sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="icon-badge w-9 h-9 rounded-xl"
-            aria-label="Back to dashboard"
-          >
+          <button onClick={() => navigate("/dashboard")} className="icon-badge w-9 h-9 rounded-xl" aria-label="Back to dashboard">
             <HiOutlineChevronLeft className="text-lg" />
           </button>
           <div className="flex items-center gap-2">
@@ -324,37 +279,22 @@ export function ProfileEditPage() {
         </div>
       </nav>
 
-      <form
-        onSubmit={handleSave}
-        className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-16"
-      >
+      <form onSubmit={handleSave} className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-16">
         {error && <DarkAlert message={error} type="error" />}
         {success && <DarkAlert message={success} type="success" />}
 
         {/* ── Identity ──────────────────────────────────── */}
         <Section title="Identity">
-          {/* Avatar upload */}
+          {/* Profile photo */}
           <div className="flex items-center gap-5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden
-                bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] hover:border-brand-500/60
-                flex items-center justify-center transition-all group"
+              className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex items-center justify-center transition-all group"
             >
               {formData.imageUrl ? (
-                <img
-                  src={formData.imageUrl}
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
+                <img src={formData.imageUrl} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-2xl font-bold text-brand-400">
                   {formData.fullName?.charAt(0)?.toUpperCase() || "?"}
@@ -364,89 +304,53 @@ export function ProfileEditPage() {
                 <HiOutlineCamera className="text-white text-xl" />
               </div>
             </button>
-
             <div className="space-y-2">
-              <Button
-                type="button"
-                variant="dark"
-                className="text-sm py-2 px-4"
-                onClick={() => fileInputRef.current?.click()}
-              >
+              <Button type="button" variant="dark" className="text-sm py-2 px-4" onClick={() => fileInputRef.current?.click()}>
                 Upload Photo
               </Button>
               {formData.imageUrl && (
-                <button
-                  type="button"
-                  onClick={() => updateField("imageUrl", "")}
-                  className="block text-xs text-red-400 hover:text-red-300 transition-colors"
-                >
+                <button type="button" onClick={() => updateField("imageUrl", "")} className="block text-xs text-red-400 hover:text-red-300 transition-colors">
                   Remove photo
                 </button>
               )}
-              <p className="text-xs text-gray-500">
-                JPG, PNG or GIF · max 5 MB
-              </p>
+              <p className="text-xs text-gray-500">JPG, PNG or GIF · max 5 MB</p>
             </div>
           </div>
 
-          <DarkInput
-            label="Full Name"
-            value={formData.fullName}
-            onChange={(e) => updateField("fullName", e.target.value)}
-            placeholder="Jane Smith"
-          />
-          <DarkInput
-            label="Job Title"
-            value={formData.jobTitle || ""}
-            onChange={(e) => updateField("jobTitle", e.target.value)}
-            placeholder="Software Engineer"
-          />
-          <DarkInput
-            label="Company"
-            value={formData.company || ""}
-            onChange={(e) => updateField("company", e.target.value)}
-            placeholder="Acme Corp"
-          />
-          <DarkTextarea
-            label="Bio"
-            value={formData.bio || ""}
-            onChange={(e) => updateField("bio", e.target.value)}
-            placeholder="A short description about yourself…"
-            rows={3}
-            maxLength={500}
-          />
+          {/* Cover photo */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">Cover Photo</label>
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
+            <div
+              onClick={() => coverInputRef.current?.click()}
+              className="relative w-full h-28 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-gray-200 hover:border-brand-500 transition-colors flex items-center justify-center bg-gray-50"
+            >
+              {formData.coverImageUrl ? (
+                <img src={formData.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+              ) : (
+                <p className="text-xs text-gray-400">Click to upload cover photo</p>
+              )}
+            </div>
+            {formData.coverImageUrl && (
+              <button type="button" onClick={() => updateField("coverImageUrl", "")} className="text-xs text-red-400 hover:text-red-300">
+                Remove cover
+              </button>
+            )}
+          </div>
+
+          <DarkInput label="Full Name" value={formData.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder="Jane Smith" />
+          <DarkInput label="Job Title" value={formData.jobTitle || ""} onChange={(e) => updateField("jobTitle", e.target.value)} placeholder="Software Engineer" />
+          <DarkInput label="Company" value={formData.company || ""} onChange={(e) => updateField("company", e.target.value)} placeholder="Acme Corp" />
+          <DarkTextarea label="Bio" value={formData.bio || ""} onChange={(e) => updateField("bio", e.target.value)} placeholder="A short description about yourself…" rows={3} maxLength={500} />
         </Section>
 
         {/* ── Contact Details ──────────────────────────── */}
         <Section title="Contact Details">
-          <DarkInput
-            label="Phone"
-            value={formData.phone || ""}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="+250 788 000 000"
-            type="tel"
-          />
-          <DarkInput
-            label="Email"
-            value={formData.email || ""}
-            onChange={(e) => updateField("email", e.target.value)}
-            placeholder="you@example.com"
-          />
-          <DarkInput
-            label="Website"
-            value={formData.website || ""}
-            onChange={(e) => updateField("website", e.target.value)}
-            placeholder="https://yourwebsite.com"
-          />
-          <DarkInput
-            label="WhatsApp Number"
-            value={formData.whatsapp || ""}
-            onChange={(e) => updateField("whatsapp", e.target.value)}
-            placeholder="250788000000"
-          />
-          <p className="text-xs text-gray-500 -mt-2 px-1">
-            Digits only, with country code. No + sign.
-          </p>
+          <DarkInput label="Phone" value={formData.phone || ""} onChange={(e) => updateField("phone", e.target.value)} placeholder="+250 788 000 000" type="tel" />
+          <DarkInput label="Email" value={formData.email || ""} onChange={(e) => updateField("email", e.target.value)} placeholder="you@example.com" />
+          <DarkInput label="Website" value={formData.website || ""} onChange={(e) => updateField("website", e.target.value)} placeholder="https://yourwebsite.com" />
+          <DarkInput label="WhatsApp Number" value={formData.whatsapp || ""} onChange={(e) => updateField("whatsapp", e.target.value)} placeholder="250788000000" />
+          <p className="text-xs text-gray-500 -mt-2 px-1">Digits only, with country code. No + sign.</p>
         </Section>
 
         {/* ── Social Links ─────────────────────────────── */}
@@ -456,8 +360,7 @@ export function ProfileEditPage() {
             <button
               type="button"
               onClick={addLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#DE3A16]
-                text-gray-700 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#DE3A16] text-gray-700 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
             >
               <HiOutlinePlus className="text-base" /> Add Link
             </button>
@@ -470,57 +373,24 @@ export function ProfileEditPage() {
           )}
 
           {formData.links.map((link, index) => (
-            <div
-              key={index}
-              className="card-soft p-4 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)]"
-            >
+            <div key={index} className="card-soft p-4 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-                  Link {index + 1}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeLink(index)}
-                  className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs font-medium transition-colors"
-                >
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Link {index + 1}</span>
+                <button type="button" onClick={() => removeLink(index)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs font-medium transition-colors">
                   <HiOutlineTrash className="text-sm" /> Remove
                 </button>
               </div>
-              <DarkSelect
-                label="Platform"
-                value={link.type}
-                onChange={(e) => updateLink(index, "type", e.target.value)}
-                options={LINK_TYPES}
-              />
-              <DarkInput
-                label="Display Label"
-                value={link.label}
-                onChange={(e) => updateLink(index, "label", e.target.value)}
-                placeholder="My LinkedIn"
-              />
-              <DarkInput
-                label="URL"
-                value={link.url}
-                onChange={(e) => updateLink(index, "url", e.target.value)}
-                placeholder="https://linkedin.com/in/yourprofile"
-              />
+              <DarkSelect label="Platform" value={link.type} onChange={(e) => updateLink(index, "type", e.target.value)} options={LINK_TYPES} />
+              <DarkInput label="Display Label" value={link.label} onChange={(e) => updateLink(index, "label", e.target.value)} placeholder="My LinkedIn" />
+              <DarkInput label="URL" value={link.url} onChange={(e) => updateLink(index, "url", e.target.value)} placeholder="https://linkedin.com/in/yourprofile" />
             </div>
           ))}
         </section>
 
         {/* ── Save / Cancel ─────────────────────────────── */}
         <div className="flex gap-3 pb-4">
-          <Button type="submit" isLoading={isSaving} fullWidth className="py-3">
-            Save Profile
-          </Button>
-          <Button
-            type="button"
-            variant="dark"
-            onClick={() => navigate("/dashboard")}
-            className="py-3 px-5"
-          >
-            Cancel
-          </Button>
+          <Button type="submit" isLoading={isSaving} fullWidth className="py-3">Save Profile</Button>
+          <Button type="button" variant="dark" onClick={() => navigate("/dashboard")} className="py-3 px-5">Cancel</Button>
         </div>
       </form>
     </div>

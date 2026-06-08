@@ -94,8 +94,10 @@ export interface PublicBusinessProfile {
   email: string | null;
   website: string | null;
   imageUrl: string | null;
+  whatsapp: string | null;
   paymentCode: string | null;
   menus?: BusinessMenu[];
+  links?: Link[];
 }
 
 export interface BusinessProfile extends PublicBusinessProfile {
@@ -147,6 +149,7 @@ export interface Profile {
   website: string | null;
   bio: string | null;
   imageUrl: string | null;
+  coverImageUrl: string | null;
   whatsapp: string | null;
   links: Link[];
 }
@@ -161,6 +164,7 @@ export interface PublicProfile {
   website: string | null;
   bio: string | null;
   imageUrl: string | null;
+  coverImageUrl: string | null;
   whatsapp: string | null;
   links: Link[];
 }

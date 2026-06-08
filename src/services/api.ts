@@ -549,17 +549,23 @@ export const profileApi = {
    *   3. Set in backend .env: CLOUDINARY_URL=cloudinary://...
    */
   uploadPhoto: async (file: File) => {
-    // Note: This endpoint requires special handling for FormData
-    // See ProfileEditPage.tsx for how it's called
     const formData = new FormData();
     formData.append("photo", file);
-
     const res = await apiClient.post<ApiResponse<{ imageUrl: string }>>(
       "/profile/photo",
       formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return res.data.data;
+  },
+
+  uploadCoverPhoto: async (file: File) => {
+    const formData = new FormData();
+    formData.append("photo", file);
+    const res = await apiClient.post<ApiResponse<{ coverImageUrl: string }>>(
+      "/profile/cover",
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
     );
     return res.data.data;
   },
