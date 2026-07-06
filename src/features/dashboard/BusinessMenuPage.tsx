@@ -2,26 +2,34 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import {
   HiOutlineLink,
-  HiOutlineOfficeBuilding,
   HiOutlinePhotograph,
   HiOutlinePlus,
   HiOutlineTrash,
 } from "react-icons/hi";
-import { DashboardLayout } from "../../components/layout/DashboardLayout";
-import { Alert, Button, Input, PageSpinner } from "../../components/ui";
+import { Alert, Button, Input, PageSpinner, Select, Textarea } from "../../components/ui";
+import {
+  BUSINESS_TYPES,
+  BusinessType,
+  BUSINESS_TYPE_LABELS,
+} from "../../constants/businessTypes";
 import { businessApi, getErrorMessage, menuApi } from "../../services/api";
-import { BusinessCardLink, BusinessMenu, BusinessProfile } from "../../types";
+import { BusinessCardLink, BusinessMenu, BusinessProfile, BusinessSettings } from "../../types";
 import { getPublicCardUrl } from "../card/publicCardUrl";
 
 type BusinessFormState = {
   name: string;
-  category: string;
+  businessType: BusinessType;
   description: string;
   location: string;
   phone: string;
   email: string;
   website: string;
   paymentCode: string;
+  wifiPassword: string;
+  checkInTime: string;
+  checkOutTime: string;
+  operatingHours: string;
+  emergencyPhone: string;
 };
 
 type ItemFormState = {
@@ -32,14 +40,42 @@ type ItemFormState = {
 
 const EMPTY_BUSINESS_FORM: BusinessFormState = {
   name: "",
-  category: "",
+  businessType: "RESTAURANT",
   description: "",
   location: "",
   phone: "",
   email: "",
   website: "",
   paymentCode: "",
+  wifiPassword: "",
+  checkInTime: "",
+  checkOutTime: "",
+  operatingHours: "",
+  emergencyPhone: "",
 };
+
+function settingsFromProfile(settings?: BusinessSettings | null): Pick<
+  BusinessFormState,
+  "wifiPassword" | "checkInTime" | "checkOutTime" | "operatingHours" | "emergencyPhone"
+> {
+  return {
+    wifiPassword: settings?.wifiPassword ?? "",
+    checkInTime: settings?.checkInTime ?? "",
+    checkOutTime: settings?.checkOutTime ?? "",
+    operatingHours: settings?.operatingHours ?? "",
+    emergencyPhone: settings?.emergencyPhone ?? "",
+  };
+}
+
+function buildSettingsPayload(form: BusinessFormState): BusinessSettings | null {
+  const settings: BusinessSettings = {};
+  if (form.wifiPassword.trim()) settings.wifiPassword = form.wifiPassword.trim();
+  if (form.checkInTime.trim()) settings.checkInTime = form.checkInTime.trim();
+  if (form.checkOutTime.trim()) settings.checkOutTime = form.checkOutTime.trim();
+  if (form.operatingHours.trim()) settings.operatingHours = form.operatingHours.trim();
+  if (form.emergencyPhone.trim()) settings.emergencyPhone = form.emergencyPhone.trim();
+  return Object.keys(settings).length ? settings : null;
+}
 
 const EMPTY_ITEM_FORM: ItemFormState = {
   name: "",
@@ -125,13 +161,14 @@ export function BusinessMenuPage() {
     setBusiness(profile);
     setBusinessForm({
       name: profile.name || "",
-      category: profile.category || "",
+      businessType: profile.businessType ?? "RESTAURANT",
       description: profile.description || "",
       location: profile.location || "",
       phone: profile.phone || "",
       email: profile.email || "",
       website: profile.website || "",
       paymentCode: profile.paymentCode || "",
+      ...settingsFromProfile(profile.settings),
     });
   };
 
@@ -183,8 +220,8 @@ export function BusinessMenuPage() {
     setError("");
     setSuccess("");
 
-    if (!businessForm.name.trim() || !businessForm.category.trim()) {
-      setError("Business name and category are required.");
+    if (!businessForm.name.trim()) {
+      setError("Business name is required.");
       return;
     }
 
@@ -194,13 +231,15 @@ export function BusinessMenuPage() {
       await businessApi.upsertBusinessProfile(
         {
           name: businessForm.name.trim(),
-          category: businessForm.category.trim(),
+          businessType: businessForm.businessType,
+          category: BUSINESS_TYPE_LABELS[businessForm.businessType].toLowerCase(),
           description: businessForm.description.trim(),
           location: businessForm.location.trim(),
           phone: businessForm.phone.trim(),
           email: businessForm.email.trim(),
           website: businessForm.website.trim(),
           paymentCode: businessForm.paymentCode.trim(),
+          settings: buildSettingsPayload(businessForm),
         },
         businessPhoto,
       );
@@ -328,38 +367,26 @@ export function BusinessMenuPage() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <DashboardLayout>
-      <div className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto max-w-5xl px-4 pb-8 pt-8">
-          <div className="flex items-center gap-3">
-            <span className="icon-badge h-10 w-10 rounded-xl">
-              <HiOutlineOfficeBuilding className="text-xl" />
-            </span>
-            <span className="text-xl font-bold tracking-tight text-gray-900">
-              Business Menu Management
-            </span>
-          </div>
-          <p className="mt-3 text-sm text-gray-600">
-            Manage your business profile, link cards, and publish menus to your
-            public business card.
-          </p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Manage your business profile, link cards, and publish menus to your
+        public business card.
+      </p>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-grow flex-col gap-6 px-4 pb-10 pt-8">
+      <div className="space-y-6">
         {error && <Alert message={error} />}
         {success && <Alert message={success} type="success" />}
 
         <form
           onSubmit={handleSaveBusiness}
-          className="card-soft rounded-2xl bg-white p-6"
+          className="card-soft rounded-2xl bg-white dark:bg-gray-900 p-6"
         >
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Business Profile
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Save this first to unlock linked cards and menus.
               </p>
             </div>
@@ -378,13 +405,16 @@ export function BusinessMenuPage() {
               placeholder="Mama Restaurant"
               required
             />
-            <Input
-              label="Category"
-              value={businessForm.category}
+            <Select
+              label="Business Type"
+              value={businessForm.businessType}
               onChange={(event) =>
-                updateBusinessField("category", event.target.value)
+                updateBusinessField(
+                  "businessType",
+                  event.target.value as BusinessType,
+                )
               }
-              placeholder="Restaurant"
+              options={BUSINESS_TYPES}
               required
             />
             <Input
@@ -429,25 +459,78 @@ export function BusinessMenuPage() {
               placeholder="https://example.com"
               type="url"
             />
-            <div className="space-y-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <textarea
-                value={businessForm.description}
-                onChange={(event) =>
-                  updateBusinessField("description", event.target.value)
-                }
-                placeholder="Tell visitors about your business"
-                rows={4}
-                className="input-field resize-none"
-              />
+            <Textarea
+              label="Description"
+              value={businessForm.description}
+              onChange={(event) =>
+                updateBusinessField("description", event.target.value)
+              }
+              placeholder="Tell visitors about your business"
+              rows={4}
+              className="md:col-span-2"
+            />
+
+            <div className="md:col-span-2 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/80 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Guest &amp; operating info
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Shown on your public card. WiFi and check-in details are especially useful for hotels and motels.
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Operating hours"
+                  value={businessForm.operatingHours}
+                  onChange={(event) =>
+                    updateBusinessField("operatingHours", event.target.value)
+                  }
+                  placeholder="Mon–Sun 8am–10pm"
+                />
+                <Input
+                  label="Emergency phone"
+                  value={businessForm.emergencyPhone}
+                  onChange={(event) =>
+                    updateBusinessField("emergencyPhone", event.target.value)
+                  }
+                  placeholder="0788000000"
+                />
+                {(businessForm.businessType === "HOTEL" ||
+                  businessForm.businessType === "MOTEL") && (
+                  <>
+                    <Input
+                      label="WiFi password"
+                      value={businessForm.wifiPassword}
+                      onChange={(event) =>
+                        updateBusinessField("wifiPassword", event.target.value)
+                      }
+                      placeholder="guest-wifi-2024"
+                    />
+                    <Input
+                      label="Check-in time"
+                      value={businessForm.checkInTime}
+                      onChange={(event) =>
+                        updateBusinessField("checkInTime", event.target.value)
+                      }
+                      placeholder="2:00 PM"
+                    />
+                    <Input
+                      label="Check-out time"
+                      value={businessForm.checkOutTime}
+                      onChange={(event) =>
+                        updateBusinessField("checkOutTime", event.target.value)
+                      }
+                      placeholder="11:00 AM"
+                    />
+                  </>
+                )}
+              </div>
             </div>
+
             <div className="space-y-1 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Business Photo
               </label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600 transition-colors hover:border-[#DE3A16] hover:bg-white">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-gray-50 dark:bg-gray-950 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 transition-colors hover:border-[#DE3A16] hover:bg-white dark:bg-gray-900">
                 <HiOutlinePhotograph className="text-lg text-[#DE3A16]" />
                 <span>{businessPhoto?.name || "Choose an image to upload"}</span>
                 <input
@@ -464,13 +547,13 @@ export function BusinessMenuPage() {
         </form>
 
         <div className="grid gap-6 lg:grid-cols-[1.15fr,0.85fr]">
-          <div className="card-soft rounded-2xl bg-white p-6">
+          <div className="card-soft rounded-2xl bg-white dark:bg-gray-900 p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Linked Cards
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Connect physical cards to this business profile.
                 </p>
               </div>
@@ -500,13 +583,13 @@ export function BusinessMenuPage() {
               {linkedCards.map((card) => (
                 <div
                   key={card.id}
-                  className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3"
+                  className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-4 py-3"
                 >
                   <div>
-                    <p className="font-mono text-sm font-semibold text-gray-900">
+                    <p className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {card.cardId}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {card._count?.scans ?? 0} scans
                     </p>
                   </div>
@@ -523,20 +606,20 @@ export function BusinessMenuPage() {
               ))}
 
               {linkedCards.length === 0 && (
-                <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                   No business cards linked yet.
                 </div>
               )}
             </div>
           </div>
 
-          <div className="card-soft rounded-2xl bg-white p-6">
+          <div className="card-soft rounded-2xl bg-white dark:bg-gray-900 p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Menus
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Create menu sections such as Breakfast, Drinks, or Desserts.
                 </p>
               </div>
@@ -551,7 +634,7 @@ export function BusinessMenuPage() {
             </div>
 
             {showMenuForm && (
-              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-4">
                 <Input
                   label="Menu Title"
                   value={newMenuTitle}
@@ -575,7 +658,7 @@ export function BusinessMenuPage() {
                   className={`w-full rounded-xl px-4 py-3 text-left text-sm font-medium transition-all ${
                     selectedMenuId === menu.id
                       ? "bg-[#DE3A16] text-white shadow-md"
-                      : "text-gray-600 hover:bg-gray-100"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   {menu.title}
@@ -583,7 +666,7 @@ export function BusinessMenuPage() {
               ))}
 
               {menus.length === 0 && (
-                <div className="rounded-xl border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                   No menus created yet.
                 </div>
               )}
@@ -591,13 +674,13 @@ export function BusinessMenuPage() {
           </div>
         </div>
 
-        <div className="card-soft rounded-2xl bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 p-5">
+        <div className="card-soft rounded-2xl bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 p-5">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {selectedMenu ? `${selectedMenu.title} Items` : "Menu Items"}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Add food, drinks, and services that should appear on the public
                 business card.
               </p>
@@ -614,7 +697,7 @@ export function BusinessMenuPage() {
           </div>
 
           {showItemForm && selectedMenu && (
-            <div className="border-b border-gray-100 bg-gray-50/60 p-5">
+            <div className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/60 p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <Input
                   label="Item Name"
@@ -631,25 +714,21 @@ export function BusinessMenuPage() {
                   min="0"
                   step="0.01"
                 />
+                <Textarea
+                  label="Description"
+                  value={itemForm.description}
+                  onChange={(event) =>
+                    updateItemField("description", event.target.value)
+                  }
+                  placeholder="Spiced ginger and milk tea"
+                  rows={3}
+                  className="md:col-span-2"
+                />
                 <div className="space-y-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={itemForm.description}
-                    onChange={(event) =>
-                      updateItemField("description", event.target.value)
-                    }
-                    placeholder="Spiced ginger and milk tea"
-                    rows={3}
-                    className="input-field resize-none"
-                  />
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Item Photo
                   </label>
-                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white px-4 py-3 text-sm text-gray-600 transition-colors hover:border-[#DE3A16]">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white dark:bg-gray-900 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 transition-colors hover:border-[#DE3A16]">
                     <HiOutlinePhotograph className="text-lg text-[#DE3A16]" />
                     <span>{itemPhoto?.name || "Choose an image to upload"}</span>
                     <input
@@ -682,10 +761,10 @@ export function BusinessMenuPage() {
                   {pagedItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex gap-4 rounded-xl border border-gray-100 bg-gray-50/30 p-4 transition-shadow hover:shadow-md"
+                      className="flex gap-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/30 p-4 transition-shadow hover:shadow-md"
                     >
                       {/* Image — larger, zoom on hover, clipped */}
-                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100">
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
                         {item.imageUrl ? (
                           <img
                             src={item.imageUrl}
@@ -693,7 +772,7 @@ export function BusinessMenuPage() {
                             className="h-full w-full object-cover transition-transform duration-300 ease-out hover:scale-110"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                          <div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
                             <HiOutlinePhotograph className="text-2xl text-gray-400" />
                           </div>
                         )}
@@ -701,18 +780,18 @@ export function BusinessMenuPage() {
                       {/* Content column */}
                       <div className="flex-grow min-w-0">
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="truncate font-bold text-gray-900">{item.name}</h3>
+                          <h3 className="truncate font-bold text-gray-900 dark:text-gray-100">{item.name}</h3>
                           <span className="flex-shrink-0 font-semibold text-[#DE3A16]">RWF {item.price.toLocaleString()}</span>
                         </div>
                         {item.description && (
-                          <p className="mt-1 text-xs text-gray-500">{item.description}</p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{item.description}</p>
                         )}
                       </div>
                       {/* Delete button aligned with image */}
                       <button
                         type="button"
                         onClick={() => handleDeleteItem(selectedMenu!.id, item.id)}
-                        className="rounded-lg border border-gray-200 bg-white p-2 text-gray-400 shadow-sm transition-colors hover:border-red-300 hover:text-red-600"
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-2 text-gray-400 shadow-sm dark:shadow-none transition-colors hover:border-red-300 hover:text-red-600"
                       >
                         <HiOutlineTrash />
                       </button>
@@ -720,28 +799,28 @@ export function BusinessMenuPage() {
                   ))}
 
                   {!selectedMenu && (
-                    <div className="py-10 text-center text-gray-500">Create or select a menu to manage its items.</div>
+                    <div className="py-10 text-center text-gray-500 dark:text-gray-400">Create or select a menu to manage its items.</div>
                   )}
 
                   {selectedMenu && allItems.length === 0 && (
-                    <div className="py-10 text-center text-gray-500">No items found for this menu.</div>
+                    <div className="py-10 text-center text-gray-500 dark:text-gray-400">No items found for this menu.</div>
                   )}
 
                   {totalItemPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                      <span className="text-xs text-gray-500">Page {itemPage} of {totalItemPages}</span>
+                    <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Page {itemPage} of {totalItemPages}</span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => setItemPage((p) => Math.max(1, p - 1))}
                           disabled={itemPage === 1}
-                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                          className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
                         >
                           Previous
                         </button>
                         <button
                           onClick={() => setItemPage((p) => Math.min(totalItemPages, p + 1))}
                           disabled={itemPage === totalItemPages}
-                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                          className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
                         >
                           Next
                         </button>
@@ -754,8 +833,8 @@ export function BusinessMenuPage() {
           </div>
         </div>
 
-      </main>
-    </DashboardLayout>
+      </div>
+    </div>
   );
 }
 

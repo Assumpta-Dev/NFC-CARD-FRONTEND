@@ -17,13 +17,35 @@
 
   body {
     font-family: "Inter", sans-serif;
-    @apply text-gray-900 antialiased;
-    background-color: #ffffff;
+    @apply text-gray-900 dark:text-gray-100 antialiased;
+    @apply bg-white dark:bg-gray-950;
+  }
+
+  select option {
+    @apply bg-white text-gray-900;
+  }
+
+  .dark select option {
+    @apply bg-gray-800 text-gray-100;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus,
+  .dark textarea:-webkit-autofill,
+  .dark textarea:-webkit-autofill:hover,
+  .dark textarea:-webkit-autofill:focus,
+  .dark select:-webkit-autofill,
+  .dark select:-webkit-autofill:hover,
+  .dark select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px #1f2937 inset;
+    -webkit-text-fill-color: #f3f4f6;
+    caret-color: #f3f4f6;
   }
 }
 
 /* ===========================================================
-   COMPONENT CLASSES — Light Theme (Dashboard, Admin)
+   COMPONENT CLASSES — Light + Dark Theme
    =========================================================== */
 @layer components {
   /* Primary action button */
@@ -33,60 +55,86 @@
            text-white font-semibold rounded-xl
            transition-all duration-200 ease-in-out
            focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2
+           dark:focus:ring-offset-gray-950
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
-  /* Secondary/ghost button — light theme */
+  /* Secondary/ghost button */
   .btn-secondary {
     @apply inline-flex items-center justify-center px-6 py-3
            bg-white hover:bg-gray-50 active:bg-gray-100
-           text-gray-700 font-semibold rounded-xl border border-gray-200
+           dark:bg-gray-900 dark:hover:bg-gray-800 dark:active:bg-gray-700
+           text-gray-700 dark:text-gray-200 font-semibold rounded-xl
+           border border-gray-200 dark:border-gray-700
            transition-all duration-200 ease-in-out
-           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2;
+           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2
+           dark:focus:ring-offset-gray-950;
   }
 
-  /* Light input field */
+  /* Input field */
   .input-field {
     @apply w-full px-4 py-3 rounded-xl border border-gray-200
-           bg-white text-gray-900 placeholder-gray-400
-           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent
+           dark:border-gray-600
+           bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-brand-400/40 focus:border-brand-500
+           dark:focus:ring-brand-500/25 dark:focus:border-brand-500
            transition-all duration-200;
+  }
+
+  .select-field {
+    @apply input-field appearance-none cursor-pointer pr-10;
+  }
+
+  .textarea-field {
+    @apply input-field resize-none;
   }
 
   /* Modern card */
   .card {
-    background-color: #ffffff;
-    @apply rounded-2xl border border-gray-100 overflow-hidden shadow-sm;
+    @apply rounded-2xl border border-gray-100 dark:border-gray-800
+           overflow-hidden shadow-sm
+           bg-white dark:bg-gray-900;
   }
 
   .card-soft {
-    background-color: #ffffff;
-    @apply rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07)] transition-all duration-300;
+    @apply rounded-2xl transition-all duration-300
+           bg-white dark:bg-gray-900
+           shadow-[0_4px_24px_rgba(0,0,0,0.07)]
+           dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)];
   }
 
   .card-soft-hover {
-    background-color: #ffffff;
-    @apply rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07)] transition-all duration-300
-           hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5;
+    @apply rounded-2xl transition-all duration-300
+           bg-white dark:bg-gray-900
+           shadow-[0_4px_24px_rgba(0,0,0,0.07)]
+           dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)]
+           hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)]
+           dark:hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]
+           hover:-translate-y-1.5;
   }
 
   .icon-badge {
-    @apply inline-flex items-center justify-center rounded-xl text-brand-600;
+    @apply inline-flex items-center justify-center rounded-xl
+           text-brand-600 dark:text-brand-400
+           bg-brand-50 dark:bg-brand-500/10;
   }
 
   /* Status badges */
   .badge-active {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-           bg-green-100 text-green-800;
+           bg-green-100 text-green-800
+           dark:bg-green-500/20 dark:text-green-400;
   }
 
   .badge-inactive {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-           bg-gray-100 text-gray-600;
+           bg-gray-100 text-gray-600
+           dark:bg-gray-800 dark:text-gray-400;
   }
 
-  /* Section label — uppercase tracked, used as heading for dark page sections */
   .section-label {
-    @apply text-xs font-semibold uppercase tracking-widest text-gray-500;
+    @apply text-xs font-semibold uppercase tracking-widest
+           text-gray-500 dark:text-gray-400;
   }
 }

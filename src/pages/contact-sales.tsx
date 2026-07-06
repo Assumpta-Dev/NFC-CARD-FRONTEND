@@ -15,14 +15,14 @@ export default function ContactSalesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
       <Navbar />
 
       <div className="flex-grow flex items-center justify-center px-4 py-20 pt-32">
-        <div className="card-soft w-full max-w-lg p-8 rounded-3xl bg-white border-[#DE3A16] shadow-xl">
+        <div className="card-soft w-full max-w-lg p-8 rounded-3xl bg-white dark:bg-gray-900 border-[#DE3A16] shadow-xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Contact Sales</h1>
-            <p className="text-sm text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Contact Sales</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Interested in our Business plan? Fill out the form below and our team will get back to you shortly.
             </p>
           </div>
@@ -35,7 +35,7 @@ export default function ContactSalesPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label htmlFor="name" className="text-xs font-semibold text-gray-700 uppercase tracking-widest ml-1">
+                <label htmlFor="name" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1">
                   Full Name
                 </label>
                 <div className="relative">
@@ -48,14 +48,14 @@ export default function ContactSalesPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
                     placeholder="Your name"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-xs font-semibold text-gray-700 uppercase tracking-widest ml-1">
+                <label htmlFor="email" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1">
                   Email Address
                 </label>
                 <div className="relative">
@@ -68,14 +68,14 @@ export default function ContactSalesPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
                     placeholder="you@company.com"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="phone" className="text-xs font-semibold text-gray-700 uppercase tracking-widest ml-1">
+                <label htmlFor="phone" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-widest ml-1">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -88,7 +88,7 @@ export default function ContactSalesPage() {
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
                     placeholder="(555) 000-0000"
                   />
                 </div>

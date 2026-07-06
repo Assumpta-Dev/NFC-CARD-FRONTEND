@@ -22,6 +22,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./hooks/useQueryClient";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Feature صفحات
@@ -31,6 +32,9 @@ import { OrderTrackingPage } from "./features/card/OrderTrackingPage";
 import { UserDashboard } from "./features/dashboard/UserDashboard";
 import { ProfileEditPage } from "./features/dashboard/ProfileEditPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
+import { AdminBusinessesPage } from "./features/admin/AdminBusinessesPage";
+import { AdminPaymentsPage } from "./features/admin/AdminPaymentsPage";
+import { AppLayout } from "./components/layout/AppLayout";
 
 // New feature pages
 import { PaymentsPage } from "./features/payments/PaymentsPage";
@@ -47,7 +51,8 @@ import ContactSalesPage from "./pages/contact-sales";
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
         <BrowserRouter>
           <Routes>
             {/* ===================================================== */}
@@ -79,23 +84,26 @@ export default function App() {
             {/* PROTECTED ROUTES (AUTH REQUIRED) */}
             {/* ===================================================== */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<UserDashboard />} />
-              <Route path="/profile" element={<ProfileEditPage />} />
-              <Route path="/dashboard/payments" element={<PaymentsPage />} />
-              <Route path="/dashboard/checkout" element={<CheckoutPage />} />
-            </Route>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<UserDashboard />} />
+                <Route path="/profile" element={<ProfileEditPage />} />
+                <Route path="/dashboard/payments" element={<PaymentsPage />} />
+                <Route path="/dashboard/checkout" element={<CheckoutPage />} />
 
-            {/* Business menu — accessible to BUSINESS and ADMIN */}
-            <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
-              <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
-              <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
-            </Route>
+                <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
+                  <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
+                  <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
+                </Route>
 
-            {/* ===================================================== */}
-            {/* ADMIN ROUTES */}
-            {/* ===================================================== */}
-            <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
-              <Route path="/admin" element={<AdminDashboard />} />
+                <Route element={<ProtectedRoute requiredRole="ADMIN" />}>
+                  <Route path="/admin" element={<AdminDashboard section="overview" />} />
+                  <Route path="/admin/analytics" element={<AdminDashboard section="analytics" />} />
+                  <Route path="/admin/cards" element={<AdminDashboard section="cards" />} />
+                  <Route path="/admin/users" element={<AdminDashboard section="users" />} />
+                  <Route path="/admin/businesses" element={<AdminBusinessesPage />} />
+                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                </Route>
+              </Route>
             </Route>
 
             {/* ===================================================== */}
@@ -104,7 +112,8 @@ export default function App() {
             <Route path="*" element={<HomePage />} />
           </Routes>
         </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

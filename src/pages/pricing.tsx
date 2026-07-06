@@ -13,7 +13,7 @@ export default function PricingPage() {
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Navbar />
 
       <div className="px-6 pb-12 pt-24">
@@ -21,7 +21,7 @@ export default function PricingPage() {
           <h1 className="text-center text-3xl font-bold">
             Subscription Prices
           </h1>
-          <p className="mb-8 text-center text-gray-600">
+          <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
             Choose the plan that fits your needs
           </p>
 
@@ -32,7 +32,7 @@ export default function PricingPage() {
                 className={`rounded-full px-6 py-2 text-sm font-medium transition ${
                   cycle === "MONTHLY"
                     ? "bg-[#DE3A16] text-white"
-                    : "text-gray-600"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
                 Monthly
@@ -43,7 +43,7 @@ export default function PricingPage() {
                 className={`rounded-full px-6 py-2 text-sm font-medium transition ${
                   cycle === "ANNUAL"
                     ? "bg-[#DE3A16] text-white"
-                    : "text-gray-600"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
                 Annual
@@ -74,12 +74,12 @@ export default function PricingPage() {
                   )}
 
                   <h2 className="text-xl font-semibold">{config.title}</h2>
-                  <p className="mb-4 text-gray-600">{config.description}</p>
+                  <p className="mb-4 text-gray-600 dark:text-gray-400">{config.description}</p>
 
                   <div className="mb-2 text-3xl font-bold">
                     {formatPlanAmount(amount)}
                     {amount > 0 && (
-                      <span className="ml-1 text-sm font-medium text-gray-500">
+                      <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400">
                         /{cycle === "MONTHLY" ? "mo" : "yr"}
                       </span>
                     )}
@@ -91,7 +91,7 @@ export default function PricingPage() {
                     </p>
                   )}
 
-                  <ul className="mb-6 space-y-2 text-sm text-gray-700">
+                  <ul className="mb-6 space-y-2 text-sm text-gray-700 dark:text-gray-300">
                     {config.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#DE3A16] flex-shrink-0" />

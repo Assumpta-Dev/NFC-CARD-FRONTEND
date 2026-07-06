@@ -1,17 +1,27 @@
 // ===========================================================
 // REUSABLE UI COMPONENTS
 // ===========================================================
-// Small, focused, composable components.
-// Two themes supported:
-//   Light — used in Dashboard and Admin pages
-//   Dark  — used in Auth, ProfileEdit, and CardPublicView (OVOU style)
-// ===========================================================
 
 import React from "react";
+import { HiOutlineChevronDown } from "react-icons/hi";
+import {
+  formControlClass,
+  formLabelClass,
+  formLabelCompactClass,
+  selectControlClass,
+  textareaControlClass,
+} from "./formStyles";
+
+export {
+  formControlClass,
+  formLabelClass,
+  formLabelCompactClass,
+  selectControlClass,
+  textareaControlClass,
+} from "./formStyles";
 
 // ===========================================================
 // BUTTON
-// Supports primary, secondary, danger, ghost, and dark variants.
 // ===========================================================
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "ghost" | "dark";
@@ -30,16 +40,16 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 text-sm";
+    "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-950 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 text-sm";
 
   const variants = {
     primary: "bg-brand-500 hover:bg-brand-600 text-white focus:ring-brand-400",
     secondary:
-      "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 focus:ring-brand-400",
+      "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 focus:ring-brand-400 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-200 dark:border-gray-700",
     danger: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-400",
-    ghost: "bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300",
-    // Warm neutral variant used on beige-background pages
-    dark: "bg-white hover:bg-gray-50 text-gray-800 border border-[#DE3A16] focus:ring-brand-500/30 focus:ring-offset-white",
+    ghost:
+      "bg-transparent hover:bg-gray-100 text-gray-700 focus:ring-gray-300 dark:hover:bg-gray-800 dark:text-gray-200",
+    dark: "bg-white hover:bg-gray-50 text-gray-800 border border-brand-600 focus:ring-brand-500/30 focus:ring-offset-white dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-100 dark:border-brand-500 dark:focus:ring-offset-gray-950",
   };
 
   return (
@@ -95,29 +105,22 @@ export function Input({
     <div className="space-y-1">
       <label
         htmlFor={inputId}
-        className="block text-sm font-medium text-gray-700"
+        className={formLabelClass}
       >
         {label}
       </label>
       <input
         id={inputId}
-        className={`w-full px-4 py-3 rounded-xl border text-gray-900 placeholder-gray-400 bg-white
-          focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-200
-          ${
-            error
-              ? "border-red-300 focus:ring-red-400 focus:border-red-400"
-              : "border-gray-200 focus:ring-brand-400 focus:border-brand-400"
-          }
-          ${className}`}
+        className={formControlClass(!!error, className)}
         {...props}
       />
-      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
     </div>
   );
 }
 
 // ===========================================================
-// Warm light input for auth and profile edit pages.
+// Warm surface input for auth and profile edit pages.
 // ===========================================================
 interface DarkInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -136,20 +139,13 @@ export function DarkInput({
     <div className="space-y-1.5">
       <label
         htmlFor={inputId}
-        className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+        className={formLabelCompactClass}
       >
         {label}
       </label>
       <input
         id={inputId}
-        className={`w-full px-4 py-3 rounded-xl border text-gray-900 placeholder-gray-400 bg-white
-          focus:outline-none focus:ring-2 focus:ring-offset-0 transition-all duration-200
-          ${
-            error
-              ? "border-red-500/50 focus:ring-red-500/30 focus:border-red-500/60"
-              : "border-surface-600 focus:ring-brand-500/40 focus:border-brand-500/60"
-          }
-          ${className}`}
+        className={formControlClass(!!error, className)}
         {...props}
       />
       {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
@@ -158,21 +154,135 @@ export function DarkInput({
 }
 
 // ===========================================================
-// PAGE SPINNER — Full-screen loading indicator
+// SELECT
+// ===========================================================
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label: string;
+  options: SelectOption[];
+  error?: string;
+  compactLabel?: boolean;
+  placeholder?: string;
+}
+
+export function Select({
+  label,
+  options,
+  error,
+  compactLabel = false,
+  placeholder,
+  className = "",
+  id,
+  children,
+  ...props
+}: SelectProps) {
+  const selectId = id || label.toLowerCase().replace(/\s+/g, "_");
+  return (
+    <div className="space-y-1">
+      <label
+        htmlFor={selectId}
+        className={compactLabel ? formLabelCompactClass : formLabelClass}
+      >
+        {label}
+      </label>
+      <div className="relative">
+        <select
+          id={selectId}
+          className={selectControlClass(!!error, className)}
+          {...props}
+        >
+          {placeholder && (
+            <option value="" disabled>
+              {placeholder}
+            </option>
+          )}
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+          {children}
+        </select>
+        <HiOutlineChevronDown
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400 dark:text-gray-500"
+          aria-hidden
+        />
+      </div>
+      {error && (
+        <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================
+// TEXTAREA
+// ===========================================================
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label: string;
+  error?: string;
+  compactLabel?: boolean;
+  hint?: string;
+}
+
+export function Textarea({
+  label,
+  error,
+  compactLabel = false,
+  hint,
+  className = "",
+  id,
+  ...props
+}: TextareaProps) {
+  const textareaId = id || label.toLowerCase().replace(/\s+/g, "_");
+  return (
+    <div className="space-y-1">
+      <label
+        htmlFor={textareaId}
+        className={compactLabel ? formLabelCompactClass : formLabelClass}
+      >
+        {label}
+      </label>
+      <textarea
+        id={textareaId}
+        className={textareaControlClass(!!error, className)}
+        {...props}
+      />
+      {props.maxLength != null && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-right">
+          {(props.value?.toString() ?? "").length}/{props.maxLength}
+        </p>
+      )}
+      {hint && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+      )}
+      {error && (
+        <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>
+      )}
+    </div>
+  );
+}
+
+// ===========================================================
+// PAGE SPINNER
 // ===========================================================
 export function PageSpinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-surface-600 border-t-brand-500" />
-        <p className="mt-3 text-sm text-gray-600">Loading...</p>
+        <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-surface-600 dark:border-gray-700 border-t-brand-500" />
+        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">Loading...</p>
       </div>
     </div>
   );
 }
 
 // ===========================================================
-// ALERT — Light theme (dashboard/admin)
+// ALERT
 // ===========================================================
 interface AlertProps {
   message: string;
@@ -182,9 +292,12 @@ interface AlertProps {
 
 export function Alert({ message, type = "error", className = "" }: AlertProps) {
   const styles = {
-    error: "bg-red-50 border-red-200 text-red-700",
-    success: "bg-green-50 border-green-200 text-green-700",
-    warning: "bg-yellow-50 border-yellow-200 text-yellow-700",
+    error:
+      "bg-red-50 border-red-200 text-red-700 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400",
+    success:
+      "bg-green-50 border-green-200 text-green-700 dark:bg-green-500/10 dark:border-green-500/30 dark:text-green-400",
+    warning:
+      "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400",
   };
   return (
     <div
@@ -196,7 +309,7 @@ export function Alert({ message, type = "error", className = "" }: AlertProps) {
 }
 
 // ===========================================================
-// DARK ALERT — For dark-background pages
+// DARK ALERT — translucent variant for warm-surface pages
 // ===========================================================
 interface DarkAlertProps {
   message: string;
@@ -224,7 +337,7 @@ export function DarkAlert({
 }
 
 // ===========================================================
-// STAT CARD — Analytics number display (light theme dashboard)
+// STAT CARD
 // ===========================================================
 interface StatCardProps {
   label: string;
@@ -245,30 +358,30 @@ export function StatCard({
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500 mt-0.5">{label}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
       </div>
     </div>
   );
 }
 
 // ===========================================================
-// LOADING SKELETON — Placeholder while data loads
+// LOADING SKELETON
 // ===========================================================
 export function StatCardSkeleton() {
   return (
     <div className="card p-5 flex items-center gap-4 animate-pulse">
-      <div className="w-12 h-12 rounded-xl bg-gray-200" />
+      <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700" />
       <div className="flex-1 space-y-2">
-        <div className="h-6 bg-gray-200 rounded w-20" />
-        <div className="h-4 bg-gray-100 rounded w-32" />
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-32" />
       </div>
     </div>
   );
 }
 
 // ===========================================================
-// ERROR BOUNDARY COMPONENT — Display errors gracefully
+// ERROR BOX
 // ===========================================================
 export function ErrorBox({
   title = "Error",
@@ -283,14 +396,14 @@ export function ErrorBox({
 }) {
   return (
     <div
-      className={`rounded-xl border border-red-200 bg-red-50 p-4 ${className}`}
+      className={`rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10 ${className}`}
     >
-      <h3 className="font-semibold text-red-900">{title}</h3>
-      <p className="text-sm text-red-700 mt-1">{message}</p>
+      <h3 className="font-semibold text-red-900 dark:text-red-300">{title}</h3>
+      <p className="text-sm text-red-700 dark:text-red-400 mt-1">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="mt-3 text-sm font-medium text-red-600 hover:text-red-700 underline"
+          className="mt-3 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 underline"
           aria-label="Retry loading data"
         >
           Try again
@@ -301,7 +414,7 @@ export function ErrorBox({
 }
 
 // ===========================================================
-// PAGINATION CONTROLS — Navigate large lists
+// PAGINATION
 // ===========================================================
 interface PaginationProps {
   currentPage: number;
@@ -330,12 +443,15 @@ export function Pagination({
     pageNumbers.push(i);
   }
 
+  const pageBtn =
+    "px-3 py-1 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300";
+
   return (
     <div className={`flex items-center justify-center gap-2 ${className}`}>
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        className={`${pageBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
         aria-label="Previous page"
       >
         Prev
@@ -343,10 +459,7 @@ export function Pagination({
 
       {start > 1 && (
         <>
-          <button
-            onClick={() => onPageChange(1)}
-            className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-50"
-          >
+          <button onClick={() => onPageChange(1)} className={pageBtn}>
             1
           </button>
           {start > 2 && <span className="text-gray-400">...</span>}
@@ -360,7 +473,7 @@ export function Pagination({
           className={`px-3 py-1 rounded border ${
             page === currentPage
               ? "bg-brand-500 text-white border-brand-500"
-              : "border-gray-200 hover:bg-gray-50"
+              : pageBtn
           }`}
           aria-label={`Page ${page}`}
           aria-current={page === currentPage ? "page" : undefined}
@@ -372,10 +485,7 @@ export function Pagination({
       {end < totalPages && (
         <>
           {end < totalPages - 1 && <span className="text-gray-400">...</span>}
-          <button
-            onClick={() => onPageChange(totalPages)}
-            className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-50"
-          >
+          <button onClick={() => onPageChange(totalPages)} className={pageBtn}>
             {totalPages}
           </button>
         </>
@@ -384,7 +494,7 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 rounded border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+        className={`${pageBtn} disabled:opacity-50 disabled:cursor-not-allowed`}
         aria-label="Next page"
       >
         Next
@@ -394,7 +504,7 @@ export function Pagination({
 }
 
 // ===========================================================
-// DATE RANGE PICKER — Select time periods
+// DATE RANGE PICKER
 // ===========================================================
 interface DateRangePickerProps {
   selectedRange: "7d" | "30d" | "90d" | "all";
@@ -419,11 +529,11 @@ export function DateRangePicker({
       {ranges.map((range) => (
         <button
           key={range.value}
-          onClick={() => onRangeChange(range.value as any)}
+          onClick={() => onRangeChange(range.value as "7d" | "30d" | "90d" | "all")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             selectedRange === range.value
               ? "bg-brand-500 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           }`}
           aria-label={`Show ${range.label}`}
           aria-pressed={selectedRange === range.value}
@@ -434,3 +544,5 @@ export function DateRangePicker({
     </div>
   );
 }
+
+export { ThemeToggle } from "./ThemeToggle";

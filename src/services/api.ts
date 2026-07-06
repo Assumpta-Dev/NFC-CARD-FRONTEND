@@ -63,7 +63,7 @@ import {
 //   4. Set JWT_SECRET to a random 64-char string
 //   5. Run: npm run dev (listens on :5000)
 // ===========================================================
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 const NORMALIZED_BASE_URL = BASE_URL.endsWith("/") ? BASE_URL : `${BASE_URL}/`;
 
 function buildApiUrl(path: string) {
@@ -592,7 +592,8 @@ export const businessApi = {
   upsertBusinessProfile: async (
     data: {
       name: string;
-      category: string;
+      businessType: import("../types").BusinessType;
+      category?: string;
       description?: string;
       location?: string;
       phone?: string;
@@ -600,6 +601,7 @@ export const businessApi = {
       website?: string;
       imageUrl?: string;
       paymentCode?: string;
+      settings?: import("../types").BusinessSettings | null;
     },
     file?: File | null,
   ) => {
@@ -609,7 +611,8 @@ export const businessApi = {
     };
 
     formData.append("name", data.name);
-    formData.append("category", data.category);
+    formData.append("businessType", data.businessType);
+    if (data.category) formData.append("category", data.category);
     appendOptionalField("description", data.description);
     appendOptionalField("location", data.location);
     appendOptionalField("phone", data.phone);
@@ -617,6 +620,9 @@ export const businessApi = {
     appendOptionalField("website", data.website);
     appendOptionalField("imageUrl", data.imageUrl);
     appendOptionalField("paymentCode", data.paymentCode);
+    if (data.settings !== undefined) {
+      formData.append("settings", JSON.stringify(data.settings ?? {}));
+    }
     if (file) formData.append("photo", file);
 
     const res = await apiClient.post<ApiResponse<BusinessProfile>>(
@@ -1320,6 +1326,9 @@ export const orderApi = {
     businessId: string;
     customerName: string;
     phone: string;
+    orderContext?: import("../types").OrderContext;
+    tableNumber?: string;
+    roomNumber?: string;
     items: { id: string; name: string; price: number; qty: number; imageUrl: string | null }[];
   }) => {
     const res = await apiClient.post<ApiResponse<import("../types").Order>>("/orders", data);

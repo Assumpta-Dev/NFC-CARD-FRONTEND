@@ -1,18 +1,12 @@
-// ===========================================================
-// PROFILE EDIT PAGE
-// ===========================================================
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { profileApi, getErrorMessage } from "../../services/api";
 import { Profile, Link as CardLink } from "../../types";
-import { Button, DarkInput, DarkAlert } from "../../components/ui";
+import { Button, DarkInput, DarkAlert, Select, Textarea } from "../../components/ui";
 import {
-  HiOutlineChevronLeft,
   HiOutlineCamera,
   HiOutlinePlus,
   HiOutlineTrash,
-  HiOutlineCreditCard,
 } from "react-icons/hi";
 
 const LINK_TYPES = [
@@ -30,61 +24,10 @@ type FormData = Omit<Profile, "id" | "userId">;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
-      <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
+    <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+      <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-base">{title}</h2>
       {children}
     </section>
-  );
-}
-
-const DARK_INPUT_CLS =
-  "w-full px-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 transition-all duration-200";
-
-function DarkTextarea({
-  label, value, onChange, placeholder, rows = 3, maxLength, hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  placeholder?: string;
-  rows?: number;
-  maxLength?: number;
-  hint?: string;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">{label}</label>
-      <textarea
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        rows={rows}
-        maxLength={maxLength}
-        className={`${DARK_INPUT_CLS} resize-none`}
-      />
-      {maxLength && <p className="text-xs text-gray-500 text-right">{value.length}/{maxLength}</p>}
-      {hint && <p className="text-xs text-gray-500">{hint}</p>}
-    </div>
-  );
-}
-
-function DarkSelect({
-  label, value, onChange, options,
-}: {
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">{label}</label>
-      <select value={value} onChange={onChange} className={DARK_INPUT_CLS}>
-        {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-white text-gray-900">{o.label}</option>
-        ))}
-      </select>
-    </div>
   );
 }
 
@@ -254,32 +197,18 @@ export function ProfileEditPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-surface-600 border-t-brand-500" />
-          <p className="mt-3 text-sm text-gray-600">Loading profile...</p>
+          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)] sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button onClick={() => navigate("/dashboard")} className="icon-badge w-9 h-9 rounded-xl" aria-label="Back to dashboard">
-            <HiOutlineChevronLeft className="text-lg" />
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="icon-badge w-9 h-9 rounded-xl">
-              <HiOutlineCreditCard className="text-lg" />
-            </span>
-            <h1 className="font-bold text-gray-900">Edit Profile</h1>
-          </div>
-        </div>
-      </nav>
-
-      <form onSubmit={handleSave} className="max-w-2xl mx-auto px-4 py-6 space-y-4 pb-16">
+    <div>
+      <form onSubmit={handleSave} className="max-w-2xl mx-auto space-y-4 pb-16">
         {error && <DarkAlert message={error} type="error" />}
         {success && <DarkAlert message={success} type="success" />}
 
@@ -291,7 +220,7 @@ export function ProfileEditPage() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden bg-white shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex items-center justify-center transition-all group"
+              className="relative w-20 h-20 rounded-full flex-shrink-0 overflow-hidden bg-white dark:bg-gray-900 shadow-[0_4px_24px_rgba(0,0,0,0.08)] flex items-center justify-center transition-all group"
             >
               {formData.imageUrl ? (
                 <img src={formData.imageUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -313,17 +242,17 @@ export function ProfileEditPage() {
                   Remove photo
                 </button>
               )}
-              <p className="text-xs text-gray-500">JPG, PNG or GIF · max 5 MB</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">JPG, PNG or GIF · max 5 MB</p>
             </div>
           </div>
 
           {/* Cover photo */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">Cover Photo</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300">Cover Photo</label>
             <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
             <div
               onClick={() => coverInputRef.current?.click()}
-              className="relative w-full h-28 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-gray-200 hover:border-brand-500 transition-colors flex items-center justify-center bg-gray-50"
+              className="relative w-full h-28 rounded-2xl overflow-hidden cursor-pointer border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors flex items-center justify-center bg-gray-50 dark:bg-gray-950"
             >
               {formData.coverImageUrl ? (
                 <img src={formData.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
@@ -341,7 +270,7 @@ export function ProfileEditPage() {
           <DarkInput label="Full Name" value={formData.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder="Jane Smith" />
           <DarkInput label="Job Title" value={formData.jobTitle || ""} onChange={(e) => updateField("jobTitle", e.target.value)} placeholder="Software Engineer" />
           <DarkInput label="Company" value={formData.company || ""} onChange={(e) => updateField("company", e.target.value)} placeholder="Acme Corp" />
-          <DarkTextarea label="Bio" value={formData.bio || ""} onChange={(e) => updateField("bio", e.target.value)} placeholder="A short description about yourself…" rows={3} maxLength={500} />
+          <Textarea compactLabel label="Bio" value={formData.bio || ""} onChange={(e) => updateField("bio", e.target.value)} placeholder="A short description about yourself…" rows={3} maxLength={500} />
         </Section>
 
         {/* ── Contact Details ──────────────────────────── */}
@@ -350,24 +279,24 @@ export function ProfileEditPage() {
           <DarkInput label="Email" value={formData.email || ""} onChange={(e) => updateField("email", e.target.value)} placeholder="you@example.com" />
           <DarkInput label="Website" value={formData.website || ""} onChange={(e) => updateField("website", e.target.value)} placeholder="https://yourwebsite.com" />
           <DarkInput label="WhatsApp Number" value={formData.whatsapp || ""} onChange={(e) => updateField("whatsapp", e.target.value)} placeholder="250788000000" />
-          <p className="text-xs text-gray-500 -mt-2 px-1">Digits only, with country code. No + sign.</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2 px-1">Digits only, with country code. No + sign.</p>
         </Section>
 
         {/* ── Social Links ─────────────────────────────── */}
         <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900 text-base">Links</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Links</h2>
             <button
               type="button"
               onClick={addLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-[#DE3A16] text-gray-700 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-[#DE3A16] text-gray-700 dark:text-gray-300 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
             >
               <HiOutlinePlus className="text-base" /> Add Link
             </button>
           </div>
 
           {formData.links.length === 0 && (
-            <p className="text-sm text-gray-600 text-center py-4 border border-dashed border-surface-600 rounded-2xl">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4 border border-dashed border-surface-600 rounded-2xl">
               No links yet. Add your social profiles or website links.
             </p>
           )}
@@ -375,12 +304,12 @@ export function ProfileEditPage() {
           {formData.links.map((link, index) => (
             <div key={index} className="card-soft p-4 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Link {index + 1}</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Link {index + 1}</span>
                 <button type="button" onClick={() => removeLink(index)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs font-medium transition-colors">
                   <HiOutlineTrash className="text-sm" /> Remove
                 </button>
               </div>
-              <DarkSelect label="Platform" value={link.type} onChange={(e) => updateLink(index, "type", e.target.value)} options={LINK_TYPES} />
+              <Select compactLabel label="Platform" value={link.type} onChange={(e) => updateLink(index, "type", e.target.value)} options={LINK_TYPES} />
               <DarkInput label="Display Label" value={link.label} onChange={(e) => updateLink(index, "label", e.target.value)} placeholder="My LinkedIn" />
               <DarkInput label="URL" value={link.url} onChange={(e) => updateLink(index, "url", e.target.value)} placeholder="https://linkedin.com/in/yourprofile" />
             </div>

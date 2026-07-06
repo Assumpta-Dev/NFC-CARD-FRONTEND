@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { HiOutlineCheck } from "react-icons/hi";
-import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Alert, Button, Input } from "../../components/ui";
 import { getErrorMessage, paymentApi } from "../../services/api";
 import {
@@ -86,23 +85,22 @@ export function CheckoutPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="shadow-[0_2px_16px_rgba(0,0,0,0.08)] bg-white">
-        <div className="mx-auto max-w-5xl px-4 pb-10 pt-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+    <div>
+      <div className="pb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             Upgrade your Account
           </h1>
-          <p className="mx-auto mt-3 max-w-lg text-gray-500">
+          <p className="mx-auto mt-3 max-w-lg text-gray-500 dark:text-gray-400">
             Choose a plan that fits your networking and business needs.
           </p>
 
-          <div className="mt-8 inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-100 p-1">
+          <div className="mt-8 inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 p-1">
             <button
               onClick={() => setCycle("MONTHLY")}
               className={`rounded-full px-6 py-2 text-sm font-semibold transition-all ${
                 cycle === "MONTHLY"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm dark:shadow-none"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Monthly
@@ -111,17 +109,16 @@ export function CheckoutPage() {
               onClick={() => setCycle("ANNUAL")}
               className={`rounded-full px-6 py-2 text-sm font-semibold transition-all ${
                 cycle === "ANNUAL"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm dark:shadow-none"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Annual <span className="ml-1 text-xs font-bold text-[#DE3A16]">-20%</span>
             </button>
           </div>
-        </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-grow flex-col gap-8 px-4 pb-20 pt-12">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 pb-20 pt-4">
         {error && <Alert message={error} />}
 
         <div className="grid gap-6 md:grid-cols-3">
@@ -138,31 +135,31 @@ export function CheckoutPage() {
                 className={`card-soft relative flex flex-col rounded-2xl border-2 p-6 text-left transition-all duration-200 ${
                   isSelected
                     ? "z-10 scale-[1.03] border-[#DE3A16] shadow-[0_8px_32px_rgba(222,58,22,0.18)]"
-                    : "border-[#f0e8e5] bg-white hover:border-[#DE3A16] hover:shadow-[0_4px_16px_rgba(222,58,22,0.10)]"
+                    : "border-[#f0e8e5] bg-white dark:bg-gray-900 hover:border-[#DE3A16] hover:shadow-[0_4px_16px_rgba(222,58,22,0.10)]"
                 }`}
               >
                 {config.badge && (
                   <div className="absolute right-0 top-0 translate-x-2 -translate-y-3 transform">
-                    <span className="rounded-full bg-[#DE3A16] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm">
+                    <span className="rounded-full bg-[#DE3A16] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm dark:shadow-none">
                       {config.badge}
                     </span>
                   </div>
                 )}
 
                 <div className="flex-grow">
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {config.title}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {config.description}
                   </p>
 
                   <div className="mt-4 flex items-end gap-2">
-                    <span className="text-3xl font-bold text-gray-900">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                       {formatPlanAmount(planAmount)}
                     </span>
                     {planAmount > 0 && (
-                      <span className="mb-1 text-sm text-gray-500">
+                      <span className="mb-1 text-sm text-gray-500 dark:text-gray-400">
                         /{cycle === "MONTHLY" ? "mo" : "yr"}
                       </span>
                     )}
@@ -172,7 +169,7 @@ export function CheckoutPage() {
                     {config.features.map((feature) => (
                       <li
                         key={feature}
-                        className="flex items-start gap-2 text-sm text-gray-600"
+                        className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
                       >
                         <HiOutlineCheck className="flex-shrink-0 text-lg text-[#DE3A16]" />
                         <span>{feature}</span>
@@ -185,16 +182,16 @@ export function CheckoutPage() {
           })}
         </div>
 
-        <div className="card-soft rounded-2xl bg-white p-6">
+        <div className="card-soft rounded-2xl bg-white dark:bg-gray-900 p-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                 Checkout Summary
               </p>
-              <h2 className="mt-2 text-2xl font-bold text-gray-900">
+              <h2 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {PLAN_CONFIG[selectedPlan].title}
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {cycle === "MONTHLY" ? "Monthly billing" : "Annual billing"}
               </p>
               <p className="mt-4 text-3xl font-bold text-[#DE3A16]">
@@ -206,7 +203,7 @@ export function CheckoutPage() {
               {selectedPlan !== "FREE" && (
                 <>
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                       Payment Method
                     </p>
                     <div className="grid grid-cols-2 gap-3">
@@ -218,7 +215,7 @@ export function CheckoutPage() {
                           className={`rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                             paymentMethod === method
                               ? "border-[#DE3A16] bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.25)]"
-                              : "border-[#e9d7d2] text-gray-700 hover:border-[#DE3A16] hover:bg-[#fdf8f7]"
+                              : "border-[#e9d7d2] text-gray-700 dark:text-gray-300 hover:border-[#DE3A16] hover:bg-[#fdf8f7]"
                           }`}
                         >
                           {method}
@@ -235,7 +232,7 @@ export function CheckoutPage() {
                     type="tel"
                   />
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Payments are initiated as pending and move to success when
                     the provider callback confirms them.
                   </p>
@@ -255,7 +252,7 @@ export function CheckoutPage() {
             </div>
           </div>
         </div>
-      </main>
-    </DashboardLayout>
+      </div>
+    </div>
   );
 }

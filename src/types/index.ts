@@ -84,9 +84,25 @@ export interface BusinessMenu {
   items: MenuItem[];
 }
 
+export type BusinessType =
+  | "RESTAURANT"
+  | "HOTEL"
+  | "MOTEL"
+  | "CAFE"
+  | "OTHER";
+
+export interface BusinessSettings {
+  wifiPassword?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  operatingHours?: string;
+  emergencyPhone?: string;
+}
+
 export interface PublicBusinessProfile {
   id: string;
   name: string;
+  businessType?: BusinessType;
   category: string;
   description: string | null;
   location: string | null;
@@ -96,6 +112,7 @@ export interface PublicBusinessProfile {
   imageUrl: string | null;
   whatsapp: string | null;
   paymentCode: string | null;
+  settings?: BusinessSettings | null;
   menus?: BusinessMenu[];
   links?: Link[];
 }
@@ -202,6 +219,7 @@ export interface PaginatedPayments {
 // ORDERS
 // ===========================================================
 export type OrderStatus = "PENDING" | "WAITING_VERIFICATION" | "PAID" | "REJECTED";
+export type OrderContext = "TABLE" | "ROOM";
 
 export interface OrderItem {
   id: string;
@@ -216,6 +234,9 @@ export interface Order {
   businessId: string;
   customerName: string;
   phone: string;
+  orderContext?: OrderContext;
+  tableNumber?: string | null;
+  roomNumber?: string | null;
   total: number;
   status: OrderStatus;
   txId: string | null;

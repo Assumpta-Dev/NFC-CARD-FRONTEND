@@ -12,6 +12,19 @@
       rel="stylesheet"
     />
     <title>E-Card Platform</title>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("ecard-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var theme =
+          stored === "light" || stored === "dark"
+            ? stored
+            : prefersDark
+              ? "dark"
+              : "light";
+        if (theme === "dark") document.documentElement.classList.add("dark");
+      })();
+    </script>
   </head>
   <body>
     <!-- React mounts here — single root element pattern -->

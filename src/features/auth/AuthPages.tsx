@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { authApi, getErrorMessage } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
-import { Button, DarkAlert } from "../../components/ui";
+import { Button, DarkAlert, formControlClass } from "../../components/ui";
 import Navbar from "../../components/layout/navbar";
 import {
   HiOutlineCreditCard,
@@ -52,12 +52,12 @@ function PasswordInput({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
-        className="w-full pl-14 pr-12 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white transition-all duration-200 caret-brand-600"
+        className={formControlClass(false, "pl-14 pr-12 cursor-text caret-brand-600")}
       />
       <button
         type="button"
         onClick={() => setShow((s) => !s)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors"
         tabIndex={-1}
         aria-label={show ? "Hide password" : "Show password"}
       >
@@ -102,9 +102,7 @@ function IconInput({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
-        className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
-        focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
-        transition-all duration-200 caret-brand-600"
+        className={formControlClass(false, "pl-14 pr-4 cursor-text caret-brand-600")}
       />
     </div>
   );
@@ -115,14 +113,14 @@ function IconInput({
 // ===========================================================
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="relative w-full max-w-md animate-fade-in">
         {/* Brand mark */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="icon-badge w-9 h-9">
             <HiOutlineCreditCard className="text-lg" />
           </div>
-          <span className="font-bold text-gray-900 text-lg tracking-tight">
+          <span className="font-bold text-gray-900 dark:text-gray-100 text-lg tracking-tight">
             E-Card
           </span>
         </div>
@@ -182,14 +180,14 @@ export function LoginPage() {
   };
 
   return (
-     <div className="min-h-screen bg-white flex flex-col">
+     <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
           {/* Navbar */}
             <Navbar />
     <AuthLayout>
       {/* Heading */}
       <div className="mb-7 pt-20">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p className="text-gray-600 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome back</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
           Sign in to manage your digital card
         </p>
       </div>
@@ -206,7 +204,7 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="email"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             Email address
           </label>
@@ -223,8 +221,8 @@ export function LoginPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400 cursor-text
-                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white
+              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 cursor-text
+                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white dark:bg-gray-900
                 transition-all duration-200 caret-brand-600"
             />
           </div>
@@ -234,7 +232,7 @@ export function LoginPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="password"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             Password
           </label>
@@ -261,12 +259,12 @@ export function LoginPage() {
 
       {/* Divider */}
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-500">or</span>
-        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+        <span className="text-xs text-gray-500 dark:text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
       </div>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Don't have an account?{" "}
         <Link
           to="/register"
@@ -276,7 +274,7 @@ export function LoginPage() {
         </Link>
       </p>
 
-      <p className="text-center text-sm text-gray-500 mt-2">
+      <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
         <Link
           to="/forgot-password"
           className="text-brand-600 font-semibold hover:text-brand-700 transition-colors"
@@ -345,13 +343,13 @@ export function RegisterPage() {
   // Helper for icon-prefixed inputs
 
   return (
-     <div className="min-h-screen bg-white flex flex-col">
+     <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
           {/* Navbar */}
             <Navbar />
     <AuthLayout>
       <div className="mb-7 pt-20">
-        <h1 className="text-2xl font-bold text-gray-900">Create your card</h1>
-        <p className="text-gray-600 text-sm mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create your card</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
           Set up your digital business card in seconds
         </p>
       </div>
@@ -359,14 +357,14 @@ export function RegisterPage() {
       {error && <DarkAlert message={error} className="mb-5" />}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-2 rounded-xl bg-gray-100 p-1">
+        <div className="flex gap-2 rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
           <button
             type="button"
             onClick={() => setRole("USER")}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
               role === "USER"
                 ? "bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.3)]"
-                : "text-gray-500 hover:text-gray-900"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
             }`}
           >
             Individual
@@ -377,7 +375,7 @@ export function RegisterPage() {
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
               role === "BUSINESS"
                 ? "bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.3)]"
-                : "text-gray-500 hover:text-gray-900"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
             }`}
           >
             Business
@@ -387,7 +385,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="name"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             {role === "BUSINESS" ? "Business name" : "Full name"}
           </label>
@@ -407,7 +405,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="register-email"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             Email address
           </label>
@@ -428,7 +426,7 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="register-password"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             Password
           </label>
@@ -447,10 +445,10 @@ export function RegisterPage() {
         <div className="space-y-1.5">
           <label
             htmlFor="cardId"
-            className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+            className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
           >
             Card ID{" "}
-            <span className="normal-case text-gray-500 font-normal tracking-normal">
+            <span className="normal-case text-gray-500 dark:text-gray-400 font-normal tracking-normal">
               (optional)
             </span>
           </label>
@@ -462,7 +460,7 @@ export function RegisterPage() {
             onChange={(e) => setCardId(e.target.value.toUpperCase())}
             placeholder="CARD_XXXXXX"
           />
-          <p className="text-xs text-gray-500 px-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
             Enter your physical card ID to activate it immediately
           </p>
         </div>
@@ -478,12 +476,12 @@ export function RegisterPage() {
       </form>
 
       <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-xs text-gray-500">or</span>
-        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+        <span className="text-xs text-gray-500 dark:text-gray-400">or</span>
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
       </div>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Already have an account?{" "}
         <Link
           to="/login"
@@ -522,12 +520,12 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
       <Navbar />
       <AuthLayout>
         <div className="mb-7 pt-20">
-          <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
-          <p className="text-gray-600 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Forgot password?</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
             Enter your email and we'll send you a reset link
           </p>
         </div>
@@ -543,7 +541,7 @@ export function ForgotPasswordPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="forgot-email"
-                className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+                className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
               >
                 Email address
               </label>
@@ -559,7 +557,7 @@ export function ForgotPasswordPage() {
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
-                  className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white text-gray-900 placeholder-gray-400
+                  className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400
                     focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
                     transition-all duration-200"
                 />
@@ -578,12 +576,12 @@ export function ForgotPasswordPage() {
         )}
 
         <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-500">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-500 dark:text-gray-400">or</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Remember your password?{" "}
           <Link
             to="/login"
@@ -649,12 +647,12 @@ export function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
       <Navbar />
       <AuthLayout>
         <div className="mb-7 pt-20">
-          <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
-          <p className="text-gray-600 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Set new password</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
             Choose a strong password for your account
           </p>
         </div>
@@ -665,7 +663,7 @@ export function ResetPasswordPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="new-password"
-              className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+              className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
             >
               New password
             </label>
@@ -683,7 +681,7 @@ export function ResetPasswordPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="confirm-password"
-              className="block text-xs font-semibold uppercase tracking-wider text-gray-700"
+              className="block text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300"
             >
               Confirm password
             </label>

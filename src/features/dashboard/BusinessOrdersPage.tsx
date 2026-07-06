@@ -6,7 +6,6 @@ import {
   HiOutlineDownload,
   HiOutlineTrash,
 } from "react-icons/hi";
-import { DashboardLayout } from "../../components/layout/DashboardLayout";
 import { Alert, PageSpinner } from "../../components/ui";
 import { getErrorMessage, orderApi } from "../../services/api";
 import { Order } from "../../types";
@@ -88,47 +87,35 @@ export function BusinessOrdersPage() {
   const pendingCount = orders.filter(o => o.status === "PENDING" || o.status === "WAITING_VERIFICATION").length;
 
   return (
-    <DashboardLayout>
-      <div className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
-        <div className="mx-auto max-w-5xl px-4 pb-8 pt-8">
-          <div className="flex items-center gap-3">
-            <span className="icon-badge h-10 w-10 rounded-xl">
-              <HiOutlineClipboardList className="text-xl" />
-            </span>
-            <div>
-              <span className="text-xl font-bold tracking-tight text-gray-900">
-                Incoming Orders
-              </span>
-              {pendingCount > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center rounded-full bg-[#DE3A16] px-2 py-0.5 text-xs font-bold text-white">
-                  {pendingCount} pending
-                </span>
-              )}
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-gray-600">
-            Review and confirm customer orders. Auto-refreshes every 10 seconds.
-          </p>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Review and confirm customer orders. Auto-refreshes every 10 seconds.
+        </p>
+        {pendingCount > 0 && (
+          <span className="inline-flex items-center justify-center rounded-full bg-[#DE3A16] px-2 py-0.5 text-xs font-bold text-white">
+            {pendingCount} pending
+          </span>
+        )}
       </div>
 
-      <main className="mx-auto w-full max-w-5xl px-4 pb-10 pt-8 space-y-4">
+      <div className="space-y-4">
         {error && <Alert message={error} />}
         {success && <Alert message={success} type="success" />}
 
-        <div className="card-soft overflow-hidden rounded-2xl bg-white">
-          <div className="flex items-center gap-3 border-b border-gray-100 p-5">
+        <div className="card-soft overflow-hidden rounded-2xl bg-white dark:bg-gray-900">
+          <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 p-5">
             <HiOutlineClipboardList className="text-xl text-[#DE3A16]" />
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900">Orders</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Orders</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Verify payment then confirm or reject each order.
               </p>
             </div>
             <button
               onClick={handleExportOrders}
               disabled={orders.length === 0}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-[#DE3A16] hover:text-[#DE3A16] disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:border-[#DE3A16] hover:text-[#DE3A16] disabled:opacity-40"
             >
               <HiOutlineDownload className="text-sm" /> Export CSV
             </button>
@@ -136,7 +123,7 @@ export function BusinessOrdersPage() {
 
           <div className="divide-y divide-gray-50">
             {orders.length === 0 && (
-              <div className="py-16 text-center text-sm text-gray-500">
+              <div className="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
                 No orders yet. They will appear here when customers order.
               </div>
             )}
@@ -145,15 +132,21 @@ export function BusinessOrdersPage() {
               <div key={order.id} className="p-5">
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">
-                      {order.customerName.replace(/\s*\(.*\)$/, "")}
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">
+                      {order.customerName}
                     </p>
-                    {/\(.*\)$/.test(order.customerName) && (
+                    {(order.orderContext === "ROOM" && order.roomNumber) ||
+                    (order.orderContext === "TABLE" && order.tableNumber) ||
+                    /\(.*\)$/.test(order.customerName) ? (
                       <span className="inline-block mt-0.5 rounded-full bg-[#fdf3f0] px-2 py-0.5 text-xs font-semibold text-[#DE3A16]">
-                        {order.customerName.match(/\((.*)\)$/)?.[1]}
+                        {order.orderContext === "ROOM" && order.roomNumber
+                          ? `Room ${order.roomNumber}`
+                          : order.orderContext === "TABLE" && order.tableNumber
+                            ? `Table ${order.tableNumber}`
+                            : order.customerName.match(/\((.*)\)$/)?.[1]}
                       </span>
-                    )}
-                    <p className="text-xs text-gray-500">
+                    ) : null}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {order.phone} &middot; {new Date(order.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -161,7 +154,7 @@ export function BusinessOrdersPage() {
                     order.status === "PAID" ? "bg-green-100 text-green-700" :
                     order.status === "REJECTED" ? "bg-red-100 text-red-600" :
                     order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600" :
-                    "bg-gray-100 text-gray-500"
+                    "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   }`}>
                     {order.status.replace("_", " ")}
                   </span>
@@ -169,7 +162,7 @@ export function BusinessOrdersPage() {
 
                 <div className="mb-2 space-y-1">
                   {(order.items as any[]).map((item, i) => (
-                    <p key={i} className="text-xs text-gray-600">
+                    <p key={i} className="text-xs text-gray-600 dark:text-gray-400">
                       {item.name} &times; {item.qty} &mdash; RWF {(item.price * item.qty).toLocaleString()}
                     </p>
                   ))}
@@ -181,8 +174,8 @@ export function BusinessOrdersPage() {
 
                 {order.txId && (
                   <div className="mb-3 rounded-xl bg-[#fdf3f0] px-4 py-2">
-                    <p className="text-xs font-semibold text-gray-500">TxId from customer</p>
-                    <p className="font-mono text-sm font-bold text-gray-900">{order.txId}</p>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">TxId from customer</p>
+                    <p className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{order.txId}</p>
                   </div>
                 )}
 
@@ -208,7 +201,7 @@ export function BusinessOrdersPage() {
                 {(order.status === "PAID" || order.status === "REJECTED") && (
                   <button
                     onClick={() => handleDeleteOrder(order.id)}
-                    className="flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-red-300 hover:text-red-500"
+                    className="flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-red-300 hover:text-red-500"
                   >
                     <HiOutlineTrash className="text-sm" /> Delete
                   </button>
@@ -217,22 +210,22 @@ export function BusinessOrdersPage() {
             ))}
 
             {totalOrderPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-100 px-5 py-4">
-                <span className="text-xs text-gray-500">
+              <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 px-5 py-4">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   Page {orderPage} of {totalOrderPages} &middot; {orders.length} orders
                 </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
                     disabled={orderPage === 1}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
                     disabled={orderPage === totalOrderPages}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
                   >
                     Next
                   </button>
@@ -241,7 +234,7 @@ export function BusinessOrdersPage() {
             )}
           </div>
         </div>
-      </main>
-    </DashboardLayout>
+      </div>
+    </div>
   );
 }

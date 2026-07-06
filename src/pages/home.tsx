@@ -63,12 +63,12 @@ export default function HomePage() {
   const slide = SLIDES[current];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
       <Navbar />
 
-      <main className="flex-1 bg-white pt-28 pb-16">
+      <main className="flex-1 bg-white dark:bg-gray-900 pt-28 pb-16">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-14 px-6">
-          <section className="relative overflow-hidden rounded-[2rem] border border-gray-100 bg-slate-950/95 shadow-[0_32px_80px_rgba(15,23,42,0.18)]">
+          <section className="relative overflow-hidden rounded-[2rem] border border-gray-100 dark:border-gray-800 bg-slate-950/95 shadow-[0_32px_80px_rgba(15,23,42,0.18)]">
             <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/10 to-slate-950/90" />
             <div className="relative h-[min(72vh,680px)] max-h-[720px] overflow-hidden">
               <img
@@ -103,7 +103,7 @@ export default function HomePage() {
                   </Link>
                   <Link
                     to="/login"
-                    className="rounded-full border border-white/20 bg-white/10 px-8 py-3.5 text-sm font-semibold text-white shadow-[0_0_0_2px_rgba(255,255,255,0.18)] backdrop-blur-sm transition duration-200 hover:bg-white hover:text-slate-950"
+                    className="rounded-full border border-white/20 bg-white dark:bg-gray-900/10 px-8 py-3.5 text-sm font-semibold text-white shadow-[0_0_0_2px_rgba(255,255,255,0.18)] backdrop-blur-sm transition duration-200 hover:bg-white dark:bg-gray-900 hover:text-slate-950"
                   >
                     Sign In
                   </Link>
@@ -118,7 +118,7 @@ export default function HomePage() {
                     className={`h-2 rounded-full transition-all duration-300 ${
                       i === current
                         ? "w-8 bg-[#DE3A16]"
-                        : "w-2 bg-white/50 hover:bg-white/80"
+                        : "w-2 bg-white dark:bg-gray-900/50 hover:bg-white dark:bg-gray-900/80"
                     }`}
                   />
                 ))}
@@ -161,10 +161,10 @@ export default function HomePage() {
                 className="card-soft p-6 transition-transform duration-300 ease-out hover:-translate-y-2 hover:shadow-[0_16px_40px_rgba(0,0,0,0.12)]"
               >
                 <p className="section-label mb-3">Feature</p>
-                <h2 className="mb-3 text-xl font-semibold text-gray-900">
+                <h2 className="mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {item.title}
                 </h2>
-                <p className="text-sm leading-6 text-gray-600">{item.desc}</p>
+                <p className="text-sm leading-6 text-gray-600 dark:text-gray-400">{item.desc}</p>
               </div>
             ))}
           </section>

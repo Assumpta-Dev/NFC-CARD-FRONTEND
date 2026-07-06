@@ -13,8 +13,9 @@
 
 // React removed from import — react-jsx transform handles JSX; only named hooks needed
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { adminApi, getErrorMessage } from "../../services/api";
+import type { AdminSection } from "../../components/layout/adminNav";
 import {
   AdminCard,
   AdminUser,
@@ -23,15 +24,13 @@ import {
   TopCard,
   TopUser,
 } from "../../types";
-import { Button, Alert, PageSpinner } from "../../components/ui";
+import { Button, Alert, PageSpinner, selectControlClass } from "../../components/ui";
+import { useTheme } from "../../contexts/ThemeContext";
+import { getChartColors } from "../../utils/chartTheme";
 import {
-  HiOutlineCog,
   HiOutlineCreditCard,
   HiOutlineUserGroup,
   HiOutlineCheckCircle,
-  HiOutlineEye,
-  HiOutlinePencil,
-  HiOutlineLogout,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
   HiOutlineQrcode,
@@ -50,15 +49,17 @@ import {
 import { CardQrCodePanel } from "../card/CardQrCodePanel";
 import { getPublicCardPath } from "../card/publicCardUrl";
 
-// Simple tab state to switch between Cards and Users views
-type Tab = "overview" | "analytics" | "cards" | "users";
-
 // How many items to show per page in the tables
 const ITEMS_PER_PAGE = 10;
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  section?: AdminSection;
+}
+
+export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const { resolvedTheme } = useTheme();
+  const chartColors = getChartColors(resolvedTheme);
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [cards, setCards] = useState<AdminCard[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -96,9 +97,9 @@ export function AdminDashboard() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Lazy-load cards/users/analytics only when that tab is first opened
+  // Lazy-load cards/users/analytics only when that section is first opened
   useEffect(() => {
-    if (activeTab === "cards" && cards.length === 0) {
+    if (section === "cards" && cards.length === 0) {
       adminApi
         .getAllCards()
         .then((fetchedCards) => {
@@ -110,20 +111,20 @@ export function AdminDashboard() {
         })
         .catch((err) => setError(getErrorMessage(err)));
     }
-    if (activeTab === "users" && users.length === 0) {
+    if (section === "users" && users.length === 0) {
       adminApi
         .getAllUsers()
         .then(setUsers)
         .catch((err) => setError(getErrorMessage(err)));
     }
-    if (activeTab === "cards" && users.length === 0) {
+    if (section === "cards" && users.length === 0) {
       // Load users for card assignment functionality
       adminApi
         .getAllUsers()
         .then(setUsers)
         .catch((err) => setError(getErrorMessage(err)));
     }
-    if (activeTab === "analytics" && dailyScans.length === 0) {
+    if (section === "analytics" && dailyScans.length === 0) {
       // Load all analytics data
       Promise.all([
         adminApi.getUserCount(),
@@ -157,7 +158,7 @@ export function AdminDashboard() {
         )
         .catch((err) => setError(getErrorMessage(err)));
     }
-  }, [activeTab, cards.length, users.length, dailyScans.length]);
+  }, [section, cards.length, users.length, dailyScans.length]);
 
   // Pagination logic
   const totalCardPages = Math.ceil(cards.length / ITEMS_PER_PAGE);
@@ -174,12 +175,12 @@ export function AdminDashboard() {
 
   // Reset page when tab changes or data loads
   useEffect(() => {
-    if (activeTab === "cards") setCardPage(1);
-  }, [activeTab, cards.length]);
+    if (section === "cards") setCardPage(1);
+  }, [section, cards.length]);
 
   useEffect(() => {
-    if (activeTab === "users") setUserPage(1);
-  }, [activeTab, users.length]);
+    if (section === "users") setUserPage(1);
+  }, [section, users.length]);
 
   // ── Assign Card Handler ─────────────────────────────────
   const handleAssignCard = async (cardId: string) => {
@@ -227,8 +228,7 @@ export function AdminDashboard() {
 
       setCards(normalizedAllCards);
       setSuccess(`Created ${cardCount} card(s) successfully!`);
-      // Auto-switch to cards tab so user sees the new cards
-      setActiveTab("cards");
+      navigate("/admin/cards");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -239,174 +239,94 @@ export function AdminDashboard() {
   if (isLoading) return <PageSpinner />;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* ════════════════════════════════════════════════════
-          DARK HERO HEADER — OVOU-inspired admin section
-          Stats are displayed prominently inside the dark zone
-          ════════════════════════════════════════════════════ */}
-      <div className="bg-white shadow-[0_2px_16px_rgba(0,0,0,0.08)]">
-        <div className="max-w-4xl mx-auto px-4 pt-5 pb-8">
-          {/* Top bar: logo + actions */}
-          <div className="flex items-center justify-between mb-7">
-            <div className="flex items-center gap-3">
-              <span className="icon-badge w-10 h-10 rounded-xl">
-                <HiOutlineCog className="text-xl" />
+    <div className="space-y-4">
+      {error && <Alert message={error} />}
+      {success && <Alert message={success} type="success" />}
+
+      {section === "overview" && stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
+          <div className="px-4 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="icon-badge w-8 h-8 rounded-lg">
+                <HiOutlineUserGroup className="text-sm" />
               </span>
-              <span className="font-bold text-gray-900 tracking-tight">
-                Admin Panel
-              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                Users
+              </p>
             </div>
-            <div className="flex items-center gap-0.5">
-              <Link
-                to="/profile"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
-              >
-                <HiOutlinePencil className="text-base" />
-                <span className="hidden sm:inline">Edit Profile</span>
-              </Link>
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
-              >
-                <HiOutlineEye className="text-base" />
-                <span className="hidden sm:inline">User Dashboard</span>
-              </Link>
-              <button
-                onClick={() => navigate("/login")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-[#DE3A16] hover:text-white transition-colors"
-              >
-                <HiOutlineLogout className="text-base" />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
-            </div>
+            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+              {stats.totalUsers.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Registered</p>
           </div>
 
-          {/* Greeting */}
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">
-            System Overview
-          </p>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-            Welcome back, Admin
-          </h1>
-          <p className="text-gray-600 text-sm mt-1">
-            Manage your E-Card system - Admin Panel
-          </p>
-
-          {/* Tab navigation pills */}
-          <div className="flex gap-2 mt-5">
-            {(["overview", "analytics", "cards", "users"] as Tab[]).map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all capitalize ${
-                    activeTab === tab
-                      ? "bg-[#DE3A16] text-white"
-                      : "bg-white text-gray-600 border border-[#DE3A16] hover:bg-[#DE3A16] hover:text-white"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ),
-            )}
+          <div className="px-4 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="icon-badge w-8 h-8 rounded-lg">
+                <HiOutlineCreditCard className="text-sm" />
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                Cards
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+              {stats.totalCards.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Total</p>
           </div>
 
-          {/* ── Stats Block inside dark header (OVOU-inspired) ── */}
-          {activeTab === "overview" && stats && (
-            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-              {/* Stat 1: Total Users */}
-              <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="icon-badge w-8 h-8 rounded-lg">
-                    <HiOutlineUserGroup className="text-sm" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Users
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {stats.totalUsers.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">Registered</p>
-              </div>
-
-              {/* Stat 2: Total Cards */}
-              <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="icon-badge w-8 h-8 rounded-lg">
-                    <HiOutlineCreditCard className="text-sm" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Cards
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {stats.totalCards.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">Total</p>
-              </div>
-
-              {/* Stat 3: Active Cards */}
-              <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="icon-badge w-8 h-8 rounded-lg">
-                    <HiOutlineCheckCircle className="text-sm" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Active
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {stats.activeCards.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">Cards</p>
-              </div>
-
-              {/* Stat 4: Total Scans */}
-              <div className="px-4 py-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="icon-badge w-8 h-8 rounded-lg">
-                    <MdOutlineBarChart className="text-sm" />
-                  </span>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                    Scans
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-                  {stats.totalScans.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">All time</p>
-              </div>
+          <div className="px-4 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="icon-badge w-8 h-8 rounded-lg">
+                <HiOutlineCheckCircle className="text-sm" />
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                Active
+              </p>
             </div>
-          )}
+            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+              {stats.activeCards.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Cards</p>
+          </div>
+
+          <div className="px-4 py-4 text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="icon-badge w-8 h-8 rounded-lg">
+                <MdOutlineBarChart className="text-sm" />
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
+                Scans
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
+              {stats.totalScans.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">All time</p>
+          </div>
         </div>
-      </div>
-
-      {/* ── Main Content ─────────────────────────────────── */}
-      <main className="max-w-4xl mx-auto px-4 pt-5 pb-10 space-y-4">
-        {error && <Alert message={error} className="mt-1" />}
-        {success && <Alert message={success} type="success" className="mt-1" />}
+      )}
 
         {/* ════════════════════════════════════════════════════
-            TAB: OVERVIEW
+            SECTION: OVERVIEW
             ════════════════════════════════════════════════════ */}
-        {activeTab === "overview" && (
+        {section === "overview" && (
           <div className="space-y-6">
             {/* ── Create Cards Panel ───────────────────────────── */}
             <div className="card p-6">
-              <h2 className="font-semibold text-gray-900 mb-1">
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 Create New Cards
               </h2>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 Generate unique card IDs for new physical E-Card/QR cards. Print or
                 program the E-Card with the URL:{" "}
-                <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">
+                <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-xs font-mono">
                   yourdomain.com/c/CARD_XXXXXX
                 </code>
               </p>
               <div className="flex items-end gap-3">
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Number of cards
                   </label>
                   <input
@@ -440,18 +360,18 @@ export function AdminDashboard() {
         {/* ════════════════════════════════════════════════════
             TAB: ANALYTICS
             ════════════════════════════════════════════════════ */}
-        {activeTab === "analytics" && (
+        {section === "analytics" && (
           <div className="space-y-6">
             {/* ── Analytics Stats Grid ───────────────────────────── */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <HiOutlineUserGroup className="text-blue-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Users
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {userCount.toLocaleString()}
                 </p>
               </div>
@@ -459,11 +379,11 @@ export function AdminDashboard() {
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <HiOutlineCreditCard className="text-green-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Cards
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {cardCountTotal.toLocaleString()}
                 </p>
               </div>
@@ -471,11 +391,11 @@ export function AdminDashboard() {
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <HiOutlineCheckCircle className="text-purple-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Active Users
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {activeUsers.toLocaleString()}
                 </p>
               </div>
@@ -483,11 +403,11 @@ export function AdminDashboard() {
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MdOutlineBarChart className="text-orange-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     Total Scans
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {scanCountTotal.toLocaleString()}
                 </p>
               </div>
@@ -495,33 +415,34 @@ export function AdminDashboard() {
 
             {/* ── Daily Scan Trend Chart ───────────────────────────── */}
             <div className="card p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Daily Scan Activity
               </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={dailyScans.slice(-30)}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: chartColors.tick }}
                       tickFormatter={(date) =>
                         new Date(date).toLocaleDateString()
                       }
                     />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12, fill: chartColors.tick }} />
                     <Tooltip
                       labelFormatter={(date) =>
                         new Date(date).toLocaleDateString()
                       }
                       formatter={(value) => [value, "Scans"]}
+                      contentStyle={chartColors.tooltip}
                     />
                     <Line
                       type="monotone"
                       dataKey="count"
-                      stroke="#3b82f6"
+                      stroke={chartColors.blue}
                       strokeWidth={2}
-                      dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+                      dot={{ fill: chartColors.blue, strokeWidth: 2, r: 4 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -532,7 +453,7 @@ export function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top Cards */}
               <div className="card p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Top Cards by Scans
                 </h3>
                 <div className="space-y-3">
@@ -546,23 +467,23 @@ export function AdminDashboard() {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
                             {card.cardId}
                           </p>
                           {card.user && (
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {card.user.name}
                             </p>
                           )}
                         </div>
                       </div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
                         {card.scanCount}
                       </p>
                     </div>
                   ))}
                   {topCards.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                       No scan data available
                     </p>
                   )}
@@ -571,7 +492,7 @@ export function AdminDashboard() {
 
               {/* Top Users */}
               <div className="card p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">
                   Top Users by Scans
                 </h3>
                 <div className="space-y-3">
@@ -585,19 +506,19 @@ export function AdminDashboard() {
                           {index + 1}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
                             {user.name}
                           </p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
                         </div>
                       </div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
                         {user.scanCount}
                       </p>
                     </div>
                   ))}
                   {topUsers.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                       No scan data available
                     </p>
                   )}
@@ -607,8 +528,8 @@ export function AdminDashboard() {
 
             {/* ── Export Data ───────────────────────────── */}
             <div className="card p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Export Data</h3>
-              <p className="text-sm text-gray-600 mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Export Data</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Download all scan data as CSV for detailed analysis.
               </p>
               <Button
@@ -638,11 +559,11 @@ export function AdminDashboard() {
         {/* ════════════════════════════════════════════════════
             TAB: CARDS
             ════════════════════════════════════════════════════ */}
-        {activeTab === "cards" && (
+        {section === "cards" && (
           <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-gray-900">All Cards</h2>
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Cards</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {cards.length} cards in system
                 </p>
@@ -660,8 +581,8 @@ export function AdminDashboard() {
             {cards.length === 0 ? (
               <div className="p-10 text-center">
                 <HiOutlineCreditCard className="text-gray-300 text-6xl mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 mb-2">No cards yet</h3>
-                <p className="text-gray-500 text-sm mb-6">
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No cards yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
                   Create some cards to get started.
                 </p>
                 <Button onClick={handleCreateCards} isLoading={isCreating}>
@@ -672,13 +593,13 @@ export function AdminDashboard() {
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-950">
                       <tr>
                         {["Card ID", "Status", "Owner", "Scans", "Actions"].map(
                           (h) => (
                             <th
                               key={h}
-                              className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                              className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               {h}
                             </th>
@@ -690,9 +611,9 @@ export function AdminDashboard() {
                       {pagedCards.map((card) => (
                         <tr
                           key={card.id}
-                          className="hover:bg-gray-50/50 transition-colors"
+                          className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors"
                         >
-                          <td className="px-4 py-3 font-mono font-semibold text-gray-900">
+                          <td className="px-4 py-3 font-mono font-semibold text-gray-900 dark:text-gray-100">
                             {card.cardId}
                           </td>
                           <td className="px-4 py-3">
@@ -706,10 +627,10 @@ export function AdminDashboard() {
                               {card.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-600">
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                             {card.user ? (
                               <div>
-                                <p className="font-medium text-gray-800">
+                                <p className="font-medium text-gray-800 dark:text-gray-200">
                                   {card.user.name}
                                 </p>
                                 <p className="text-xs text-gray-400">
@@ -722,7 +643,7 @@ export function AdminDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-gray-700 font-medium">
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium">
                             {card._count.scans}
                           </td>
                           <td className="px-4 py-3">
@@ -736,7 +657,7 @@ export function AdminDashboard() {
                                 </button>
                                 <button
                                   onClick={() => setQrPreviewCardId(card.cardId)}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-brand-600"
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-brand-600"
                                 >
                                   <HiOutlineQrcode className="text-sm" />
                                   QR
@@ -746,27 +667,32 @@ export function AdminDashboard() {
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => setQrPreviewCardId(card.cardId)}
-                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-brand-600"
+                                  className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-brand-600"
                                 >
                                   <HiOutlineQrcode className="text-sm" />
                                   QR
                                 </button>
                                 {assigningCard === card.cardId ? (
                                   <div className="flex items-center gap-2">
-                                    <select
-                                      value={selectedUserId}
-                                      onChange={(e) =>
-                                        setSelectedUserId(e.target.value)
-                                      }
-                                      className="text-xs border border-gray-300 rounded px-2 py-1"
-                                    >
-                                      <option value="">Select User</option>
-                                      {users.map((user) => (
-                                        <option key={user.id} value={user.id}>
-                                          {user.name} ({user.email})
-                                        </option>
-                                      ))}
-                                    </select>
+                                    <div className="relative">
+                                      <select
+                                        value={selectedUserId}
+                                        onChange={(e) =>
+                                          setSelectedUserId(e.target.value)
+                                        }
+                                        className={selectControlClass(
+                                          false,
+                                          "text-xs py-1.5 pl-2 min-w-[10rem]",
+                                        )}
+                                      >
+                                        <option value="">Select User</option>
+                                        {users.map((user) => (
+                                          <option key={user.id} value={user.id}>
+                                            {user.name} ({user.email})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
                                     <Button
                                       onClick={() =>
                                         handleAssignCard(card.cardId)
@@ -781,7 +707,7 @@ export function AdminDashboard() {
                                         setAssigningCard(null);
                                         setSelectedUserId("");
                                       }}
-                                      className="text-gray-400 hover:text-gray-600 text-xs"
+                                      className="text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xs"
                                     >
                                       Cancel
                                     </button>
@@ -807,7 +733,7 @@ export function AdminDashboard() {
 
                 {/* Pagination for cards */}
                 {totalCardPages > 1 && (
-                  <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                  <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
                       {(cardPage - 1) * ITEMS_PER_PAGE + 1}–
                       {Math.min(cardPage * ITEMS_PER_PAGE, cards.length)} of{" "}
@@ -817,20 +743,20 @@ export function AdminDashboard() {
                       <button
                         onClick={() => setCardPage((p) => Math.max(1, p - 1))}
                         disabled={cardPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
                         aria-label="Previous page"
                       >
-                        <HiOutlineChevronLeft className="text-gray-600 text-base" />
+                        <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-base" />
                       </button>
                       <button
                         onClick={() =>
                           setCardPage((p) => Math.min(totalCardPages, p + 1))
                         }
                         disabled={cardPage === totalCardPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
                         aria-label="Next page"
                       >
-                        <HiOutlineChevronRight className="text-gray-600 text-base" />
+                        <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-base" />
                       </button>
                     </div>
                   </div>
@@ -843,11 +769,11 @@ export function AdminDashboard() {
         {/* ════════════════════════════════════════════════════
             TAB: USERS
             ════════════════════════════════════════════════════ */}
-        {activeTab === "users" && (
+        {section === "users" && (
           <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <div>
-                <h2 className="font-semibold text-gray-900">All Users</h2>
+                <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Users</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {users.length} users registered
                 </p>
@@ -857,8 +783,8 @@ export function AdminDashboard() {
             {users.length === 0 ? (
               <div className="p-10 text-center">
                 <HiOutlineUserGroup className="text-gray-300 text-6xl mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 mb-2">No users yet</h3>
-                <p className="text-gray-500 text-sm">
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No users yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Users will appear here once they register.
                 </p>
               </div>
@@ -866,13 +792,13 @@ export function AdminDashboard() {
               <>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-950">
                       <tr>
                         {["Name", "Email", "Role", "Cards", "Joined"].map(
                           (h) => (
                             <th
                               key={h}
-                              className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                              className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                             >
                               {h}
                             </th>
@@ -884,12 +810,12 @@ export function AdminDashboard() {
                       {pagedUsers.map((user) => (
                         <tr
                           key={user.id}
-                          className="hover:bg-gray-50/50 transition-colors"
+                          className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors"
                         >
-                          <td className="px-4 py-3 font-medium text-gray-900">
+                          <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                             {user.name}
                           </td>
-                          <td className="px-4 py-3 text-gray-600">
+                          <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                             {user.email}
                           </td>
                           <td className="px-4 py-3">
@@ -903,10 +829,10 @@ export function AdminDashboard() {
                               {user.role}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-700 font-medium text-center">
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium text-center">
                             {user._count.cards}
                           </td>
-                          <td className="px-4 py-3 text-gray-500 text-xs">
+                          <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
                             {new Date(user.createdAt).toLocaleDateString()}
                           </td>
                         </tr>
@@ -916,7 +842,7 @@ export function AdminDashboard() {
                 </div>
 
                 {/* Pagination for users — always shown so the list stays compact */}
-                <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
                       {(userPage - 1) * ITEMS_PER_PAGE + 1}–
                       {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of{" "}
@@ -926,20 +852,20 @@ export function AdminDashboard() {
                       <button
                         onClick={() => setUserPage((p) => Math.max(1, p - 1))}
                         disabled={userPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
                         aria-label="Previous page"
                       >
-                        <HiOutlineChevronLeft className="text-gray-600 text-base" />
+                        <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-base" />
                       </button>
                       <button
                         onClick={() =>
                           setUserPage((p) => Math.min(totalUserPages, p + 1))
                         }
                         disabled={userPage === totalUserPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
                         aria-label="Next page"
                       >
-                        <HiOutlineChevronRight className="text-gray-600 text-base" />
+                        <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-base" />
                       </button>
                     </div>
                   </div>
@@ -947,23 +873,22 @@ export function AdminDashboard() {
             )}
           </div>
         )}
-      </main>
 
       {qrPreviewCardId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
-          <div className="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-gray-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 px-5 py-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
                   Card QR
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-gray-900">
+                <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {qrPreviewCardId}
                 </h2>
               </div>
               <button
                 onClick={() => setQrPreviewCardId(null)}
-                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:text-gray-300"
                 aria-label="Close QR preview"
               >
                 <HiOutlineX className="text-xl" />

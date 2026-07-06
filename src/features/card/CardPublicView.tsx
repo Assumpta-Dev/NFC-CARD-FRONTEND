@@ -42,6 +42,12 @@ import {
   HiOutlineX,
 } from "react-icons/hi";
 import { PageSpinner } from "../../components/ui";
+import {
+  businessTypeLabel,
+  defaultOrderContext,
+  isLodgingType,
+  menuSectionLabel,
+} from "../../constants/businessTypes";
 import { cardApi, getErrorMessage, orderApi } from "../../services/api";
 import {
   OrderItem,
@@ -148,10 +154,10 @@ function ContactRow({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="truncate text-sm font-medium text-gray-900">{value}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{value}</p>
       </div>
-      <HiOutlineChevronRight className="flex-shrink-0 text-gray-500 transition-colors group-hover:text-gray-700" />
+      <HiOutlineChevronRight className="flex-shrink-0 text-gray-500 dark:text-gray-400 transition-colors group-hover:text-gray-700 dark:text-gray-300" />
     </a>
   );
 }
@@ -164,13 +170,13 @@ function CenteredMessage({
   message: string;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white p-6">
+    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-900 p-6">
       <div className="max-w-sm text-center animate-fade-in">
         <div className="icon-badge mx-auto mb-5 h-20 w-20 rounded-3xl">
           <HiOutlineSearch className="text-3xl" />
         </div>
-        <h2 className="mb-2 text-xl font-bold text-gray-900">{title}</h2>
-        <p className="text-sm text-gray-600">{message}</p>
+        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">{title}</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
       </div>
     </div>
   );
@@ -247,7 +253,25 @@ export function CardPublicView() {
     txId,
     orderId,
     orderStatus,
+    orderType,
+    tableRoom,
   ]);
+
+  // Default table vs room from business type when no saved checkout session
+  useEffect(() => {
+    if (cardData?.type !== "business" || saved?.orderType) return;
+    const type = cardData.business.businessType;
+    if (type === "RESTAURANT" || type === "CAFE") {
+      setOrderType("table");
+      return;
+    }
+    if (type === "MOTEL") {
+      setOrderType("room");
+      return;
+    }
+    const ctx = defaultOrderContext(type);
+    setOrderType(ctx === "ROOM" ? "room" : "table");
+  }, [cardData, saved?.orderType]);
 
   // Re-open modal after card data loads if there was an in-progress order
   useEffect(() => {
@@ -318,16 +342,14 @@ export function CardPublicView() {
     }
     setOrderError("");
     setIsSubmitting(true);
-    const locationTag =
-      orderType === "table"
-        ? `Table ${tableRoom.trim()}`
-        : `Room ${tableRoom.trim()}`;
-    const nameWithLocation = `${customerName.trim()} (${locationTag})`;
     try {
       const order = await orderApi.placeOrder({
         businessId,
-        customerName: nameWithLocation,
+        customerName: customerName.trim(),
         phone: customerPhone.trim(),
+        orderContext: orderType === "room" ? "ROOM" : "TABLE",
+        tableNumber: orderType === "table" ? tableRoom.trim() : undefined,
+        roomNumber: orderType === "room" ? tableRoom.trim() : undefined,
         items: cart,
       });
       setOrderId(order.id);
@@ -374,7 +396,12 @@ export function CardPublicView() {
     setOrderStatus("");
     setOrderError("");
     setTableRoom("");
-    setOrderType("table");
+    const ctx =
+      cardData?.type === "business" &&
+      defaultOrderContext(cardData.business.businessType) === "ROOM"
+        ? "room"
+        : "table";
+    setOrderType(ctx);
   };
 
   const resetAll = () => {
@@ -423,15 +450,15 @@ export function CardPublicView() {
 
   if (cardData.type === "unassigned") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white p-6">
+      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-gray-900 p-6">
         <div className="card-soft w-full max-w-sm animate-slide-up rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-8 text-center">
           <div className="icon-badge mx-auto mb-5 h-16 w-16 rounded-3xl">
             <HiOutlineUserAdd className="text-3xl" />
           </div>
-          <h2 className="mb-2 text-xl font-bold text-gray-900">
+          <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">
             Activate Your Card
           </h2>
-          <p className="mb-7 text-sm leading-relaxed text-gray-600">
+          <p className="mb-7 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
             {cardData.message ||
               "This E-Card has not been set up yet. Create your free account to make it yours."}
           </p>
@@ -441,7 +468,7 @@ export function CardPublicView() {
           >
             Claim This Card
           </button>
-          <p className="mt-5 text-xs text-gray-600">
+          <p className="mt-5 text-xs text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
@@ -459,6 +486,18 @@ export function CardPublicView() {
     cardData.type === "personal" ? cardData.profile : null;
   const businessProfile: PublicBusinessProfile | null =
     cardData.type === "business" ? cardData.business : null;
+  const showTableOrders =
+    businessProfile?.businessType !== "MOTEL";
+  const showRoomOrders =
+    businessProfile?.businessType === "HOTEL" ||
+    businessProfile?.businessType === "MOTEL" ||
+    businessProfile?.businessType === "OTHER" ||
+    !businessProfile?.businessType;
+  const placeOrderLabel = isLodgingType(businessProfile?.businessType)
+    ? orderType === "room"
+      ? "Request Room Service"
+      : "Place Order"
+    : "Place Order";
 
   if (cardData.type === "business" && !businessProfile) {
     return (
@@ -494,10 +533,7 @@ export function CardPublicView() {
   const bgImage = cardData.type === "business" ? businessProfile?.imageUrl ?? null : null;
 
   return (
-    <div
-      className="relative min-h-screen pb-10"
-      style={{ backgroundColor: "#ffffff" }}
-    >
+    <div className="relative min-h-screen pb-10 bg-white dark:bg-gray-950">
       {/* Full-screen background image — only rendered when profile has a photo */}
       {bgImage && (
         <div
@@ -534,7 +570,7 @@ export function CardPublicView() {
                 className="h-24 w-24 rounded-full object-cover shadow-[0_0_0_3px_rgba(222,58,22,0.3),0_2px_12px_rgba(0,0,0,0.15)] border-4 border-white"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-[0_2px_12px_rgba(0,0,0,0.10)] border-4 border-white">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white dark:bg-gray-900 shadow-[0_2px_12px_rgba(0,0,0,0.10)] border-4 border-white">
                 <span className="text-3xl font-bold text-[#DE3A16]">
                   {profile
                     ? profile.fullName.charAt(0).toUpperCase()
@@ -545,16 +581,21 @@ export function CardPublicView() {
             <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white bg-green-400 shadow" />
           </div>
 
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {profile ? profile.fullName : businessProfile?.name}
           </h1>
-          {(profile?.jobTitle || businessProfile?.category) && (
+          {(profile?.jobTitle || businessProfile) && (
             <p className="mt-1 text-sm font-medium text-brand-400">
-              {profile ? profile.jobTitle : businessProfile?.category}
+              {profile
+                ? profile.jobTitle
+                : businessTypeLabel(
+                    businessProfile?.businessType,
+                    businessProfile?.category,
+                  )}
             </p>
           )}
           {(profile?.company || businessProfile?.location) && (
-            <p className="mt-0.5 text-sm text-gray-600">
+            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
               {profile ? profile.company : businessProfile?.location}
             </p>
           )}
@@ -576,18 +617,73 @@ export function CardPublicView() {
         {(profile?.bio || businessProfile?.description) && (
           <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
             <p className="section-label mb-3">About</p>
-            <p className="text-sm leading-relaxed text-gray-700">
+            <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
               {profile ? profile.bio : businessProfile?.description}
             </p>
           </div>
         )}
 
+        {businessProfile &&
+          (isLodgingType(businessProfile.businessType) ||
+            businessProfile.settings?.operatingHours ||
+            businessProfile.settings?.emergencyPhone) && (
+          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
+            <p className="section-label mb-3">
+              {isLodgingType(businessProfile.businessType)
+                ? "Guest Information"
+                : "Visit Info"}
+            </p>
+            <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              {businessProfile.settings?.operatingHours && (
+                <p>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Hours: </span>
+                  {businessProfile.settings.operatingHours}
+                </p>
+              )}
+              {isLodgingType(businessProfile.businessType) &&
+                businessProfile.settings?.checkInTime && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">Check-in: </span>
+                    {businessProfile.settings.checkInTime}
+                  </p>
+                )}
+              {isLodgingType(businessProfile.businessType) &&
+                businessProfile.settings?.checkOutTime && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">Check-out: </span>
+                    {businessProfile.settings.checkOutTime}
+                  </p>
+                )}
+              {isLodgingType(businessProfile.businessType) &&
+                businessProfile.settings?.wifiPassword && (
+                  <p>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">WiFi: </span>
+                    {businessProfile.settings.wifiPassword}
+                  </p>
+                )}
+              {businessProfile.settings?.emergencyPhone && (
+                <p>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">Emergency: </span>
+                  <a
+                    href={`tel:${businessProfile.settings.emergencyPhone.replace(/\s+/g, "")}`}
+                    className="text-brand-500"
+                  >
+                    {businessProfile.settings.emergencyPhone}
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {businessProfile?.menus?.length ? (
           <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-2 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-            <p className="section-label mb-3">Menu</p>
+            <p className="section-label mb-3">
+              {menuSectionLabel(businessProfile.businessType)}
+            </p>
             {businessProfile.menus.map((menu) => (
               <div key={menu.id} className="mb-4 last:mb-0">
-                <h3 className="border-b border-gray-100 pb-1 font-bold text-gray-900">
+                <h3 className="border-b border-gray-100 dark:border-gray-800 pb-1 font-bold text-gray-900 dark:text-gray-100">
                   {menu.title}
                 </h3>
                 <div className="mt-3 space-y-3">
@@ -596,7 +692,7 @@ export function CardPublicView() {
                     return (
                       <div
                         key={item.id}
-                        className="flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                        className="flex gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                       >
                         {/* Image — larger, left-anchored, zoom on hover */}
                         {item.imageUrl && (
@@ -612,7 +708,7 @@ export function CardPublicView() {
                         <div className="flex min-w-0 flex-1 flex-col justify-between">
                           <div>
                             <div className="flex items-start justify-between gap-2">
-                              <span className="font-semibold text-gray-900 leading-snug">
+                              <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
                                 {item.name}
                               </span>
                               <span className="flex-shrink-0 font-bold text-[#DE3A16]">
@@ -620,7 +716,7 @@ export function CardPublicView() {
                               </span>
                             </div>
                             {item.description && (
-                              <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+                              <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                                 {item.description}
                               </p>
                             )}
@@ -635,7 +731,7 @@ export function CardPublicView() {
                                 >
                                   <HiOutlineMinus className="text-sm" />
                                 </button>
-                                <span className="min-w-[18px] text-center text-sm font-bold text-gray-900">
+                                <span className="min-w-[18px] text-center text-sm font-bold text-gray-900 dark:text-gray-100">
                                   {cartItem.qty}
                                 </span>
                                 <button
@@ -655,7 +751,7 @@ export function CardPublicView() {
                                     imageUrl: item.imageUrl,
                                   })
                                 }
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-[#DE3A16]/20 transition-all hover:bg-brand-700"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm dark:shadow-none shadow-[#DE3A16]/20 transition-all hover:bg-brand-700"
                               >
                                 <HiOutlinePlus className="text-xs" /> Add to
                                 cart
@@ -743,7 +839,7 @@ export function CardPublicView() {
                     >
                       {getLinkDisplay(link.type, link.url).icon}
                     </div>
-                    <span className="max-w-[56px] truncate text-center text-xs text-gray-600 transition-colors group-hover:text-gray-800">
+                    <span className="max-w-[56px] truncate text-center text-xs text-gray-600 dark:text-gray-400 transition-colors group-hover:text-gray-800 dark:text-gray-200">
                       {link.label}
                     </span>
                   </a>
@@ -753,7 +849,7 @@ export function CardPublicView() {
           );
         })()}
 
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
           Powered by Icumu Tech Ltd
         </p>
       </div>
@@ -788,12 +884,12 @@ export function CardPublicView() {
       {/* Checkout modal — slides up from bottom */}
       {showCart && businessProfile && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-t-3xl bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-sm rounded-t-3xl bg-white dark:bg-gray-900 p-6 shadow-2xl">
             {/* STEP 1 — cart review + customer details */}
             {checkoutStep === "form" && (
               <>
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     Your Order
                   </h2>
                   <button onClick={resetAll}>
@@ -813,17 +909,17 @@ export function CardPublicView() {
                         />
                       )}
                       <div className="flex-grow">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                           {item.name}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           RWF {item.price.toLocaleString()} &times; {item.qty}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => updateQty(item.id, -1)}
-                          className="rounded-lg border p-1 text-gray-500"
+                          className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
                         >
                           <HiOutlineMinus className="text-xs" />
                         </button>
@@ -832,7 +928,7 @@ export function CardPublicView() {
                         </span>
                         <button
                           onClick={() => updateQty(item.id, 1)}
-                          className="rounded-lg border p-1 text-gray-500"
+                          className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
                         >
                           <HiOutlinePlus className="text-xs" />
                         </button>
@@ -849,30 +945,36 @@ export function CardPublicView() {
                 </div>
 
                 {/* Table / Room tabs */}
-                <div className="mb-3 flex rounded-xl bg-gray-100 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setOrderType("table")}
-                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
-                      orderType === "table"
-                        ? "bg-[#DE3A16] text-white shadow-sm"
-                        : "text-gray-500 hover:text-gray-800"
-                    }`}
-                  >
-                    🍽 Dine In
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOrderType("room")}
-                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
-                      orderType === "room"
-                        ? "bg-[#DE3A16] text-white shadow-sm"
-                        : "text-gray-500 hover:text-gray-800"
-                    }`}
-                  >
-                    🛏 Room Service
-                  </button>
-                </div>
+                {showTableOrders && showRoomOrders ? (
+                  <div className="mb-3 flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setOrderType("table")}
+                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                        orderType === "table"
+                          ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      🍽 Dine In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOrderType("room")}
+                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                        orderType === "room"
+                          ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      🛏 Room Service
+                    </button>
+                  </div>
+                ) : (
+                  <p className="mb-3 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    {orderType === "room" ? "Room service order" : "Dine-in order"}
+                  </p>
+                )}
 
                 {/* Customer details */}
                 <div className="mb-3 space-y-3">
@@ -880,14 +982,14 @@ export function CardPublicView() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
                   />
                   <input
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="Your MTN/Airtel number"
                     type="tel"
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
                   />
                   <input
                     value={tableRoom}
@@ -897,7 +999,7 @@ export function CardPublicView() {
                         ? "Table number (e.g. 5)"
                         : "Room number (e.g. 204)"
                     }
-                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
                   />
                 </div>
 
@@ -909,7 +1011,7 @@ export function CardPublicView() {
                   disabled={isSubmitting}
                   className="w-full rounded-2xl bg-[#DE3A16] py-3 text-sm font-bold text-white disabled:opacity-60"
                 >
-                  {isSubmitting ? "Placing order..." : "Place Order"}
+                  {isSubmitting ? "Placing order..." : placeOrderLabel}
                 </button>
               </>
             )}
@@ -918,13 +1020,13 @@ export function CardPublicView() {
             {checkoutStep === "payment" && (
               <>
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">Pay Now</h2>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Pay Now</h2>
                   <button onClick={resetAll}>
                     <HiOutlineX className="text-xl text-gray-400" />
                   </button>
                 </div>
                 <div className="mb-4 rounded-2xl bg-[#fdf3f0] p-4 text-center">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Dial this USSD code on your phone
                   </p>
                   {businessProfile.paymentCode ? (
@@ -950,9 +1052,9 @@ export function CardPublicView() {
                     Copy Code
                   </button>
                 </div>
-                <p className="mb-4 text-center text-sm text-gray-600">
+                <p className="mb-4 text-center text-sm text-gray-600 dark:text-gray-400">
                   Pay{" "}
-                  <span className="font-bold text-gray-900">
+                  <span className="font-bold text-gray-900 dark:text-gray-100">
                     RWF {cartTotal.toLocaleString()}
                   </span>{" "}
                   via MTN MoMo,{" "}
@@ -983,21 +1085,21 @@ export function CardPublicView() {
             {checkoutStep === "txid" && (
               <>
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     Enter Transaction ID
                   </h2>
                   <button onClick={resetAll}>
                     <HiOutlineX className="text-xl text-gray-400" />
                   </button>
                 </div>
-                <p className="mb-4 text-sm text-gray-600">
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                   Enter the TxId from the MoMo SMS you received after paying.
                 </p>
                 <input
                   value={txId}
                   onChange={(e) => setTxId(e.target.value)}
                   placeholder="e.g. 2345567889"
-                  className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                  className="mb-3 w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
                 />
                 {orderError && (
                   <p className="mb-3 text-xs text-red-500">{orderError}</p>
@@ -1016,10 +1118,10 @@ export function CardPublicView() {
             {checkoutStep === "waiting" && (
               <div className="py-8 text-center">
                 <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#DE3A16] border-t-transparent" />
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   Waiting for confirmation...
                 </h2>
-                <p className="mt-2 text-sm text-gray-500">
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                   We are verifying your payment. Please wait as this usually
                   takes a moment!
                 </p>
@@ -1040,10 +1142,10 @@ export function CardPublicView() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
                       ✅
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       Payment Confirmed!
                     </h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       Your order has been confirmed. Enjoy your meal!
                     </p>
                     <button
@@ -1058,10 +1160,10 @@ export function CardPublicView() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-3xl">
                       ❌
                     </div>
-                    <h2 className="text-lg font-bold text-gray-900">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       Payment Rejected
                     </h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       The business could not verify your payment. Please contact
                       them directly.
                     </p>
@@ -1069,7 +1171,7 @@ export function CardPublicView() {
                 )}
                 <button
                   onClick={resetAll}
-                  className="mt-3 w-full rounded-2xl border border-gray-200 py-3 text-sm font-semibold text-gray-600"
+                  className="mt-3 w-full rounded-2xl border border-gray-200 dark:border-gray-700 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400"
                 >
                   Close
                 </button>
