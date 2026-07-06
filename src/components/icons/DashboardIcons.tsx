@@ -381,6 +381,57 @@ export function IconMoon(props: IconProps) {
   );
 }
 
+/** User single */
+export function IconUser(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 19c0-3.5 3.1-6 7-6s7 2.5 7 6" />
+    </BaseIcon>
+  );
+}
+
+/** Mail */
+export function IconMail(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <path d="M3 8l9 6 9-6" />
+    </BaseIcon>
+  );
+}
+
+/** Phone */
+export function IconPhone(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M8 3h8l1 2v14l-1 2H8l-1-2V5l1-2z" />
+      <path d="M11 17h2" opacity="0.5" />
+    </BaseIcon>
+  );
+}
+
+/** Lock */
+export function IconLock(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="6" y="11" width="12" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </BaseIcon>
+  );
+}
+
+/** ID card */
+export function IconIdCard(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="4" y="5" width="16" height="14" rx="2" />
+      <circle cx="9.5" cy="11" r="2" />
+      <path d="M14 10h4M14 14h3" opacity="0.7" />
+    </BaseIcon>
+  );
+}
+
 export type IconComponent = typeof IconHome;
 
 export type MetricAccent =
