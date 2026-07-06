@@ -337,12 +337,17 @@ export function DarkAlert({
 }
 
 // ===========================================================
-// STAT CARD
+// STAT CARD — minimal metric tile
 // ===========================================================
+import type { MetricAccent } from "../icons/DashboardIcons";
+import { metricAccentStyles } from "../icons/DashboardIcons";
+
 interface StatCardProps {
   label: string;
   value: number | string;
   icon: React.ReactNode;
+  accent?: MetricAccent;
+  /** @deprecated use accent instead */
   color?: string;
 }
 
@@ -350,17 +355,104 @@ export function StatCard({
   label,
   value,
   icon,
-  color = "bg-brand-500",
+  accent = "brand",
 }: StatCardProps) {
+  const styles = metricAccentStyles[accent];
+
   return (
-    <div className="card p-5 flex items-center gap-4">
-      <div className={`${color} p-3 rounded-xl text-white flex-shrink-0`}>
-        {icon}
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-100/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 transition-all duration-300 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
+      <div
+        className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${styles.shell}`}
+      >
+        <span className={styles.icon}>{icon}</span>
       </div>
-      <div>
-        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+        {label}
+      </p>
+      <p className="mt-1.5 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+interface MetricTileProps {
+  label: string;
+  value: number | string;
+  icon?: React.ReactNode;
+  accent?: MetricAccent;
+  valueClassName?: string;
+}
+
+export function MetricTile({
+  label,
+  value,
+  icon,
+  accent = "slate",
+  valueClassName = "",
+}: MetricTileProps) {
+  const styles = metricAccentStyles[accent];
+
+  return (
+    <div className="rounded-2xl border border-gray-100/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 transition-colors hover:border-gray-200 dark:hover:border-gray-700">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400 dark:text-gray-500">
+            {label}
+          </p>
+          <p
+            className={`mt-1.5 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100 ${valueClassName}`}
+          >
+            {value}
+          </p>
+        </div>
+        {icon && (
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${styles.shell}`}
+          >
+            <span className={styles.icon}>{icon}</span>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+interface MetricTileCompactProps {
+  label: string;
+  value: number | string;
+  icon: React.ReactNode;
+  accent?: MetricAccent;
+  hint?: string;
+}
+
+export function MetricTileCompact({
+  label,
+  value,
+  icon,
+  accent = "brand",
+  hint,
+}: MetricTileCompactProps) {
+  const styles = metricAccentStyles[accent];
+
+  return (
+    <div className="rounded-2xl border border-gray-100/80 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-center transition-colors hover:border-gray-200 dark:hover:border-gray-700">
+      <div
+        className={`mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border ${styles.shell}`}
+      >
+        <span className={styles.icon}>{icon}</span>
+      </div>
+      {hint && (
+        <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-gray-400">
+          {hint}
+        </p>
+      )}
+      <p className="text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-gray-400">
+        {label}
+      </p>
     </div>
   );
 }
@@ -370,12 +462,10 @@ export function StatCard({
 // ===========================================================
 export function StatCardSkeleton() {
   return (
-    <div className="card p-5 flex items-center gap-4 animate-pulse">
-      <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-700" />
-      <div className="flex-1 space-y-2">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-32" />
-      </div>
+    <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 animate-pulse">
+      <div className="mb-4 h-11 w-11 rounded-2xl bg-gray-100 dark:bg-gray-800" />
+      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-24 mb-3" />
+      <div className="h-7 bg-gray-100 dark:bg-gray-800 rounded w-20" />
     </div>
   );
 }

@@ -642,6 +642,21 @@ export const businessApi = {
     );
     return res.data.data;
   },
+
+  getAnalytics: async () => {
+    const res = await apiClient.get<ApiResponse<import("../types").BusinessEarningsDashboard>>(
+      "/business/analytics",
+    );
+    return res.data.data;
+  },
+
+  getScanAnalytics: async (cardId?: string) => {
+    const res = await apiClient.get<ApiResponse<import("../types").BusinessScanDashboard>>(
+      "/business/analytics/scans",
+      { params: cardId ? { cardId } : undefined },
+    );
+    return res.data.data;
+  },
 };
 
 // ===========================================================

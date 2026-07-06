@@ -29,7 +29,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from "./features/auth/AuthPages";
 import { CardPublicView } from "./features/card/CardPublicView";
 import { OrderTrackingPage } from "./features/card/OrderTrackingPage";
-import { UserDashboard } from "./features/dashboard/UserDashboard";
+import { DashboardRouter } from "./features/dashboard/DashboardRouter";
 import { ProfileEditPage } from "./features/dashboard/ProfileEditPage";
 import { AdminDashboard } from "./features/admin/AdminDashboard";
 import { AdminBusinessesPage } from "./features/admin/AdminBusinessesPage";
@@ -41,6 +41,7 @@ import { PaymentsPage } from "./features/payments/PaymentsPage";
 import { CheckoutPage } from "./features/payments/CheckoutPage";
 import { BusinessMenuPage } from "./features/dashboard/BusinessMenuPage";
 import { BusinessOrdersPage } from "./features/dashboard/BusinessOrdersPage";
+import { BusinessCardAnalyticsPage } from "./features/dashboard/BusinessCardAnalyticsPage";
 
 // New landing pages
 import HomePage from "./pages/home";
@@ -85,7 +86,7 @@ export default function App() {
             {/* ===================================================== */}
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
-                <Route path="/dashboard" element={<UserDashboard />} />
+                <Route path="/dashboard" element={<DashboardRouter />} />
                 <Route path="/profile" element={<ProfileEditPage />} />
                 <Route path="/dashboard/payments" element={<PaymentsPage />} />
                 <Route path="/dashboard/checkout" element={<CheckoutPage />} />
@@ -93,6 +94,7 @@ export default function App() {
                 <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
                   <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
                   <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
+                  <Route path="/dashboard/card-analytics" element={<BusinessCardAnalyticsPage />} />
                 </Route>
 
                 <Route element={<ProtectedRoute requiredRole="ADMIN" />}>

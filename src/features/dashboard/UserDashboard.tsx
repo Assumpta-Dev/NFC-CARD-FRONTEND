@@ -14,20 +14,22 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getChartColors } from "../../utils/chartTheme";
 import { ScanAnalytics, UserAnalyticsSummary, RecentScan } from "../../types";
-import { PageSpinner, Alert } from "../../components/ui";
+import { PageSpinner, Alert, MetricTileCompact } from "../../components/ui";
 import {
-  HiOutlineCreditCard,
+  IconNfcTap,
+  IconPulse,
+  IconRadar,
+  IconDesktop,
+  IconMobile,
+} from "../../components/icons/DashboardIcons";
+import {
   HiOutlineClipboard,
   HiOutlineCheck,
-  HiOutlineDeviceMobile,
-  HiOutlineDesktopComputer,
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
   HiOutlineEye,
   HiOutlineX,
-  HiOutlineOfficeBuilding,
 } from "react-icons/hi";
-import { MdOutlineBarChart } from "react-icons/md";
 import { CardQrCodePanel } from "../card/CardQrCodePanel";
 import { getPublicCardPath, getPublicCardUrl } from "../card/publicCardUrl";
 
@@ -170,59 +172,27 @@ export function UserDashboard() {
           {/* ── User Summary Stats ── */}
           {userSummary && (
             <div className="mt-6 grid grid-cols-3 gap-3">
-              <div className="card-soft p-4 text-center">
-                <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                  <HiOutlineCreditCard className="text-brand-400 text-lg" />
-                  <span className="text-xs text-gray-400 font-medium">Today</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {userSummary.today.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
-              </div>
-
-              <div className="card-soft p-4 text-center">
-                <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                  <MdOutlineBarChart className="text-brand-400 text-lg" />
-                  <span className="text-xs text-gray-400 font-medium">This Week</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {userSummary.week.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
-              </div>
-
-              <div className="card-soft p-4 text-center">
-                <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                  <HiOutlineCheck className="text-brand-400 text-lg" />
-                  <span className="text-xs text-gray-400 font-medium">Total</span>
-                </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {userSummary.total.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Scans</p>
-              </div>
-            </div>
-          )}
-
-          {/* Business menu banner — shown only for BUSINESS role */}
-          {user?.role === "BUSINESS" && (
-            <div className="mt-5 flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4 shadow-sm dark:shadow-none">
-              <div className="flex items-center gap-3">
-                <span className="icon-badge w-9 h-9">
-                  <HiOutlineOfficeBuilding className="text-lg" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Business Account</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Manage your menu and linked cards</p>
-                </div>
-              </div>
-              <Link
-                to="/dashboard/menu"
-                className="btn-primary px-4 py-2 text-sm"
-              >
-                Manage Menu
-              </Link>
+              <MetricTileCompact
+                hint="Today"
+                label="Scans"
+                value={userSummary.today.toLocaleString()}
+                icon={<IconNfcTap size={18} />}
+                accent="brand"
+              />
+              <MetricTileCompact
+                hint="This Week"
+                label="Scans"
+                value={userSummary.week.toLocaleString()}
+                icon={<IconPulse size={18} />}
+                accent="sky"
+              />
+              <MetricTileCompact
+                hint="Total"
+                label="Scans"
+                value={userSummary.total.toLocaleString()}
+                icon={<IconRadar size={18} />}
+                accent="violet"
+              />
             </div>
           )}
 
@@ -245,25 +215,32 @@ export function UserDashboard() {
 
           {/* ── Stats Block ── */}
           {analytics && (
-            <div className="mt-6 grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm dark:shadow-none">
-              <div className="px-4 py-4 text-center">
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">
-                  {timeFilter === "7d" ? "7-Day" : timeFilter === "30d" ? "30-Day" : "Total"} Scans
-                </p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{displayTotal.toLocaleString()}</p>
-              </div>
-              <div className="px-4 py-4 text-center">
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Today</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{analytics.scansToday.toLocaleString()}</p>
-              </div>
-              <div className="px-4 py-4 text-center">
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold mb-1">Device Shift</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  {analytics.deviceBreakdown.mobile > 0
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <MetricTileCompact
+                hint={timeFilter === "7d" ? "7-Day" : timeFilter === "30d" ? "30-Day" : "Total"}
+                label="Scans"
+                value={displayTotal.toLocaleString()}
+                icon={<IconPulse size={18} />}
+                accent="brand"
+              />
+              <MetricTileCompact
+                hint="Today"
+                label="Scans"
+                value={analytics.scansToday.toLocaleString()}
+                icon={<IconNfcTap size={18} />}
+                accent="sky"
+              />
+              <MetricTileCompact
+                hint="Mobile"
+                label="Device Share"
+                value={
+                  analytics.deviceBreakdown.mobile > 0
                     ? `${Math.round((analytics.deviceBreakdown.mobile / (analytics.deviceBreakdown.mobile + analytics.deviceBreakdown.desktop)) * 100)}%`
-                    : "—"}
-                </p>
-              </div>
+                    : "—"
+                }
+                icon={<IconMobile size={18} />}
+                accent="violet"
+              />
             </div>
           )}
       </div>
@@ -274,7 +251,9 @@ export function UserDashboard() {
         {/* ── No Cards Empty State ────────────────────────── */}
         {cards.length === 0 && (
           <div className="card p-10 text-center">
-            <HiOutlineCreditCard className="text-gray-300 text-6xl mx-auto mb-4" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-200/80 dark:border-gray-700 bg-gradient-to-br from-brand-500/[0.08] to-transparent text-brand-500 dark:text-brand-400">
+              <IconNfcTap size={28} />
+            </div>
             <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No cards yet</h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
               Tap or scan your physical E-Card to activate it.
@@ -297,11 +276,11 @@ export function UserDashboard() {
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
-                  <HiOutlineDeviceMobile className="text-brand-400" />
+                  <IconMobile size={14} className="text-brand-500 dark:text-brand-400" />
                   {analytics.deviceBreakdown.mobile}
                 </span>
                 <span className="flex items-center gap-1">
-                  <HiOutlineDesktopComputer className="text-gray-400" />
+                  <IconDesktop size={14} />
                   {analytics.deviceBreakdown.desktop}
                 </span>
               </div>
@@ -491,8 +470,8 @@ export function UserDashboard() {
               {recentScans.slice((scanPage - 1) * SCANS_PER_PAGE, scanPage * SCANS_PER_PAGE).map((scan, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                      <HiOutlineDeviceMobile className="text-gray-400 text-lg" />
+                    <div className="w-9 h-9 rounded-xl border border-gray-200/80 dark:border-gray-700 bg-gradient-to-br from-gray-500/[0.06] to-transparent flex items-center justify-center text-gray-400">
+                      <IconMobile size={16} />
                     </div>
                     <div>
                       <p className="font-mono font-bold text-gray-900 dark:text-gray-100 text-sm">{scan.card.cardId}</p>

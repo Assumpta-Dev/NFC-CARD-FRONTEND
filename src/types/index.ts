@@ -251,6 +251,75 @@ export interface PaginatedOrders {
   pagination: ApiPagination;
 }
 
+export interface BusinessRevenueStats {
+  today: number;
+  week: number;
+  month: number;
+  allTime: number;
+}
+
+export interface BusinessOrderStats {
+  total: number;
+  pending: number;
+  waitingVerification: number;
+  paid: number;
+  rejected: number;
+  paidToday: number;
+  avgOrderValue: number;
+}
+
+export interface BusinessTopItem {
+  name: string;
+  qty: number;
+  revenue: number;
+}
+
+export interface BusinessRecentOrder {
+  id: string;
+  customerName: string;
+  total: number;
+  status: OrderStatus;
+  createdAt: string;
+  orderContext: OrderContext;
+  tableNumber: string | null;
+  roomNumber: string | null;
+}
+
+export interface BusinessSetupStatus {
+  hasProfile: boolean;
+  hasPaymentCode: boolean;
+  hasMenuItems: boolean;
+  hasLinkedCard: boolean;
+  menuItemCount: number;
+  linkedCardCount: number;
+}
+
+export interface BusinessEarningsDashboard {
+  revenue: BusinessRevenueStats;
+  orders: BusinessOrderStats;
+  dailyRevenue: { date: string; amount: number }[];
+  dailyOrders: { date: string; count: number }[];
+  topItems: BusinessTopItem[];
+  recentOrders: BusinessRecentOrder[];
+  setup: BusinessSetupStatus;
+  businessName: string;
+}
+
+export interface BusinessCardScanSummary {
+  cardId: string;
+  status: string;
+  totalScans: number;
+  scansToday: number;
+}
+
+export interface BusinessScanDashboard {
+  cards: BusinessCardScanSummary[];
+  summary: UserAnalyticsSummary;
+  dailyBreakdown: DailyScanCount[];
+  deviceBreakdown: { mobile: number; desktop: number };
+  analytics: ScanAnalytics | null;
+}
+
 // ===========================================================
 // ANALYTICS
 // ===========================================================

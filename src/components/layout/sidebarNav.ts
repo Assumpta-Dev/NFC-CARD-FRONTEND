@@ -42,7 +42,14 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
         label: "Dashboard",
         icon: HiOutlineHome,
         end: true,
-        roles: ["USER", "BUSINESS", "ADMIN"],
+        roles: ["USER", "ADMIN"],
+      },
+      {
+        to: "/dashboard",
+        label: "Business Dashboard",
+        icon: HiOutlineHome,
+        end: true,
+        roles: ["BUSINESS"],
       },
       {
         to: "/profile",
@@ -71,6 +78,12 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
         to: "/dashboard/orders",
         label: "Orders",
         icon: HiOutlineClipboardList,
+        roles: ["BUSINESS", "ADMIN"],
+      },
+      {
+        to: "/dashboard/card-analytics",
+        label: "Card Analytics",
+        icon: HiOutlineCreditCard,
         roles: ["BUSINESS", "ADMIN"],
       },
     ],
@@ -131,6 +144,7 @@ export function getNavGroupsForRole(role: UserRole): SidebarNavGroup[] {
 const pageTitleEntries: [string, string][] = [
   ["/dashboard/checkout", "Checkout"],
   ["/dashboard/payments", "My Payments"],
+  ["/dashboard/card-analytics", "Card Analytics"],
   ["/dashboard/menu", "Business Menu"],
   ["/dashboard/orders", "Orders"],
   ["/dashboard", "Dashboard"],
