@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { HiOutlineCheck } from "react-icons/hi";
+import { IconPaid } from "../../components/icons/DashboardIcons";
 import { Alert, Button, Input } from "../../components/ui";
 import { getErrorMessage, paymentApi } from "../../services/api";
 import {
@@ -113,7 +113,7 @@ export function CheckoutPage() {
                   : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
-              Annual <span className="ml-1 text-xs font-bold text-[#DE3A16]">-20%</span>
+              Annual <span className="ml-1 text-xs font-bold text-brand-500">-20%</span>
             </button>
           </div>
       </div>
@@ -134,13 +134,13 @@ export function CheckoutPage() {
                 onClick={() => setSelectedPlan(plan)}
                 className={`card-soft relative flex flex-col rounded-2xl border-2 p-6 text-left transition-all duration-200 ${
                   isSelected
-                    ? "z-10 scale-[1.03] border-[#DE3A16] shadow-[0_8px_32px_rgba(222,58,22,0.18)]"
-                    : "border-[#f0e8e5] bg-white dark:bg-gray-900 hover:border-[#DE3A16] hover:shadow-[0_4px_16px_rgba(222,58,22,0.10)]"
+                    ? "z-10 scale-[1.03] border-brand-500 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]"
+                    : "border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900 hover:border-brand-500/40 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
                 }`}
               >
                 {config.badge && (
                   <div className="absolute right-0 top-0 translate-x-2 -translate-y-3 transform">
-                    <span className="rounded-full bg-[#DE3A16] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-sm dark:shadow-none">
+                    <span className="rounded-full bg-brand-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white">
                       {config.badge}
                     </span>
                   </div>
@@ -171,7 +171,7 @@ export function CheckoutPage() {
                         key={feature}
                         className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
                       >
-                        <HiOutlineCheck className="flex-shrink-0 text-lg text-[#DE3A16]" />
+                        <IconPaid size={18} className="flex-shrink-0 text-brand-500" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -194,7 +194,7 @@ export function CheckoutPage() {
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 {cycle === "MONTHLY" ? "Monthly billing" : "Annual billing"}
               </p>
-              <p className="mt-4 text-3xl font-bold text-[#DE3A16]">
+              <p className="mt-4 text-3xl font-bold text-brand-600 dark:text-brand-400">
                 {formatPlanAmount(amount)}
               </p>
             </div>
@@ -214,8 +214,8 @@ export function CheckoutPage() {
                           onClick={() => setPaymentMethod(method)}
                           className={`rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all duration-200 ${
                             paymentMethod === method
-                              ? "border-[#DE3A16] bg-[#DE3A16] text-white shadow-[0_2px_10px_rgba(222,58,22,0.25)]"
-                              : "border-[#e9d7d2] text-gray-700 dark:text-gray-300 hover:border-[#DE3A16] hover:bg-[#fdf8f7]"
+                              ? "border-brand-500 bg-brand-500 text-white"
+                              : "border-gray-200 text-gray-700 dark:border-gray-700 dark:text-gray-300 hover:border-brand-500/40 hover:bg-brand-500/5"
                           }`}
                         >
                           {method}

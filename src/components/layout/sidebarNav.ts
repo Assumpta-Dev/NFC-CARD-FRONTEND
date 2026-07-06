@@ -1,14 +1,14 @@
-import type { IconType } from "react-icons";
+import type { IconComponent } from "../icons/DashboardIcons";
 import {
-  HiOutlineChartBar,
-  HiOutlineClipboardList,
-  HiOutlineCreditCard,
-  HiOutlineCurrencyDollar,
-  HiOutlineHome,
-  HiOutlineOfficeBuilding,
-  HiOutlinePencil,
-  HiOutlineUserGroup,
-} from "react-icons/hi";
+  IconHome,
+  IconEdit,
+  IconPayment,
+  IconStorefront,
+  IconOrders,
+  IconNfcTap,
+  IconSparkline,
+  IconUsers,
+} from "../icons/DashboardIcons";
 
 export type UserRole = "USER" | "BUSINESS" | "ADMIN";
 
@@ -23,7 +23,7 @@ export type AdminSection =
 export interface SidebarNavItem {
   to: string;
   label: string;
-  icon: IconType;
+  icon: IconComponent;
   end?: boolean;
   roles: UserRole[];
 }
@@ -40,27 +40,27 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
       {
         to: "/dashboard",
         label: "Dashboard",
-        icon: HiOutlineHome,
+        icon: IconHome,
         end: true,
         roles: ["USER", "ADMIN"],
       },
       {
         to: "/dashboard",
         label: "Business Dashboard",
-        icon: HiOutlineHome,
+        icon: IconHome,
         end: true,
         roles: ["BUSINESS"],
       },
       {
         to: "/profile",
         label: "Edit Profile",
-        icon: HiOutlinePencil,
+        icon: IconEdit,
         roles: ["USER", "BUSINESS", "ADMIN"],
       },
       {
         to: "/dashboard/payments",
         label: "My Payments",
-        icon: HiOutlineCurrencyDollar,
+        icon: IconPayment,
         roles: ["USER", "BUSINESS", "ADMIN"],
       },
     ],
@@ -71,19 +71,19 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
       {
         to: "/dashboard/menu",
         label: "Menu",
-        icon: HiOutlineOfficeBuilding,
+        icon: IconStorefront,
         roles: ["BUSINESS", "ADMIN"],
       },
       {
         to: "/dashboard/orders",
         label: "Orders",
-        icon: HiOutlineClipboardList,
+        icon: IconOrders,
         roles: ["BUSINESS", "ADMIN"],
       },
       {
         to: "/dashboard/card-analytics",
         label: "Card Analytics",
-        icon: HiOutlineCreditCard,
+        icon: IconNfcTap,
         roles: ["BUSINESS", "ADMIN"],
       },
     ],
@@ -94,38 +94,38 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
       {
         to: "/admin",
         label: "Overview",
-        icon: HiOutlineHome,
+        icon: IconHome,
         end: true,
         roles: ["ADMIN"],
       },
       {
         to: "/admin/analytics",
         label: "Analytics",
-        icon: HiOutlineChartBar,
+        icon: IconSparkline,
         roles: ["ADMIN"],
       },
       {
         to: "/admin/cards",
         label: "Cards",
-        icon: HiOutlineCreditCard,
+        icon: IconNfcTap,
         roles: ["ADMIN"],
       },
       {
         to: "/admin/users",
         label: "Users",
-        icon: HiOutlineUserGroup,
+        icon: IconUsers,
         roles: ["ADMIN"],
       },
       {
         to: "/admin/businesses",
         label: "Businesses",
-        icon: HiOutlineOfficeBuilding,
+        icon: IconStorefront,
         roles: ["ADMIN"],
       },
       {
         to: "/admin/payments",
         label: "All Payments",
-        icon: HiOutlineCurrencyDollar,
+        icon: IconPayment,
         roles: ["ADMIN"],
       },
     ],

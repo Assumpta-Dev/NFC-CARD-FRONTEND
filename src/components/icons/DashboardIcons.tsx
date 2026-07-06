@@ -205,6 +205,184 @@ export function IconDesktop(props: IconProps) {
   );
 }
 
+/** Home / dashboard */
+export function IconHome(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5z" />
+    </BaseIcon>
+  );
+}
+
+/** Pencil edit */
+export function IconEdit(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 18h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 15v3z" />
+      <path d="M13.5 6.5l3 3" />
+    </BaseIcon>
+  );
+}
+
+/** Payment / currency */
+export function IconPayment(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <path d="M3 10h18" opacity="0.5" />
+      <path d="M7 14h4" opacity="0.7" />
+    </BaseIcon>
+  );
+}
+
+/** Users group */
+export function IconUsers(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 19c0-3 2.7-5 6-5s6 2 6 5" />
+      <circle cx="17" cy="9" r="2.5" opacity="0.7" />
+      <path d="M15 19c.3-2 1.8-3.5 4-3.5" opacity="0.7" />
+    </BaseIcon>
+  );
+}
+
+/** QR code */
+export function IconQrCode(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <path d="M14 14h2v2h-2zM18 14h2v2h-2zM14 18h2v2h-2zM18 18h2v2h-2z" />
+    </BaseIcon>
+  );
+}
+
+/** Copy */
+export function IconCopy(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="8" y="8" width="11" height="11" rx="2" />
+      <path d="M6 16H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </BaseIcon>
+  );
+}
+
+/** Eye preview */
+export function IconEye(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </BaseIcon>
+  );
+}
+
+/** Chevron left */
+export function IconChevronLeft(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M14 6l-6 6 6 6" />
+    </BaseIcon>
+  );
+}
+
+/** Chevron right */
+export function IconChevronRight(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M10 6l6 6-6 6" />
+    </BaseIcon>
+  );
+}
+
+/** Chevron down */
+export function IconChevronDown(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </BaseIcon>
+  );
+}
+
+/** Download */
+export function IconDownload(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 4v10M8 10l4 4 4-4" />
+      <path d="M4 18h16" opacity="0.5" />
+    </BaseIcon>
+  );
+}
+
+/** Trash */
+export function IconTrash(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 7h16M9 7V5h6v2M7 7l1 12h8l1-12" />
+    </BaseIcon>
+  );
+}
+
+/** Plus */
+export function IconPlus(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M12 6v12M6 12h12" />
+    </BaseIcon>
+  );
+}
+
+/** Close X */
+export function IconClose(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M7 7l10 10M17 7L7 17" />
+    </BaseIcon>
+  );
+}
+
+/** Hamburger menu */
+export function IconMenu(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </BaseIcon>
+  );
+}
+
+/** Sign out */
+export function IconSignOut(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
+      <path d="M14 12H20M17 9l3 3-3 3" />
+    </BaseIcon>
+  );
+}
+
+/** Sun */
+export function IconSun(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" opacity="0.55" />
+    </BaseIcon>
+  );
+}
+
+/** Moon */
+export function IconMoon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 7 7 0 1 0 20 14.5z" />
+    </BaseIcon>
+  );
+}
+
+export type IconComponent = typeof IconHome;
+
 export type MetricAccent =
   | "brand"
   | "emerald"

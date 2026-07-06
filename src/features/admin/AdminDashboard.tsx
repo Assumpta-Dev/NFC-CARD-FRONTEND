@@ -24,19 +24,17 @@ import {
   TopCard,
   TopUser,
 } from "../../types";
-import { Button, Alert, PageSpinner, selectControlClass } from "../../components/ui";
+import { Button, Alert, PageSpinner, selectControlClass, StatCard, Pagination, EmptyState } from "../../components/ui";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getChartColors } from "../../utils/chartTheme";
 import {
-  HiOutlineCreditCard,
-  HiOutlineUserGroup,
-  HiOutlineCheckCircle,
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
-  HiOutlineQrcode,
-  HiOutlineX,
-} from "react-icons/hi";
-import { MdOutlineBarChart } from "react-icons/md";
+  IconClose,
+  IconNfcTap,
+  IconPaid,
+  IconQrCode,
+  IconRadar,
+  IconUsers,
+} from "../../components/icons/DashboardIcons";
 import {
   LineChart,
   Line,
@@ -244,66 +242,31 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
       {success && <Alert message={success} type="success" />}
 
       {section === "overview" && stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-[#ece7e5] border border-[#e9d7d2] rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-[0_14px_34px_rgba(15,23,42,0.10),0_2px_10px_rgba(15,23,42,0.05)]">
-          <div className="px-4 py-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="icon-badge w-8 h-8 rounded-lg">
-                <HiOutlineUserGroup className="text-sm" />
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                Users
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-              {stats.totalUsers.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Registered</p>
-          </div>
-
-          <div className="px-4 py-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="icon-badge w-8 h-8 rounded-lg">
-                <HiOutlineCreditCard className="text-sm" />
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                Cards
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-              {stats.totalCards.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Total</p>
-          </div>
-
-          <div className="px-4 py-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="icon-badge w-8 h-8 rounded-lg">
-                <HiOutlineCheckCircle className="text-sm" />
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                Active
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-              {stats.activeCards.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Cards</p>
-          </div>
-
-          <div className="px-4 py-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="icon-badge w-8 h-8 rounded-lg">
-                <MdOutlineBarChart className="text-sm" />
-              </span>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">
-                Scans
-              </p>
-            </div>
-            <p className="text-2xl font-bold text-[#DE3A16] tabular-nums">
-              {stats.totalScans.toLocaleString()}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">All time</p>
-          </div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard
+            label="Users"
+            value={stats.totalUsers.toLocaleString()}
+            icon={<IconUsers size={20} />}
+            accent="sky"
+          />
+          <StatCard
+            label="Cards"
+            value={stats.totalCards.toLocaleString()}
+            icon={<IconNfcTap size={20} />}
+            accent="brand"
+          />
+          <StatCard
+            label="Active Cards"
+            value={stats.activeCards.toLocaleString()}
+            icon={<IconPaid size={20} />}
+            accent="emerald"
+          />
+          <StatCard
+            label="Total Scans"
+            value={stats.totalScans.toLocaleString()}
+            icon={<IconRadar size={20} />}
+            accent="violet"
+          />
         </div>
       )}
 
@@ -363,54 +326,31 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
         {section === "analytics" && (
           <div className="space-y-6">
             {/* ── Analytics Stats Grid ───────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <HiOutlineUserGroup className="text-blue-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Users
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {userCount.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <HiOutlineCreditCard className="text-green-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Cards
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {cardCountTotal.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <HiOutlineCheckCircle className="text-purple-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Active Users
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {activeUsers.toLocaleString()}
-                </p>
-              </div>
-
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <MdOutlineBarChart className="text-orange-500 text-lg" />
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total Scans
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {scanCountTotal.toLocaleString()}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard
+                label="Total Users"
+                value={userCount.toLocaleString()}
+                icon={<IconUsers size={20} />}
+                accent="sky"
+              />
+              <StatCard
+                label="Total Cards"
+                value={cardCountTotal.toLocaleString()}
+                icon={<IconNfcTap size={20} />}
+                accent="brand"
+              />
+              <StatCard
+                label="Active Users"
+                value={activeUsers.toLocaleString()}
+                icon={<IconPaid size={20} />}
+                accent="emerald"
+              />
+              <StatCard
+                label="Total Scans"
+                value={scanCountTotal.toLocaleString()}
+                icon={<IconRadar size={20} />}
+                accent="violet"
+              />
             </div>
 
             {/* ── Daily Scan Trend Chart ───────────────────────────── */}
@@ -579,16 +519,17 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
             </div>
 
             {cards.length === 0 ? (
-              <div className="p-10 text-center">
-                <HiOutlineCreditCard className="text-gray-300 text-6xl mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No cards yet</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                  Create some cards to get started.
-                </p>
-                <Button onClick={handleCreateCards} isLoading={isCreating}>
-                  Create First Cards
-                </Button>
-              </div>
+              <EmptyState
+                icon={<IconNfcTap size={22} />}
+                title="No cards yet"
+                description="Create some cards to get started."
+                accent="brand"
+                action={
+                  <Button onClick={handleCreateCards} isLoading={isCreating}>
+                    Create First Cards
+                  </Button>
+                }
+              />
             ) : (
               <>
                 <div className="overflow-x-auto">
@@ -659,7 +600,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                                   onClick={() => setQrPreviewCardId(card.cardId)}
                                   className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-brand-600"
                                 >
-                                  <HiOutlineQrcode className="text-sm" />
+                                  <IconQrCode size={14} />
                                   QR
                                 </button>
                               </div>
@@ -669,7 +610,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                                   onClick={() => setQrPreviewCardId(card.cardId)}
                                   className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:text-brand-600"
                                 >
-                                  <HiOutlineQrcode className="text-sm" />
+                                  <IconQrCode size={14} />
                                   QR
                                 </button>
                                 {assigningCard === card.cardId ? (
@@ -731,34 +672,13 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                   </table>
                 </div>
 
-                {/* Pagination for cards */}
                 {totalCardPages > 1 && (
-                  <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
-                      {(cardPage - 1) * ITEMS_PER_PAGE + 1}–
-                      {Math.min(cardPage * ITEMS_PER_PAGE, cards.length)} of{" "}
-                      {cards.length}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setCardPage((p) => Math.max(1, p - 1))}
-                        disabled={cardPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                        aria-label="Previous page"
-                      >
-                        <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-base" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setCardPage((p) => Math.min(totalCardPages, p + 1))
-                        }
-                        disabled={cardPage === totalCardPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                        aria-label="Next page"
-                      >
-                        <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-base" />
-                      </button>
-                    </div>
+                  <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+                    <Pagination
+                      currentPage={cardPage}
+                      totalPages={totalCardPages}
+                      onPageChange={setCardPage}
+                    />
                   </div>
                 )}
               </>
@@ -781,13 +701,12 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
             </div>
 
             {users.length === 0 ? (
-              <div className="p-10 text-center">
-                <HiOutlineUserGroup className="text-gray-300 text-6xl mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No users yet</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  Users will appear here once they register.
-                </p>
-              </div>
+              <EmptyState
+                icon={<IconUsers size={22} />}
+                title="No users yet"
+                description="Users will appear here once they register."
+                accent="sky"
+              />
             ) : (
               <>
                 <div className="overflow-x-auto">
@@ -841,34 +760,13 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                   </table>
                 </div>
 
-                {/* Pagination for users — always shown so the list stays compact */}
-                <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
-                      {(userPage - 1) * ITEMS_PER_PAGE + 1}–
-                      {Math.min(userPage * ITEMS_PER_PAGE, users.length)} of{" "}
-                      {users.length}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setUserPage((p) => Math.max(1, p - 1))}
-                        disabled={userPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                        aria-label="Previous page"
-                      >
-                        <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-base" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setUserPage((p) => Math.min(totalUserPages, p + 1))
-                        }
-                        disabled={userPage === totalUserPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                        aria-label="Next page"
-                      >
-                        <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-base" />
-                      </button>
-                    </div>
-                  </div>
+                <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+                  <Pagination
+                    currentPage={userPage}
+                    totalPages={totalUserPages}
+                    onPageChange={setUserPage}
+                  />
+                </div>
               </>
             )}
           </div>
@@ -891,7 +789,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                 className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:text-gray-300"
                 aria-label="Close QR preview"
               >
-                <HiOutlineX className="text-xl" />
+                <IconClose size={20} />
               </button>
             </div>
 

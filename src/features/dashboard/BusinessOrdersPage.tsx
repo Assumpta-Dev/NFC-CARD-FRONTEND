@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  HiOutlineClipboardList,
-  HiOutlineCheck,
-  HiOutlineX,
-  HiOutlineDownload,
-  HiOutlineTrash,
-} from "react-icons/hi";
-import { Alert, PageSpinner } from "../../components/ui";
+  Alert,
+  Button,
+  MetricTile,
+  PageSpinner,
+  Pagination,
+  PanelCard,
+  SectionHeader,
+} from "../../components/ui";
+import {
+  IconDownload,
+  IconOrders,
+  IconPaid,
+  IconPending,
+  IconTrash,
+} from "../../components/icons/DashboardIcons";
 import { getErrorMessage, orderApi } from "../../services/api";
 import { Order } from "../../types";
 
@@ -62,7 +70,6 @@ export function BusinessOrdersPage() {
     setError("");
     try {
       await orderApi.deleteOrder(orderId);
-      // Reload from server to confirm deletion took effect
       await loadOrders();
       setSuccess("Order deleted.");
     } catch (err) { setError(getErrorMessage(err)); }
@@ -85,156 +92,166 @@ export function BusinessOrdersPage() {
   const totalOrderPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
   const pagedOrders = orders.slice((orderPage - 1) * ORDERS_PER_PAGE, orderPage * ORDERS_PER_PAGE);
   const pendingCount = orders.filter(o => o.status === "PENDING" || o.status === "WAITING_VERIFICATION").length;
+  const paidCount = orders.filter(o => o.status === "PAID").length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Review and confirm customer orders. Auto-refreshes every 10 seconds.
         </p>
         {pendingCount > 0 && (
-          <span className="inline-flex items-center justify-center rounded-full bg-[#DE3A16] px-2 py-0.5 text-xs font-bold text-white">
+          <span className="inline-flex items-center justify-center rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">
             {pendingCount} pending
           </span>
         )}
       </div>
 
-      <div className="space-y-4">
-        {error && <Alert message={error} />}
-        {success && <Alert message={success} type="success" />}
+      {error && <Alert message={error} />}
+      {success && <Alert message={success} type="success" />}
 
-        <div className="card-soft overflow-hidden rounded-2xl bg-white dark:bg-gray-900">
-          <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 p-5">
-            <HiOutlineClipboardList className="text-xl text-[#DE3A16]" />
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Orders</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Verify payment then confirm or reject each order.
-              </p>
-            </div>
-            <button
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MetricTile
+          label="Pending"
+          value={pendingCount}
+          icon={<IconPending size={18} />}
+          accent="amber"
+        />
+        <MetricTile
+          label="Paid"
+          value={paidCount}
+          icon={<IconPaid size={18} />}
+          accent="emerald"
+        />
+        <MetricTile
+          label="Total Orders"
+          value={orders.length}
+          icon={<IconOrders size={18} />}
+          accent="brand"
+        />
+      </div>
+
+      <PanelCard>
+        <SectionHeader
+          title="Orders"
+          description="Verify payment then confirm or reject each order."
+          icon={<IconOrders size={18} />}
+          accent="brand"
+          action={
+            <Button
+              variant="secondary"
               onClick={handleExportOrders}
               disabled={orders.length === 0}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 transition-colors hover:border-[#DE3A16] hover:text-[#DE3A16] disabled:opacity-40"
+              className="gap-1.5 py-2 text-xs"
             >
-              <HiOutlineDownload className="text-sm" /> Export CSV
-            </button>
-          </div>
+              <IconDownload size={16} />
+              Export CSV
+            </Button>
+          }
+        />
 
-          <div className="divide-y divide-gray-50 dark:divide-gray-800">
-            {orders.length === 0 && (
-              <div className="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
-                No orders yet. They will appear here when customers order.
-              </div>
-            )}
+        <div className="divide-y divide-gray-50 dark:divide-gray-800">
+          {orders.length === 0 && (
+            <p className="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
+              No orders yet. They will appear here when customers order.
+            </p>
+          )}
 
-            {pagedOrders.map((order) => (
-              <div key={order.id} className="p-5">
-                <div className="mb-2 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100">
-                      {order.customerName}
-                    </p>
-                    {(order.orderContext === "ROOM" && order.roomNumber) ||
-                    (order.orderContext === "TABLE" && order.tableNumber) ||
-                    /\(.*\)$/.test(order.customerName) ? (
-                      <span className="inline-block mt-0.5 rounded-full bg-[#fdf3f0] dark:bg-brand-500/15 px-2 py-0.5 text-xs font-semibold text-[#DE3A16] dark:text-brand-400">
-                        {order.orderContext === "ROOM" && order.roomNumber
-                          ? `Room ${order.roomNumber}`
-                          : order.orderContext === "TABLE" && order.tableNumber
-                            ? `Table ${order.tableNumber}`
-                            : order.customerName.match(/\((.*)\)$/)?.[1]}
-                      </span>
-                    ) : null}
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {order.phone} &middot; {new Date(order.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    order.status === "PAID" ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" :
-                    order.status === "REJECTED" ? "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400" :
-                    order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" :
-                    "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-                  }`}>
-                    {order.status.replace("_", " ")}
-                  </span>
+          {pagedOrders.map((order) => (
+            <div key={order.id} className="p-5 sm:px-6">
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">
+                    {order.customerName}
+                  </p>
+                  {(order.orderContext === "ROOM" && order.roomNumber) ||
+                  (order.orderContext === "TABLE" && order.tableNumber) ||
+                  /\(.*\)$/.test(order.customerName) ? (
+                    <span className="mt-0.5 inline-block rounded-full bg-brand-500/10 px-2 py-0.5 text-xs font-semibold text-brand-600 dark:text-brand-400">
+                      {order.orderContext === "ROOM" && order.roomNumber
+                        ? `Room ${order.roomNumber}`
+                        : order.orderContext === "TABLE" && order.tableNumber
+                          ? `Table ${order.tableNumber}`
+                          : order.customerName.match(/\((.*)\)$/)?.[1]}
+                    </span>
+                  ) : null}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {order.phone} &middot; {new Date(order.createdAt).toLocaleString()}
+                  </p>
                 </div>
-
-                <div className="mb-2 space-y-1">
-                  {(order.items as any[]).map((item, i) => (
-                    <p key={i} className="text-xs text-gray-600 dark:text-gray-400">
-                      {item.name} &times; {item.qty} &mdash; RWF {(item.price * item.qty).toLocaleString()}
-                    </p>
-                  ))}
-                </div>
-
-                <p className="mb-3 text-sm font-bold text-[#DE3A16]">
-                  Total: RWF {order.total.toLocaleString()}
-                </p>
-
-                {order.txId && (
-                  <div className="mb-3 rounded-xl bg-[#fdf3f0] dark:bg-gray-800 px-4 py-2 border border-transparent dark:border-gray-700">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">TxId from customer</p>
-                    <p className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{order.txId}</p>
-                  </div>
-                )}
-
-                {(order.status === "WAITING_VERIFICATION" || order.status === "PENDING") && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleConfirmOrder(order.id)}
-                      disabled={ordersLoading}
-                      className="flex items-center gap-1 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                    >
-                      <HiOutlineCheck /> Confirm Payment
-                    </button>
-                    <button
-                      onClick={() => handleRejectOrder(order.id)}
-                      disabled={ordersLoading}
-                      className="flex items-center gap-1 rounded-xl border border-red-300 dark:border-red-500/40 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
-                    >
-                      <HiOutlineX /> Reject
-                    </button>
-                  </div>
-                )}
-
-                {(order.status === "PAID" || order.status === "REJECTED") && (
-                  <button
-                    onClick={() => handleDeleteOrder(order.id)}
-                    className="flex items-center gap-1 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-semibold text-gray-400 transition-colors hover:border-red-300 hover:text-red-500"
-                  >
-                    <HiOutlineTrash className="text-sm" /> Delete
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {totalOrderPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 px-5 py-4">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  Page {orderPage} of {totalOrderPages} &middot; {orders.length} orders
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  order.status === "PAID" ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" :
+                  order.status === "REJECTED" ? "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400" :
+                  order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" :
+                  "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                }`}>
+                  {order.status.replace("_", " ")}
                 </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
-                    disabled={orderPage === 1}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
-                    disabled={orderPage === totalOrderPages}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
               </div>
-            )}
-          </div>
+
+              <div className="mb-2 space-y-1">
+                {(order.items as { name: string; qty: number; price: number }[]).map((item, i) => (
+                  <p key={i} className="text-xs text-gray-600 dark:text-gray-400">
+                    {item.name} &times; {item.qty} &mdash; RWF {(item.price * item.qty).toLocaleString()}
+                  </p>
+                ))}
+              </div>
+
+              <p className="mb-3 text-sm font-semibold text-brand-600 dark:text-brand-400">
+                Total: RWF {order.total.toLocaleString()}
+              </p>
+
+              {order.txId && (
+                <div className="mb-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">TxId from customer</p>
+                  <p className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{order.txId}</p>
+                </div>
+              )}
+
+              {(order.status === "WAITING_VERIFICATION" || order.status === "PENDING") && (
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleConfirmOrder(order.id)}
+                    disabled={ordersLoading}
+                    className="bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-400"
+                  >
+                    Confirm Payment
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleRejectOrder(order.id)}
+                    disabled={ordersLoading}
+                    className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              )}
+
+              {(order.status === "PAID" || order.status === "REJECTED") && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleDeleteOrder(order.id)}
+                  className="gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-red-500"
+                >
+                  <IconTrash size={14} />
+                  Delete
+                </Button>
+              )}
+            </div>
+          ))}
+
+          {totalOrderPages > 1 && (
+            <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-800">
+              <Pagination
+                currentPage={orderPage}
+                totalPages={totalOrderPages}
+                onPageChange={setOrderPage}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      </PanelCard>
     </div>
   );
 }

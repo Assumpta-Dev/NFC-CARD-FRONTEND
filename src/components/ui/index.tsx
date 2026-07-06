@@ -3,7 +3,6 @@
 // ===========================================================
 
 import React from "react";
-import { HiOutlineChevronDown } from "react-icons/hi";
 import {
   formControlClass,
   formLabelClass,
@@ -207,9 +206,9 @@ export function Select({
           ))}
           {children}
         </select>
-        <HiOutlineChevronDown
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-400 dark:text-gray-500"
-          aria-hidden
+        <IconChevronDown
+          size={18}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
         />
       </div>
       {error && (
@@ -340,7 +339,10 @@ export function DarkAlert({
 // STAT CARD — minimal metric tile
 // ===========================================================
 import type { MetricAccent } from "../icons/DashboardIcons";
-import { metricAccentStyles } from "../icons/DashboardIcons";
+import {
+  IconChevronDown,
+  metricAccentStyles,
+} from "../icons/DashboardIcons";
 
 interface StatCardProps {
   label: string;
@@ -453,6 +455,184 @@ export function MetricTileCompact({
       <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-gray-400">
         {label}
       </p>
+    </div>
+  );
+}
+
+// ===========================================================
+// ICON SHELL — accent icon container
+// ===========================================================
+interface IconShellProps {
+  icon: React.ReactNode;
+  accent?: MetricAccent;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export function IconShell({
+  icon,
+  accent = "brand",
+  size = "md",
+  className = "",
+}: IconShellProps) {
+  const styles = metricAccentStyles[accent];
+  const sizeClass =
+    size === "sm"
+      ? "h-8 w-8 rounded-lg"
+      : size === "lg"
+        ? "h-12 w-12 rounded-2xl"
+        : "h-10 w-10 rounded-xl";
+
+  return (
+    <div
+      className={`inline-flex shrink-0 items-center justify-center border ${sizeClass} ${styles.shell} ${className}`}
+    >
+      <span className={styles.icon}>{icon}</span>
+    </div>
+  );
+}
+
+// ===========================================================
+// PANEL CARD — consistent bordered section
+// ===========================================================
+interface PanelCardProps {
+  children: React.ReactNode;
+  className?: string;
+  padding?: boolean;
+}
+
+export function PanelCard({
+  children,
+  className = "",
+  padding = false,
+}: PanelCardProps) {
+  return (
+    <div
+      className={`overflow-hidden rounded-2xl border border-gray-100/80 bg-white dark:border-gray-800 dark:bg-gray-900 ${
+        padding ? "p-5" : ""
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ===========================================================
+// SECTION HEADER — title row with optional icon
+// ===========================================================
+interface SectionHeaderProps {
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
+  accent?: MetricAccent;
+  action?: React.ReactNode;
+  className?: string;
+}
+
+export function SectionHeader({
+  title,
+  description,
+  icon,
+  accent = "brand",
+  action,
+  className = "",
+}: SectionHeaderProps) {
+  return (
+    <div
+      className={`flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800 sm:px-6 ${className}`}
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        {icon && <IconShell icon={icon} accent={accent} size="sm" />}
+        <div className="min-w-0">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+            {title}
+          </h2>
+          {description && (
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+              {description}
+            </p>
+          )}
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+// ===========================================================
+// EMPTY STATE
+// ===========================================================
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  accent?: MetricAccent;
+  action?: React.ReactNode;
+  className?: string;
+}
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  accent = "slate",
+  action,
+  className = "",
+}: EmptyStateProps) {
+  return (
+    <div className={`px-6 py-14 text-center ${className}`}>
+      <div className="mx-auto mb-4">
+        <IconShell icon={icon} accent={accent} size="lg" />
+      </div>
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+      {description && (
+        <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+
+// ===========================================================
+// FILTER PILLS
+// ===========================================================
+interface FilterPillOption<T extends string> {
+  label: string;
+  value: T;
+}
+
+interface FilterPillsProps<T extends string> {
+  options: FilterPillOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  className?: string;
+}
+
+export function FilterPills<T extends string>({
+  options,
+  value,
+  onChange,
+  className = "",
+}: FilterPillsProps<T>) {
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+            value === option.value
+              ? "bg-brand-500 text-white shadow-sm"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          }`}
+          aria-pressed={value === option.value}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
   );
 }

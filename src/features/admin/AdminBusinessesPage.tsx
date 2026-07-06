@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { adminApi, getErrorMessage } from "../../services/api";
 import { AdminBusinessSummary } from "../../types";
-import { Alert, PageSpinner } from "../../components/ui";
 import {
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
-  HiOutlineOfficeBuilding,
-} from "react-icons/hi";
+  Alert,
+  EmptyState,
+  PageSpinner,
+  Pagination,
+  PanelCard,
+  SectionHeader,
+} from "../../components/ui";
+import { IconStorefront } from "../../components/icons/DashboardIcons";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,22 +40,21 @@ export function AdminBusinessesPage() {
     <div className="space-y-4">
       {error && <Alert message={error} />}
 
-      <div className="card overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Businesses</h2>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {total} business{total === 1 ? "" : "es"} registered
-          </p>
-        </div>
+      <PanelCard>
+        <SectionHeader
+          title="All Businesses"
+          description={`${total} business${total === 1 ? "" : "es"} registered`}
+          icon={<IconStorefront size={18} />}
+          accent="brand"
+        />
 
         {businesses.length === 0 ? (
-          <div className="p-10 text-center">
-            <HiOutlineOfficeBuilding className="text-gray-300 text-6xl mx-auto mb-4" />
-            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">No businesses yet</h3>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Business profiles appear here when users register as a business.
-            </p>
-          </div>
+          <EmptyState
+            icon={<IconStorefront size={22} />}
+            title="No businesses yet"
+            description="Business profiles appear here when users register as a business."
+            accent="slate"
+          />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -69,18 +71,18 @@ export function AdminBusinessesPage() {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
                       >
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {businesses.map((business) => (
                     <tr
                       key={business.id}
-                      className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors"
+                      className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900 dark:text-gray-100">
@@ -103,13 +105,13 @@ export function AdminBusinessesPage() {
                           {business.user.email}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium text-center">
+                      <td className="px-4 py-3 text-center font-medium text-gray-700 dark:text-gray-300">
                         {business.cards.length}
                       </td>
-                      <td className="px-4 py-3 text-gray-700 dark:text-gray-300 font-medium text-center">
+                      <td className="px-4 py-3 text-center font-medium text-gray-700 dark:text-gray-300">
                         {business._count.menus}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                         {new Date(business.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
@@ -119,34 +121,17 @@ export function AdminBusinessesPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                <span className="text-xs text-gray-400">
-                  {(page - 1) * ITEMS_PER_PAGE + 1}–
-                  {Math.min(page * ITEMS_PER_PAGE, total)} of {total}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                    aria-label="Previous page"
-                  >
-                    <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-base" />
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                    aria-label="Next page"
-                  >
-                    <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-base" />
-                  </button>
-                </div>
+              <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               </div>
             )}
           </>
         )}
-      </div>
+      </PanelCard>
     </div>
   );
 }

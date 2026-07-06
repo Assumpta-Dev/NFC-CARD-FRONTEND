@@ -14,22 +14,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getChartColors } from "../../utils/chartTheme";
 import { ScanAnalytics, UserAnalyticsSummary, RecentScan } from "../../types";
-import { PageSpinner, Alert, MetricTileCompact } from "../../components/ui";
+import { PageSpinner, Alert, MetricTileCompact, Pagination } from "../../components/ui";
 import {
+  IconClose,
+  IconCopy,
+  IconDesktop,
+  IconEye,
+  IconMobile,
   IconNfcTap,
+  IconPaid,
   IconPulse,
   IconRadar,
-  IconDesktop,
-  IconMobile,
 } from "../../components/icons/DashboardIcons";
-import {
-  HiOutlineClipboard,
-  HiOutlineCheck,
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight,
-  HiOutlineEye,
-  HiOutlineX,
-} from "react-icons/hi";
 import { CardQrCodePanel } from "../card/CardQrCodePanel";
 import { getPublicCardPath, getPublicCardUrl } from "../card/publicCardUrl";
 
@@ -141,17 +137,6 @@ export function UserDashboard() {
     (cardPage - 1) * CARDS_PER_PAGE,
     cardPage * CARDS_PER_PAGE,
   );
-
-  // Compute visible page number buttons (max 5 around current page)
-  const getPageNumbers = (): number[] => {
-    const maxVisible = 5;
-    let start = Math.max(1, cardPage - 2);
-    let end = Math.min(totalCardPages, start + maxVisible - 1);
-    if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
-    const pages: number[] = [];
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  };
 
   if (isLoading) return <PageSpinner />;
 
@@ -365,7 +350,7 @@ export function UserDashboard() {
                         title="Preview card (inline)"
                         aria-label={`Preview card ${card.cardId}`}
                       >
-                        <HiOutlineEye className="text-lg" />
+                        <IconEye size={18} />
                       </button>
                     )}
                     {/* Copy link button */}
@@ -379,9 +364,9 @@ export function UserDashboard() {
                       aria-label={`Copy link for ${card.cardId}`}
                     >
                       {copied && copiedId === card.cardId ? (
-                        <HiOutlineCheck className="text-green-500 text-lg" />
+                        <IconPaid size={18} className="text-emerald-500" />
                       ) : (
-                        <HiOutlineClipboard className="text-lg" />
+                        <IconCopy size={18} />
                       )}
                     </button>
                   </div>
@@ -389,52 +374,13 @@ export function UserDashboard() {
               ))}
             </div>
 
-            {/* ── Pagination controls ───────────────────────── */}
             {totalCardPages > 1 && (
-              <div className="px-5 py-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                  {(cardPage - 1) * CARDS_PER_PAGE + 1}–
-                  {Math.min(cardPage * CARDS_PER_PAGE, cards.length)} of{" "}
-                  {cards.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  {/* Previous page */}
-                  <button
-                    onClick={() => setCardPage((p) => Math.max(1, p - 1))}
-                    disabled={cardPage === 1}
-                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
-                    aria-label="Previous page"
-                  >
-                    <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
-                  </button>
-
-                  {/* Numbered page buttons */}
-                  {getPageNumbers().map((page) => (
-                    <button
-                      key={page}
-                      onClick={() => setCardPage(page)}
-                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
-                        cardPage === page
-                          ? "bg-brand-500 text-white shadow-sm dark:shadow-none"
-                          : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                  {/* Next page */}
-                  <button
-                    onClick={() =>
-                      setCardPage((p) => Math.min(totalCardPages, p + 1))
-                    }
-                    disabled={cardPage === totalCardPages}
-                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
-                    aria-label="Next page"
-                  >
-                    <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
-                  </button>
-                </div>
+              <div className="border-t border-gray-50 bg-gray-50 px-5 py-4 dark:border-gray-800 dark:bg-gray-800/50">
+                <Pagination
+                  currentPage={cardPage}
+                  totalPages={totalCardPages}
+                  onPageChange={setCardPage}
+                />
               </div>
             )}
           </div>
@@ -487,30 +433,13 @@ export function UserDashboard() {
                 </div>
               ))}
             </div>
-            {/* Pagination for recent scans */}
             {recentScans.length > SCANS_PER_PAGE && (
-              <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                  {(scanPage - 1) * SCANS_PER_PAGE + 1}–{Math.min(scanPage * SCANS_PER_PAGE, recentScans.length)} of {recentScans.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setScanPage((p) => Math.max(1, p - 1))}
-                    disabled={scanPage === 1}
-                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
-                    aria-label="Previous page"
-                  >
-                    <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
-                  </button>
-                  <button
-                    onClick={() => setScanPage((p) => Math.min(Math.ceil(recentScans.length / SCANS_PER_PAGE), p + 1))}
-                    disabled={scanPage === Math.ceil(recentScans.length / SCANS_PER_PAGE)}
-                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
-                    aria-label="Next page"
-                  >
-                    <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
-                  </button>
-                </div>
+              <div className="mt-4 border-t border-gray-50 pt-4 dark:border-gray-800">
+                <Pagination
+                  currentPage={scanPage}
+                  totalPages={Math.ceil(recentScans.length / SCANS_PER_PAGE)}
+                  onPageChange={setScanPage}
+                />
               </div>
             )}
           </div>
@@ -565,7 +494,7 @@ export function UserDashboard() {
                 onClick={() => setPreviewCard(null)}
                 className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
               >
-                <HiOutlineX className="text-lg" />
+                <IconClose size={18} />
               </button>
             </div>
             <iframe

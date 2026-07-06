@@ -3,19 +3,20 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import {
-  HiOutlineCreditCard,
-  HiOutlineLogout,
-  HiOutlineMenu,
-  HiOutlineX,
-} from "react-icons/hi";
+  IconClose,
+  IconMenu,
+  IconNfcTap,
+  IconSignOut,
+} from "../icons/DashboardIcons";
+import { IconShell } from "../ui";
 import { getNavGroupsForRole, getPageTitle } from "./sidebarNav";
 import type { UserRole } from "./sidebarNav";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
     isActive
-      ? "bg-brand-600 text-white"
-      : "text-gray-600 dark:text-gray-400 hover:bg-brand-600/10 hover:text-brand-600 dark:hover:text-brand-400"
+      ? "bg-brand-500/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 border border-brand-500/20"
+      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-200"
   }`;
 
 const roleLabels: Record<UserRole, string> = {
@@ -56,9 +57,7 @@ export function AppLayout() {
             className="flex items-center gap-3"
             onClick={closeSidebar}
           >
-            <span className="icon-badge w-10 h-10 rounded-xl">
-              <HiOutlineCreditCard className="text-xl" />
-            </span>
+            <IconShell icon={<IconNfcTap size={20} />} accent="brand" size="sm" />
             <div>
               <p className="font-bold text-gray-900 dark:text-gray-100 tracking-tight text-sm">
                 E-Card
@@ -72,7 +71,7 @@ export function AppLayout() {
             onClick={closeSidebar}
             aria-label="Close menu"
           >
-            <HiOutlineX className="text-lg" />
+            <IconClose size={18} />
           </button>
         </div>
 
@@ -91,7 +90,7 @@ export function AppLayout() {
                       className={navLinkClass}
                       onClick={closeSidebar}
                     >
-                      <item.icon className="text-lg shrink-0" />
+                      <item.icon size={18} className="shrink-0" />
                       <span>{item.label}</span>
                     </NavLink>
                   </li>
@@ -111,9 +110,9 @@ export function AppLayout() {
           <button
             type="button"
             onClick={logout}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-brand-600 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors"
           >
-            <HiOutlineLogout className="text-lg" />
+            <IconSignOut size={18} />
             Sign out
           </button>
         </div>
@@ -129,10 +128,10 @@ export function AppLayout() {
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open menu"
               >
-                <HiOutlineMenu className="text-xl" />
+                <IconMenu size={20} />
               </button>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
                   {roleLabels[role]}
                 </p>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">

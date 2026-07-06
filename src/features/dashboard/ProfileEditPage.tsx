@@ -2,12 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { profileApi, getErrorMessage } from "../../services/api";
 import { Profile, Link as CardLink } from "../../types";
-import { Button, DarkInput, DarkAlert, Select, Textarea } from "../../components/ui";
-import {
-  HiOutlineCamera,
-  HiOutlinePlus,
-  HiOutlineTrash,
-} from "react-icons/hi";
+import { Button, DarkInput, DarkAlert, Select, Textarea, PanelCard } from "../../components/ui";
+import { IconEdit, IconPlus, IconTrash } from "../../components/icons/DashboardIcons";
 
 const LINK_TYPES = [
   { value: "linkedin", label: "LinkedIn" },
@@ -24,10 +20,10 @@ type FormData = Omit<Profile, "id" | "userId">;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+    <PanelCard padding className="space-y-4">
       <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-base">{title}</h2>
       {children}
-    </section>
+    </PanelCard>
   );
 }
 
@@ -230,7 +226,7 @@ export function ProfileEditPage() {
                 </span>
               )}
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                <HiOutlineCamera className="text-white text-xl" />
+                <IconEdit size={20} className="text-white" />
               </div>
             </button>
             <div className="space-y-2">
@@ -283,30 +279,26 @@ export function ProfileEditPage() {
         </Section>
 
         {/* ── Social Links ─────────────────────────────── */}
-        <section className="card-soft rounded-3xl p-6 space-y-4 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
+        <PanelCard padding className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Links</h2>
-            <button
-              type="button"
-              onClick={addLink}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-gray-900 border border-[#DE3A16] text-gray-700 dark:text-gray-300 hover:text-white hover:bg-[#DE3A16] text-sm font-medium transition-all"
-            >
-              <HiOutlinePlus className="text-base" /> Add Link
-            </button>
+            <Button type="button" variant="secondary" onClick={addLink} className="gap-1.5 py-1.5 text-sm">
+              <IconPlus size={16} /> Add Link
+            </Button>
           </div>
 
           {formData.links.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4 border border-dashed border-surface-600 rounded-2xl">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-4 border border-dashed border-gray-200 dark:border-gray-700 rounded-2xl">
               No links yet. Add your social profiles or website links.
             </p>
           )}
 
           {formData.links.map((link, index) => (
-            <div key={index} className="card-soft p-4 rounded-2xl space-y-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
+            <div key={index} className="rounded-2xl border border-gray-100 bg-gray-50/50 p-4 space-y-3 dark:border-gray-800 dark:bg-gray-950/50">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Link {index + 1}</span>
                 <button type="button" onClick={() => removeLink(index)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs font-medium transition-colors">
-                  <HiOutlineTrash className="text-sm" /> Remove
+                  <IconTrash size={14} /> Remove
                 </button>
               </div>
               <Select compactLabel label="Platform" value={link.type} onChange={(e) => updateLink(index, "type", e.target.value)} options={LINK_TYPES} />
@@ -314,7 +306,7 @@ export function ProfileEditPage() {
               <DarkInput label="URL" value={link.url} onChange={(e) => updateLink(index, "url", e.target.value)} placeholder="https://linkedin.com/in/yourprofile" />
             </div>
           ))}
-        </section>
+        </PanelCard>
 
         {/* ── Save / Cancel ─────────────────────────────── */}
         <div className="flex gap-3 pb-4">
