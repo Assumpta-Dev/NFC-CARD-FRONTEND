@@ -130,11 +130,11 @@ export function PaymentsPage() {
             <h2 className="font-semibold text-gray-900 dark:text-gray-100">Payment History</h2>
           </div>
 
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
             {payments.map((payment) => (
               <div
                 key={payment.id}
-                className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-[#fdf8f7]"
+                className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -166,7 +166,7 @@ export function PaymentsPage() {
                 <button
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={page === 1}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-1.5 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400" />
                 </button>
@@ -175,7 +175,7 @@ export function PaymentsPage() {
                     setPage((current) => Math.min(totalPages, current + 1))
                   }
                   disabled={page === totalPages}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-1.5 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-50"
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400" />
                 </button>
@@ -190,14 +190,14 @@ export function PaymentsPage() {
 
 function getStatusClassName(status: Payment["status"]) {
   if (status === "SUCCESS") {
-    return "rounded-full bg-[#fdf0ec] px-3 py-1 text-xs font-bold text-[#DE3A16]";
+    return "rounded-full bg-[#fdf0ec] dark:bg-brand-500/15 px-3 py-1 text-xs font-bold text-[#DE3A16] dark:text-brand-400";
   }
 
   if (status === "PENDING") {
-    return "rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-600";
+    return "rounded-full bg-amber-50 dark:bg-amber-500/15 px-3 py-1 text-xs font-bold text-amber-600 dark:text-amber-400";
   }
 
-  return "rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600";
+  return "rounded-full bg-red-50 dark:bg-red-500/15 px-3 py-1 text-xs font-bold text-red-600 dark:text-red-400";
 }
 
 function formatNextBilling(payment: Payment) {

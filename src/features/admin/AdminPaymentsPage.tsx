@@ -113,11 +113,11 @@ export function AdminPaymentsPage() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {payments.map((payment) => (
                     <tr
                       key={payment.id}
-                      className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900 dark:text-gray-100">

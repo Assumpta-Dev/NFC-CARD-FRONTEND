@@ -235,7 +235,7 @@ export function UserDashboard() {
                 className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
                   timeFilter === f
                     ? "bg-brand-500 text-white shadow-sm dark:shadow-none"
-                    : "bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:bg-gray-950"
+                    : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 {f === "all" ? "All-Time" : f.toUpperCase()}
@@ -346,12 +346,14 @@ export function UserDashboard() {
               <span className="text-xs text-gray-400 font-medium">{cards.length} Total</span>
             </div>
 
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-gray-800">
               {pagedCards.map((card) => (
                 <div
                   key={card.id}
                   className={`px-5 py-4 flex items-center justify-between cursor-pointer transition-colors ${
-                    selectedCardId === card.cardId ? "bg-brand-50" : "hover:bg-gray-50 dark:bg-gray-950"
+                    selectedCardId === card.cardId
+                      ? "bg-brand-50 dark:bg-brand-500/10"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
                   }`}
                   onClick={() => setSelectedCardId(card.cardId)}
                 >
@@ -410,7 +412,7 @@ export function UserDashboard() {
 
             {/* ── Pagination controls ───────────────────────── */}
             {totalCardPages > 1 && (
-              <div className="px-5 py-4 border-t border-gray-50 flex items-center justify-between bg-gray-50 dark:bg-gray-950/30">
+              <div className="px-5 py-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                   {(cardPage - 1) * CARDS_PER_PAGE + 1}–
                   {Math.min(cardPage * CARDS_PER_PAGE, cards.length)} of{" "}
@@ -421,7 +423,7 @@ export function UserDashboard() {
                   <button
                     onClick={() => setCardPage((p) => Math.max(1, p - 1))}
                     disabled={cardPage === 1}
-                    className="p-2 rounded-xl hover:bg-white dark:bg-gray-900 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
                     aria-label="Previous page"
                   >
                     <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
@@ -448,7 +450,7 @@ export function UserDashboard() {
                       setCardPage((p) => Math.min(totalCardPages, p + 1))
                     }
                     disabled={cardPage === totalCardPages}
-                    className="p-2 rounded-xl hover:bg-white dark:bg-gray-900 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
                     aria-label="Next page"
                   >
                     <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />
@@ -489,7 +491,7 @@ export function UserDashboard() {
               {recentScans.slice((scanPage - 1) * SCANS_PER_PAGE, scanPage * SCANS_PER_PAGE).map((scan, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-gray-50 dark:bg-gray-950 rounded-lg flex items-center justify-center">
+                    <div className="w-9 h-9 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-center">
                       <HiOutlineDeviceMobile className="text-gray-400 text-lg" />
                     </div>
                     <div>
@@ -508,7 +510,7 @@ export function UserDashboard() {
             </div>
             {/* Pagination for recent scans */}
             {recentScans.length > SCANS_PER_PAGE && (
-              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+              <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                   {(scanPage - 1) * SCANS_PER_PAGE + 1}–{Math.min(scanPage * SCANS_PER_PAGE, recentScans.length)} of {recentScans.length}
                 </span>
@@ -516,7 +518,7 @@ export function UserDashboard() {
                   <button
                     onClick={() => setScanPage((p) => Math.max(1, p - 1))}
                     disabled={scanPage === 1}
-                    className="p-2 rounded-xl hover:bg-white dark:bg-gray-900 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
                     aria-label="Previous page"
                   >
                     <HiOutlineChevronLeft className="text-gray-600 dark:text-gray-400 text-sm" />
@@ -524,7 +526,7 @@ export function UserDashboard() {
                   <button
                     onClick={() => setScanPage((p) => Math.min(Math.ceil(recentScans.length / SCANS_PER_PAGE), p + 1))}
                     disabled={scanPage === Math.ceil(recentScans.length / SCANS_PER_PAGE)}
-                    className="p-2 rounded-xl hover:bg-white dark:bg-gray-900 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
+                    className="p-2 rounded-xl hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm dark:shadow-none disabled:opacity-20 transition-all"
                     aria-label="Next page"
                   >
                     <HiOutlineChevronRight className="text-gray-600 dark:text-gray-400 text-sm" />

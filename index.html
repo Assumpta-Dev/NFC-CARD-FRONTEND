@@ -14,15 +14,23 @@
     <title>E-Card Platform</title>
     <script>
       (function () {
-        var stored = localStorage.getItem("ecard-theme");
+        var STORAGE_KEY = "ecard-theme";
+        var stored = localStorage.getItem(STORAGE_KEY);
         var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        var theme =
+        var resolved =
           stored === "light" || stored === "dark"
             ? stored
             : prefersDark
               ? "dark"
               : "light";
-        if (theme === "dark") document.documentElement.classList.add("dark");
+        var root = document.documentElement;
+        if (resolved === "dark") {
+          root.classList.add("dark");
+          root.style.colorScheme = "dark";
+        } else {
+          root.classList.remove("dark");
+          root.style.colorScheme = "light";
+        }
       })();
     </script>
   </head>

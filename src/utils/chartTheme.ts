@@ -1,4 +1,4 @@
-import type { ResolvedTheme } from "../contexts/ThemeContext";
+import type { ResolvedTheme } from "../lib/theme";
 
 export function getChartColors(theme: ResolvedTheme) {
   const isDark = theme === "dark";

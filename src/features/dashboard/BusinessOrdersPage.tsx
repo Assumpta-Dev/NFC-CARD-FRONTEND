@@ -121,7 +121,7 @@ export function BusinessOrdersPage() {
             </button>
           </div>
 
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
             {orders.length === 0 && (
               <div className="py-16 text-center text-sm text-gray-500 dark:text-gray-400">
                 No orders yet. They will appear here when customers order.
@@ -138,7 +138,7 @@ export function BusinessOrdersPage() {
                     {(order.orderContext === "ROOM" && order.roomNumber) ||
                     (order.orderContext === "TABLE" && order.tableNumber) ||
                     /\(.*\)$/.test(order.customerName) ? (
-                      <span className="inline-block mt-0.5 rounded-full bg-[#fdf3f0] px-2 py-0.5 text-xs font-semibold text-[#DE3A16]">
+                      <span className="inline-block mt-0.5 rounded-full bg-[#fdf3f0] dark:bg-brand-500/15 px-2 py-0.5 text-xs font-semibold text-[#DE3A16] dark:text-brand-400">
                         {order.orderContext === "ROOM" && order.roomNumber
                           ? `Room ${order.roomNumber}`
                           : order.orderContext === "TABLE" && order.tableNumber
@@ -151,9 +151,9 @@ export function BusinessOrdersPage() {
                     </p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    order.status === "PAID" ? "bg-green-100 text-green-700" :
-                    order.status === "REJECTED" ? "bg-red-100 text-red-600" :
-                    order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600" :
+                    order.status === "PAID" ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400" :
+                    order.status === "REJECTED" ? "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400" :
+                    order.status === "WAITING_VERIFICATION" ? "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" :
                     "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   }`}>
                     {order.status.replace("_", " ")}
@@ -173,7 +173,7 @@ export function BusinessOrdersPage() {
                 </p>
 
                 {order.txId && (
-                  <div className="mb-3 rounded-xl bg-[#fdf3f0] px-4 py-2">
+                  <div className="mb-3 rounded-xl bg-[#fdf3f0] dark:bg-gray-800 px-4 py-2 border border-transparent dark:border-gray-700">
                     <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">TxId from customer</p>
                     <p className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{order.txId}</p>
                   </div>
@@ -191,7 +191,7 @@ export function BusinessOrdersPage() {
                     <button
                       onClick={() => handleRejectOrder(order.id)}
                       disabled={ordersLoading}
-                      className="flex items-center gap-1 rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-60"
+                      className="flex items-center gap-1 rounded-xl border border-red-300 dark:border-red-500/40 px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 disabled:opacity-60"
                     >
                       <HiOutlineX /> Reject
                     </button>
@@ -218,14 +218,14 @@ export function BusinessOrdersPage() {
                   <button
                     onClick={() => setOrderPage((p) => Math.max(1, p - 1))}
                     disabled={orderPage === 1}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setOrderPage((p) => Math.min(totalOrderPages, p + 1))}
                     disabled={orderPage === totalOrderPages}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
                   >
                     Next
                   </button>

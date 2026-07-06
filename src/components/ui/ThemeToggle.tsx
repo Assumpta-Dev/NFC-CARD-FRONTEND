@@ -12,9 +12,14 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      className={`p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors ${className}`}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleTheme();
+      }}
+      className={`relative z-50 p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors ${className}`}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={isDark}
       title={isDark ? "Light mode" : "Dark mode"}
     >
       {isDark ? (

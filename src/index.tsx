@@ -18,10 +18,14 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { initTheme } from './lib/theme';
 import App from './App';
 
 // Global styles — includes Tailwind base/components/utilities
 import './styles/global.css';
+
+// Apply saved theme before React paints
+initTheme();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element #root not found in index.html');
