@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Navbar from "../components/layout/navbar";
+import { formControlClass } from "../components/ui";
 import { HiOutlineMail, HiOutlineUser, HiOutlinePhone } from "react-icons/hi";
 
 export default function ContactSalesPage() {
@@ -48,7 +49,7 @@ export default function ContactSalesPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className={formControlClass(false, "pl-10")}
                     placeholder="Your name"
                   />
                 </div>
@@ -68,7 +69,7 @@ export default function ContactSalesPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className={formControlClass(false, "pl-10")}
                     placeholder="you@company.com"
                   />
                 </div>
@@ -88,7 +89,7 @@ export default function ContactSalesPage() {
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-sm rounded-xl focus:ring-[#DE3A16] focus:border-[#DE3A16] pl-10 pr-4 py-3 outline-none transition-all"
+                    className={formControlClass(false, "pl-10")}
                     placeholder="(555) 000-0000"
                   />
                 </div>

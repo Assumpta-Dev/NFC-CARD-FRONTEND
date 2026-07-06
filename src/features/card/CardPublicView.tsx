@@ -41,7 +41,7 @@ import {
   HiOutlineUserAdd,
   HiOutlineX,
 } from "react-icons/hi";
-import { PageSpinner } from "../../components/ui";
+import { PageSpinner, formControlClass } from "../../components/ui";
 import {
   businessTypeLabel,
   defaultOrderContext,
@@ -982,14 +982,14 @@ export function CardPublicView() {
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className={formControlClass()}
                   />
                   <input
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="Your MTN/Airtel number"
                     type="tel"
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className={formControlClass()}
                   />
                   <input
                     value={tableRoom}
@@ -999,7 +999,7 @@ export function CardPublicView() {
                         ? "Table number (e.g. 5)"
                         : "Room number (e.g. 204)"
                     }
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                    className={formControlClass()}
                   />
                 </div>
 
@@ -1099,7 +1099,7 @@ export function CardPublicView() {
                   value={txId}
                   onChange={(e) => setTxId(e.target.value)}
                   placeholder="e.g. 2345567889"
-                  className="mb-3 w-full rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm focus:border-[#DE3A16] focus:outline-none"
+                  className={formControlClass(false, "mb-3")}
                 />
                 {orderError && (
                   <p className="mb-3 text-xs text-red-500">{orderError}</p>

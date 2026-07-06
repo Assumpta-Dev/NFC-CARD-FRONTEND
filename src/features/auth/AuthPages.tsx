@@ -221,9 +221,7 @@ export function LoginPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
-              className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 cursor-text
-                focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60 focus:bg-white dark:bg-gray-900
-                transition-all duration-200 caret-brand-600"
+              className={formControlClass(false, "pl-14 pr-4 cursor-text caret-brand-600")}
             />
           </div>
         </div>
@@ -557,9 +555,7 @@ export function ForgotPasswordPage() {
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
-                  className="w-full pl-14 pr-4 py-3 rounded-xl border border-surface-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500/60
-                    transition-all duration-200"
+                  className={formControlClass(false, "pl-14 pr-4 cursor-text")}
                 />
               </div>
             </div>

@@ -459,16 +459,17 @@ export function BusinessMenuPage() {
               placeholder="https://example.com"
               type="url"
             />
-            <Textarea
-              label="Description"
-              value={businessForm.description}
-              onChange={(event) =>
-                updateBusinessField("description", event.target.value)
-              }
-              placeholder="Tell visitors about your business"
-              rows={4}
-              className="md:col-span-2"
-            />
+            <div className="md:col-span-2">
+              <Textarea
+                label="Description"
+                value={businessForm.description}
+                onChange={(event) =>
+                  updateBusinessField("description", event.target.value)
+                }
+                placeholder="Tell visitors about your business"
+                rows={4}
+              />
+            </div>
 
             <div className="md:col-span-2 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950/80 p-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -714,16 +715,17 @@ export function BusinessMenuPage() {
                   min="0"
                   step="0.01"
                 />
-                <Textarea
-                  label="Description"
-                  value={itemForm.description}
-                  onChange={(event) =>
-                    updateItemField("description", event.target.value)
-                  }
-                  placeholder="Spiced ginger and milk tea"
-                  rows={3}
-                  className="md:col-span-2"
-                />
+                <div className="md:col-span-2">
+                  <Textarea
+                    label="Description"
+                    value={itemForm.description}
+                    onChange={(event) =>
+                      updateItemField("description", event.target.value)
+                    }
+                    placeholder="Spiced ginger and milk tea"
+                    rows={3}
+                  />
+                </div>
                 <div className="space-y-1 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Item Photo
