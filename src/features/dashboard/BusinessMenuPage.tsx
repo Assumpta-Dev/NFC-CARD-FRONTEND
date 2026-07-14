@@ -806,23 +806,6 @@ export function BusinessMenuPage() {
                         <option value="DINE_IN">Dine-in / bar only</option>
                       </select>
                     </label>
-                    <label className="text-xs text-gray-500">
-                      Station
-                      <select
-                        className="mt-1 w-full rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
-                        value={itemForm.station}
-                        onChange={(e) =>
-                          setItemForm((p) => ({
-                            ...p,
-                            station: e.target.value as ItemFormState["station"],
-                          }))
-                        }
-                      >
-                        <option value="KITCHEN">Kitchen</option>
-                        <option value="BAR">Bar</option>
-                        <option value="FLOOR">Floor</option>
-                      </select>
-                    </label>
                   </div>
                 </div>
                 <div className="space-y-1 md:col-span-2">

@@ -2,17 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Button,
-  MetricTile,
   PageSpinner,
-  PanelCard,
-  SectionHeader,
 } from "../../components/ui";
-import {
-  IconDownload,
-  IconOrders,
-  IconPaid,
-  IconPending,
-} from "../../components/icons/DashboardIcons";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOrdersSocket } from "../../hooks/useOrdersSocket";
 import { businessApi, getErrorMessage, orderApi } from "../../services/api";
@@ -21,7 +12,6 @@ import {
   LinePrepStatus,
   Order,
   OrderItem,
-  PrepStation,
   PrepStatus,
 } from "../../types";
 import {
@@ -32,13 +22,38 @@ import {
 } from "../../utils/orderAlertSound";
 import { playReadyBumpSound } from "../../utils/readyBumpSound";
 
-const PREP_FLOW: PrepStatus[] = ["RECEIVED", "PREPARING", "READY", "SERVED"];
-const STATIONS: { value: PrepStation | "ALL"; label: string }[] = [
-  { value: "ALL", label: "All stations" },
-  { value: "KITCHEN", label: "Kitchen" },
-  { value: "BAR", label: "Bar" },
-  { value: "FLOOR", label: "Floor / room" },
+type OrdersView = "list" | "grid" | "board" | "bars";
+
+const VIEW_STORAGE_KEY = "nfc-orders-view";
+
+const VIEW_OPTIONS: { id: OrdersView; label: string; hint: string }[] = [
+  { id: "list", label: "List", hint: "Compact rows" },
+  { id: "grid", label: "Grid", hint: "Card tiles" },
+  { id: "board", label: "Board", hint: "By status" },
+  { id: "bars", label: "Bars", hint: "Progress strips" },
 ];
+
+const PREP_ACTIONS: { status: PrepStatus; label: string }[] = [
+  { status: "PREPARING", label: "Start" },
+  { status: "READY", label: "Ready" },
+  { status: "SERVED", label: "Done" },
+];
+
+const LINE_ACTIONS: { status: LinePrepStatus; label: string }[] = [
+  { status: "PREPARING", label: "Start" },
+  { status: "READY", label: "Ready" },
+  { status: "SERVED", label: "Done" },
+];
+
+function readStoredView(): OrdersView {
+  try {
+    const v = localStorage.getItem(VIEW_STORAGE_KEY);
+    if (v === "list" || v === "grid" || v === "board" || v === "bars") return v;
+  } catch {
+    /* ignore */
+  }
+  return "list";
+}
 
 function locationLabel(order: Order) {
   if (order.orderContext === "ROOM" && order.roomNumber) return `Room ${order.roomNumber}`;
@@ -49,30 +64,433 @@ function locationLabel(order: Order) {
   return null;
 }
 
-function guestTimeline(order: Order) {
-  const steps = [
-    { key: "PLACED", label: "Placed", done: true },
-    {
-      key: "PAID",
-      label: "Paid",
-      done: order.status === "PAID" || order.status === "WAITING_VERIFICATION",
-    },
-    {
-      key: "PREPARING",
-      label: "Preparing",
-      done: ["PREPARING", "READY", "SERVED"].includes(order.prepStatus ?? ""),
-    },
-    {
-      key: "READY",
-      label: order.orderContext === "ROOM" ? "On the way" : "Ready",
-      done: ["READY", "SERVED"].includes(order.prepStatus ?? ""),
-    },
-    { key: "SERVED", label: "Served", done: order.prepStatus === "SERVED" },
-  ];
-  if (order.status === "REJECTED") {
-    return [{ key: "REJECTED", label: "Rejected", done: true }];
+function prepLabel(status?: PrepStatus | null) {
+  switch (status) {
+    case "RECEIVED":
+      return "New";
+    case "PREPARING":
+      return "In progress";
+    case "READY":
+      return "Ready";
+    case "SERVED":
+      return "Done";
+    default:
+      return status ?? "";
   }
-  return steps;
+}
+
+function lineStatusLabel(status?: LinePrepStatus) {
+  if (status === "PREPARING") return "Cooking";
+  if (status === "READY") return "Ready";
+  if (status === "SERVED") return "Done";
+  return "Queued";
+}
+
+function itemCount(order: Order) {
+  return (order.items as OrderItem[]).reduce((sum, item) => sum + item.qty, 0);
+}
+
+function itemSummary(order: Order, max = 3) {
+  const names = (order.items as OrderItem[]).map((i) => `${i.qty}× ${i.name}`);
+  if (names.length <= max) return names.join(", ");
+  return `${names.slice(0, max).join(", ")} +${names.length - max} more`;
+}
+
+function isPendingPay(order: Order) {
+  return order.status === "PENDING" || order.status === "WAITING_VERIFICATION";
+}
+
+function isActivePrep(order: Order) {
+  return (
+    order.status === "PAID" &&
+    order.prepStatus !== "SERVED" &&
+    order.prepStatus !== "CANCELLED"
+  );
+}
+
+function StatusBadge({
+  label,
+  tone = "neutral",
+}: {
+  label: string;
+  tone?: "neutral" | "warn" | "progress" | "ready" | "done";
+}) {
+  const tones = {
+    neutral: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200",
+    warn: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800/60",
+    progress:
+      "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/80 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800/60",
+    ready:
+      "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-800/60",
+    done: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+  };
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${tones[tone]}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function prepTone(status?: PrepStatus | null): "neutral" | "progress" | "ready" | "done" {
+  if (status === "PREPARING") return "progress";
+  if (status === "READY") return "ready";
+  if (status === "SERVED") return "done";
+  return "neutral";
+}
+
+function orderTone(order: Order): "neutral" | "warn" | "progress" | "ready" | "done" {
+  if (isPendingPay(order)) return "warn";
+  return prepTone(order.prepStatus);
+}
+
+function orderStatusLabel(order: Order) {
+  if (isPendingPay(order)) return "Awaiting confirm";
+  return prepLabel(order.prepStatus) || order.status;
+}
+
+function nextPrepAction(status?: PrepStatus | null): PrepStatus | null {
+  if (!status || status === "RECEIVED") return "PREPARING";
+  if (status === "PREPARING") return "READY";
+  if (status === "READY") return "SERVED";
+  return null;
+}
+
+function railClass(order: Order) {
+  if (isPendingPay(order)) return "border-l-amber-400";
+  if (order.prepStatus === "PREPARING") return "border-l-sky-400";
+  if (order.prepStatus === "READY") return "border-l-emerald-400";
+  return "border-l-gray-300 dark:border-l-gray-600";
+}
+
+function barFillClass(order: Order) {
+  if (isPendingPay(order)) return "bg-amber-400";
+  if (order.prepStatus === "PREPARING") return "bg-sky-400";
+  if (order.prepStatus === "READY") return "bg-emerald-400";
+  if (order.prepStatus === "RECEIVED") return "bg-gray-300";
+  return "bg-gray-200";
+}
+
+function barFillWidth(order: Order) {
+  if (isPendingPay(order)) return "35%";
+  if (order.prepStatus === "RECEIVED") return "40%";
+  if (order.prepStatus === "PREPARING") return "70%";
+  if (order.prepStatus === "READY") return "92%";
+  if (order.prepStatus === "SERVED") return "100%";
+  return "20%";
+}
+
+function timeAgo(iso: string) {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  return `${hrs}h ${mins % 60}m ago`;
+}
+
+/** Mount + fade/scale enter+exit for overlays */
+function useOverlayAnim(open: boolean, durationMs = 280) {
+  const [mounted, setMounted] = useState(open);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setShown(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    setShown(false);
+    const t = window.setTimeout(() => setMounted(false), durationMs);
+    return () => window.clearTimeout(t);
+  }, [open, durationMs]);
+
+  return { mounted, shown };
+}
+
+function ViewSwitcher({
+  value,
+  onChange,
+}: {
+  value: OrdersView;
+  onChange: (v: OrdersView) => void;
+}) {
+  return (
+    <div
+      className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-900/70"
+      role="group"
+      aria-label="Order view"
+    >
+      {VIEW_OPTIONS.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          title={opt.hint}
+          onClick={() => onChange(opt.id)}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+            value === opt.id
+              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-50"
+              : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function OrderDetailModal({
+  order,
+  open,
+  onClose,
+  ordersLoading,
+  onConfirm,
+  onReject,
+  onPrep,
+  onLinePrep,
+}: {
+  order: Order | null;
+  open: boolean;
+  onClose: () => void;
+  ordersLoading: boolean;
+  onConfirm: (id: string) => void;
+  onReject: (order: Order) => void;
+  onPrep: (id: string, status: PrepStatus) => void;
+  onLinePrep: (orderId: string, lineId: string, status: LinePrepStatus) => void;
+}) {
+  const { mounted, shown } = useOverlayAnim(open);
+  const loc = order ? locationLabel(order) : null;
+  const pending = order ? isPendingPay(order) : false;
+  const next = order ? nextPrepAction(order.prepStatus) : null;
+  const nextMeta = PREP_ACTIONS.find((a) => a.status === next);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!mounted || !order) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+      <button
+        type="button"
+        aria-label="Close"
+        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
+          shown ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-detail-title"
+        className={`relative z-10 flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl transition-all duration-300 ease-out dark:bg-gray-950 sm:rounded-3xl ${
+          shown
+            ? "translate-y-0 scale-100 opacity-100"
+            : "translate-y-6 scale-[0.97] opacity-0 sm:translate-y-4"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+              Order detail
+            </p>
+            <h2
+              id="order-detail-title"
+              className="mt-0.5 text-xl font-semibold text-gray-900 dark:text-gray-50"
+            >
+              {loc ?? order.customerName}
+            </h2>
+            <p className="mt-0.5 text-sm text-gray-500">
+              {loc ? `${order.customerName} · ` : ""}
+              {order.phone} · {timeAgo(order.createdAt)}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            >
+              <span className="sr-only">Close</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <p className="text-sm text-gray-500">
+              {itemCount(order)} item{itemCount(order) === 1 ? "" : "s"}
+              {order.estimatedWaitMinutes
+                ? ` · guest wait ~${order.estimatedWaitMinutes} min`
+                : ""}
+            </p>
+            <p className="text-lg font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+              RWF {order.total.toLocaleString()}
+            </p>
+          </div>
+
+          <ul className="space-y-3">
+            {(order.items as OrderItem[]).map((item) => {
+              const lineDone =
+                item.linePrepStatus === "READY" || item.linePrepStatus === "SERVED";
+              const lineNext =
+                !item.linePrepStatus || item.linePrepStatus === "QUEUED"
+                  ? "PREPARING"
+                  : item.linePrepStatus === "PREPARING"
+                    ? "READY"
+                    : item.linePrepStatus === "READY"
+                      ? "SERVED"
+                      : null;
+              return (
+                <li
+                  key={item.lineId ?? item.id}
+                  className="flex flex-col gap-2 rounded-xl border border-gray-100 p-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+                      {item.qty}
+                    </span>
+                    <div>
+                      <p
+                        className={`font-medium ${
+                          lineDone
+                            ? "text-gray-400 line-through"
+                            : "text-gray-900 dark:text-gray-100"
+                        }`}
+                      >
+                        {item.name}
+                      </p>
+                      {(item.selectedModifiers ?? []).length > 0 && (
+                        <p className="text-sm text-gray-500">
+                          {(item.selectedModifiers ?? [])
+                            .map((m) => m.optionName)
+                            .join(" · ")}
+                        </p>
+                      )}
+                      {item.specialInstructions && (
+                        <p className="text-sm italic text-gray-500">
+                          “{item.specialInstructions}”
+                        </p>
+                      )}
+                      {!pending && (
+                        <div className="mt-1.5">
+                          <StatusBadge
+                            label={lineStatusLabel(item.linePrepStatus)}
+                            tone={
+                              item.linePrepStatus === "PREPARING"
+                                ? "progress"
+                                : item.linePrepStatus === "READY"
+                                  ? "ready"
+                                  : item.linePrepStatus === "SERVED"
+                                    ? "done"
+                                    : "neutral"
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {!pending && lineNext && item.lineId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onLinePrep(order.id, item.lineId!, lineNext as LinePrepStatus)
+                      }
+                      className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Mark{" "}
+                      {LINE_ACTIONS.find((a) => a.status === lineNext)?.label.toLowerCase()}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {(order.notes || order.txId) && (
+            <div className="mt-4 space-y-1 rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-400">
+              {order.notes && <p>Note: {order.notes}</p>}
+              {order.txId && <p className="font-mono text-xs">TxId {order.txId}</p>}
+            </div>
+          )}
+
+          {order.events && order.events.length > 0 && (
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                History
+              </p>
+              <ul className="mt-2 space-y-1.5 text-xs text-gray-500">
+                {order.events.slice(0, 8).map((ev) => (
+                  <li key={ev.id}>
+                    {new Date(ev.createdAt).toLocaleTimeString()} — {ev.action}
+                    {ev.actorName ? ` (${ev.actorName})` : ""}
+                    {ev.detail ? `: ${ev.detail}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2 border-t border-gray-100 bg-gray-50/90 px-5 py-4 dark:border-gray-800 dark:bg-gray-900/60">
+          {pending ? (
+            <>
+              <Button
+                disabled={ordersLoading}
+                onClick={() => onConfirm(order.id)}
+                className="min-w-[9rem]"
+              >
+                Confirm payment
+              </Button>
+              <Button variant="secondary" onClick={() => onReject(order)}>
+                Reject
+              </Button>
+            </>
+          ) : (
+            <>
+              {nextMeta && (
+                <Button onClick={() => onPrep(order.id, nextMeta.status)}>
+                  {nextMeta.status === "PREPARING" && "Start cooking"}
+                  {nextMeta.status === "READY" && "Mark ready"}
+                  {nextMeta.status === "SERVED" && "Mark served"}
+                </Button>
+              )}
+              {PREP_ACTIONS.filter((a) => a.status !== next).map((action) => (
+                <button
+                  key={action.status}
+                  type="button"
+                  onClick={() => onPrep(order.id, action.status)}
+                  className={`rounded-lg px-3 py-2 text-xs font-medium ${
+                    order.prepStatus === action.status
+                      ? "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100"
+                      : "text-gray-500 hover:bg-white dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </>
+          )}
+          <Button variant="ghost" className="ml-auto" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function BusinessOrdersPage() {
@@ -85,14 +503,18 @@ export function BusinessOrdersPage() {
   const [businessName, setBusinessName] = useState("");
   const [settings, setSettings] = useState<BusinessSettings>({});
   const [rejectReasons, setRejectReasons] = useState<{ code: string; label: string }[]>([]);
-  const [stationFilter, setStationFilter] = useState<PrepStation | "ALL">("ALL");
   const [soundOn, setSoundOn] = useState(() => isOrderAlertSoundEnabled());
+  const [view, setView] = useState<OrdersView>(() => readStoredView());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [rejectFor, setRejectFor] = useState<Order | null>(null);
   const [rejectCode, setRejectCode] = useState("WRONG_TXID");
   const [rejectNote, setRejectNote] = useState("");
   const [notifyGuest, setNotifyGuest] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const knownOrderIds = useRef<Set<string>>(new Set());
   const primed = useRef(false);
+  const rejectAnim = useOverlayAnim(Boolean(rejectFor));
 
   const announceNewOrder = useCallback(
     (order: Order) => {
@@ -105,30 +527,33 @@ export function BusinessOrdersPage() {
     [soundOn],
   );
 
-  const loadOrders = useCallback(async (opts?: { detectNew?: boolean }) => {
-    try {
-      const { orders: data, meta } = await orderApi.getBusinessOrders(1, 100);
-      if (meta?.businessName) setBusinessName(meta.businessName);
-      if (meta?.settings) setSettings(meta.settings);
-      if (meta?.rejectReasons) setRejectReasons(meta.rejectReasons);
+  const loadOrders = useCallback(
+    async (opts?: { detectNew?: boolean }) => {
+      try {
+        const { orders: data, meta } = await orderApi.getBusinessOrders(1, 100);
+        if (meta?.businessName) setBusinessName(meta.businessName);
+        if (meta?.settings) setSettings(meta.settings);
+        if (meta?.rejectReasons) setRejectReasons(meta.rejectReasons);
 
-      if (opts?.detectNew && primed.current && soundOn) {
-        for (const order of data) {
-          if (!knownOrderIds.current.has(order.id)) {
-            knownOrderIds.current.add(order.id);
-            void playOrderAlertSound();
-            setSuccess("New order received.");
-            break;
+        if (opts?.detectNew && primed.current && soundOn) {
+          for (const order of data) {
+            if (!knownOrderIds.current.has(order.id)) {
+              knownOrderIds.current.add(order.id);
+              void playOrderAlertSound();
+              setSuccess("New order received.");
+              break;
+            }
           }
         }
+        for (const order of data) knownOrderIds.current.add(order.id);
+        primed.current = true;
+        setOrders(data);
+      } catch {
+        /* silent */
       }
-      for (const order of data) knownOrderIds.current.add(order.id);
-      primed.current = true;
-      setOrders(data);
-    } catch {
-      /* silent */
-    }
-  }, [soundOn]);
+    },
+    [soundOn],
+  );
 
   useEffect(() => {
     setIsLoading(true);
@@ -171,18 +596,55 @@ export function BusinessOrdersPage() {
     return () => clearInterval(id);
   }, [socketStatus, loadOrders]);
 
-  const visibleOrders = useMemo(() => {
-    if (stationFilter === "ALL") return orders;
-    return orders.filter((o) =>
-      (o.items as OrderItem[]).some((i) => (i.station ?? "KITCHEN") === stationFilter),
-    );
-  }, [orders, stationFilter]);
+  const changeView = (next: OrdersView) => {
+    setView(next);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      /* ignore */
+    }
+  };
 
-  const activeKds = visibleOrders.filter(
-    (o) => o.status === "PAID" && o.prepStatus !== "SERVED" && o.prepStatus !== "CANCELLED",
+  const openOrder = (order: Order) => {
+    setSelectedId(order.id);
+    setDetailOpen(true);
+  };
+
+  const closeDetail = useCallback(() => setDetailOpen(false), []);
+
+  const activeOrders = useMemo(
+    () => orders.filter((o) => isPendingPay(o) || isActivePrep(o)),
+    [orders],
   );
-  const pendingPay = orders.filter(
-    (o) => o.status === "PENDING" || o.status === "WAITING_VERIFICATION",
+  const pendingPay = useMemo(() => orders.filter(isPendingPay), [orders]);
+  const cooking = useMemo(
+    () =>
+      orders.filter(
+        (o) =>
+          o.status === "PAID" &&
+          (o.prepStatus === "RECEIVED" || o.prepStatus === "PREPARING" || !o.prepStatus),
+      ),
+    [orders],
+  );
+  const newPaid = useMemo(
+    () =>
+      orders.filter(
+        (o) => o.status === "PAID" && (o.prepStatus === "RECEIVED" || !o.prepStatus),
+      ),
+    [orders],
+  );
+  const preparing = useMemo(
+    () => orders.filter((o) => o.status === "PAID" && o.prepStatus === "PREPARING"),
+    [orders],
+  );
+  const ready = useMemo(
+    () => orders.filter((o) => o.status === "PAID" && o.prepStatus === "READY"),
+    [orders],
+  );
+
+  const selectedOrder = useMemo(
+    () => orders.find((o) => o.id === selectedId) ?? null,
+    [orders, selectedId],
   );
 
   const handleConfirm = async (orderId: string) => {
@@ -191,7 +653,7 @@ export function BusinessOrdersPage() {
     try {
       const updated = await orderApi.confirmOrder(orderId);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      setSuccess("Payment confirmed — sent to stations.");
+      setSuccess("Payment confirmed — order is on the prep board.");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -304,69 +766,293 @@ export function BusinessOrdersPage() {
 
   const isStaff = user?.role === "STAFF";
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {businessName ? `${businessName} · ` : ""}
-          Live KDS{isStaff ? " (staff)" : ""}
-        </p>
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-            socketStatus === "connected"
-              ? "bg-emerald-500/15 text-emerald-600"
-              : "bg-amber-500/15 text-amber-700"
-          }`}
-        >
-          {socketStatus === "connected" ? "Live" : "Connecting…"}
+  const renderEmpty = () => (
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-14 text-center dark:border-gray-700 dark:bg-gray-950">
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No active orders</p>
+      <p className="mt-1 text-sm text-gray-500">New guest orders will appear here live.</p>
+    </div>
+  );
+
+  const listView = (
+    <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-950">
+      {activeOrders.map((order) => {
+        const loc = locationLabel(order);
+        return (
+          <li key={order.id}>
+            <button
+              type="button"
+              onClick={() => openOrder(order)}
+              className={`flex w-full items-center gap-3 border-l-4 px-4 py-3.5 text-left transition hover:bg-gray-50 dark:hover:bg-gray-900/60 ${railClass(order)}`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-semibold text-gray-900 dark:text-gray-50">
+                    {loc ?? order.customerName}
+                  </p>
+                  <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
+                </div>
+                <p className="mt-0.5 truncate text-sm text-gray-500">
+                  {itemSummary(order)} · {timeAgo(order.createdAt)}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+                  RWF {order.total.toLocaleString()}
+                </p>
+                <p className="text-xs text-gray-400">{itemCount(order)} items</p>
+              </div>
+              <svg
+                className="h-4 w-4 shrink-0 text-gray-300"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  const gridView = (
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {activeOrders.map((order) => {
+        const loc = locationLabel(order);
+        return (
+          <li key={order.id}>
+            <button
+              type="button"
+              onClick={() => openOrder(order)}
+              className={`flex h-full w-full flex-col rounded-2xl border border-gray-200 border-l-4 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-950 ${railClass(order)}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                  {loc ?? order.customerName}
+                </p>
+                <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                {loc ? order.customerName : order.phone}
+              </p>
+              <p className="mt-3 line-clamp-2 text-sm text-gray-700 dark:text-gray-300">
+                {itemSummary(order, 4)}
+              </p>
+              <div className="mt-auto flex items-end justify-between pt-4">
+                <span className="text-xs text-gray-400">{timeAgo(order.createdAt)}</span>
+                <span className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+                  RWF {order.total.toLocaleString()}
+                </span>
+              </div>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  const boardColumn = (title: string, list: Order[], empty: string) => (
+    <div className="min-w-[220px] flex-1 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-900/40">
+      <div className="mb-3 flex items-center gap-2 px-1">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
+        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-500 shadow-sm dark:bg-gray-800">
+          {list.length}
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            const next = !soundOn;
-            setSoundOn(next);
-            setOrderAlertSoundEnabled(next);
-            void unlockOrderAlertSound();
-            if (next) void playOrderAlertSound();
-          }}
-          className="rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold text-brand-600"
-        >
-          {soundOn ? "Sound on" : "Sound off"}
-        </button>
-        {!isStaff && (
-          <button
-            type="button"
-            onClick={() => void toggleBusy()}
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              settings.busyMode
-                ? "bg-red-500 text-white"
-                : "bg-gray-100 text-gray-600 dark:bg-gray-800"
-            }`}
-          >
-            {settings.busyMode ? "Busy mode ON" : "Busy mode"}
-          </button>
-        )}
       </div>
+      <ul className="space-y-2">
+        {list.length === 0 && (
+          <li className="rounded-xl border border-dashed border-gray-200 px-3 py-6 text-center text-xs text-gray-400 dark:border-gray-700">
+            {empty}
+          </li>
+        )}
+        {list.map((order) => {
+          const loc = locationLabel(order);
+          return (
+            <li key={order.id}>
+              <button
+                type="button"
+                onClick={() => openOrder(order)}
+                className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-gray-300 hover:shadow dark:border-gray-700 dark:bg-gray-950 dark:hover:border-gray-600"
+              >
+                <p className="font-semibold text-gray-900 dark:text-gray-50">
+                  {loc ?? order.customerName}
+                </p>
+                <p className="mt-1 line-clamp-2 text-xs text-gray-500">{itemSummary(order, 2)}</p>
+                <div className="mt-2 flex justify-between text-xs">
+                  <span className="text-gray-400">{timeAgo(order.createdAt)}</span>
+                  <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-200">
+                    RWF {order.total.toLocaleString()}
+                  </span>
+                </div>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  const boardView = (
+    <div className="-mx-1 flex gap-3 overflow-x-auto pb-2">
+      {boardColumn("Payment", pendingPay, "None waiting")}
+      {boardColumn("New", newPaid, "None new")}
+      {boardColumn("Cooking", preparing, "None cooking")}
+      {boardColumn("Ready", ready, "None ready")}
+    </div>
+  );
+
+  const barsView = (
+    <ul className="space-y-2">
+      {activeOrders.map((order) => {
+        const loc = locationLabel(order);
+        return (
+          <li key={order.id}>
+            <button
+              type="button"
+              onClick={() => openOrder(order)}
+              className="group w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700"
+            >
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-gray-900 dark:text-gray-50">
+                      {loc ?? order.customerName}
+                    </p>
+                    <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-gray-500">{itemSummary(order)}</p>
+                </div>
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-gray-800 dark:text-gray-100">
+                  RWF {order.total.toLocaleString()}
+                </p>
+              </div>
+              <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800">
+                <div
+                  className={`h-full rounded-r-full transition-all duration-500 ${barFillClass(order)}`}
+                  style={{ width: barFillWidth(order) }}
+                />
+              </div>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  return (
+    <div
+      className={`mx-auto space-y-6 pb-10 ${
+        view === "board" ? "max-w-6xl" : "max-w-3xl"
+      }`}
+    >
+      <header className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
+              {businessName || "Orders"}
+            </p>
+            <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
+              Live orders
+            </h1>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <StatusBadge
+                label={`${pendingPay.length} to confirm`}
+                tone={pendingPay.length ? "warn" : "neutral"}
+              />
+              <StatusBadge
+                label={`${cooking.length + ready.length} in prep`}
+                tone={cooking.length + ready.length ? "progress" : "neutral"}
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                socketStatus === "connected"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
+                  : "bg-gray-100 text-gray-500 dark:bg-gray-800"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  socketStatus === "connected" ? "bg-emerald-500" : "bg-gray-400"
+                }`}
+              />
+              {socketStatus === "connected" ? "Live" : "Connecting"}
+            </span>
+            <Button
+              variant="secondary"
+              className="!px-3 !py-1.5 text-xs"
+              onClick={() => {
+                const next = !soundOn;
+                setSoundOn(next);
+                setOrderAlertSoundEnabled(next);
+                void unlockOrderAlertSound();
+                if (next) void playOrderAlertSound();
+              }}
+            >
+              {soundOn ? "Sound on" : "Sound off"}
+            </Button>
+            {!isStaff && (
+              <>
+                <Button
+                  variant="secondary"
+                  className="!px-3 !py-1.5 text-xs"
+                  onClick={() => void toggleBusy()}
+                >
+                  {settings.busyMode ? "Resume" : "Pause"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="!px-3 !py-1.5 text-xs"
+                  onClick={() => setSettingsOpen((v) => !v)}
+                >
+                  Settings
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="!px-3 !py-1.5 text-xs"
+                  onClick={async () => {
+                    const blob = await orderApi.exportOrdersCsv();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "orders.csv";
+                    a.click();
+                  }}
+                >
+                  Export
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
 
       {error && <Alert message={error} />}
       {success && <Alert message={success} type="success" />}
 
-      {!isStaff && (
-        <PanelCard>
-          <SectionHeader
-            title="Kitchen load & wait"
-            description="Guests see this ETA when ordering and on the tracking page."
-            icon={<IconOrders size={18} />}
-            accent="brand"
-          />
-          <div className="mt-3 flex flex-wrap items-end gap-3">
-            <label className="text-xs text-gray-500">
-              Base minutes
+      {settings.busyMode && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100">
+          Orders are paused — guests cannot place new orders until you resume.
+        </p>
+      )}
+
+      {!isStaff && settingsOpen && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Guest wait estimate
+          </h2>
+          <div className="mt-4 flex flex-wrap items-end gap-4">
+            <label className="text-xs font-medium text-gray-500">
+              Minutes
               <input
                 type="number"
                 min={5}
                 max={120}
-                className="mt-1 block w-24 rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
+                className="mt-1 block w-24 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 value={settings.estimatedWaitMinutes ?? 15}
                 onChange={(e) =>
                   setSettings((s) => ({
@@ -376,10 +1062,10 @@ export function BusinessOrdersPage() {
                 }
               />
             </label>
-            <label className="text-xs text-gray-500">
-              Load
+            <label className="text-xs font-medium text-gray-500">
+              Kitchen load
               <select
-                className="mt-1 block rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
+                className="mt-1 block rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
                 value={settings.kitchenLoad ?? "NORMAL"}
                 onChange={(e) =>
                   setSettings((s) => ({
@@ -393,275 +1079,88 @@ export function BusinessOrdersPage() {
                 <option value="HIGH">High</option>
               </select>
             </label>
-            <label className="text-xs text-gray-500">
-              Happy hour (e.g. 17:00-19:00)
+            <label className="text-xs font-medium text-gray-500">
+              Happy hour
               <input
-                className="mt-1 block w-40 rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
+                className="mt-1 block w-36 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                placeholder="17:00-19:00"
                 value={settings.happyHourWindow ?? ""}
                 onChange={(e) =>
                   setSettings((s) => ({ ...s, happyHourWindow: e.target.value }))
                 }
               />
             </label>
-            <Button onClick={() => void saveWait()} className="text-xs">
+            <Button onClick={() => void saveWait()} variant="secondary">
               Save
             </Button>
           </div>
-        </PanelCard>
+        </section>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <MetricTile label="Awaiting pay" value={pendingPay.length} icon={<IconPending size={18} />} accent="amber" />
-        <MetricTile label="In prep" value={activeKds.length} icon={<IconOrders size={18} />} accent="brand" />
-        <MetricTile
-          label="Paid today-ish"
-          value={orders.filter((o) => o.status === "PAID").length}
-          icon={<IconPaid size={18} />}
-          accent="emerald"
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            Active orders
+          </h2>
+          <p className="text-xs text-gray-500">
+            Click an order to see items and take action
+          </p>
+        </div>
+        <ViewSwitcher value={view} onChange={changeView} />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {STATIONS.map((s) => (
+      {activeOrders.length === 0
+        ? renderEmpty()
+        : view === "list"
+          ? listView
+          : view === "grid"
+            ? gridView
+            : view === "board"
+              ? boardView
+              : barsView}
+
+      <OrderDetailModal
+        order={selectedOrder}
+        open={detailOpen && Boolean(selectedOrder)}
+        onClose={closeDetail}
+        ordersLoading={ordersLoading}
+        onConfirm={(id) => void handleConfirm(id)}
+        onReject={(order) => {
+          setRejectFor(order);
+          setRejectCode("WRONG_TXID");
+          setRejectNote("");
+        }}
+        onPrep={(id, status) => void handlePrep(id, status)}
+        onLinePrep={(orderId, lineId, status) =>
+          void handleLinePrep(orderId, lineId, status)
+        }
+      />
+
+      {rejectAnim.mounted && rejectFor && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <button
-            key={s.value}
             type="button"
-            onClick={() => setStationFilter(s.value)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
-              stationFilter === s.value
-                ? "bg-[#DE3A16] text-white"
-                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            aria-label="Close"
+            className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${
+              rejectAnim.shown ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => setRejectFor(null)}
+          />
+          <div
+            className={`relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 ease-out dark:bg-gray-900 ${
+              rejectAnim.shown
+                ? "translate-y-0 scale-100 opacity-100"
+                : "translate-y-3 scale-95 opacity-0"
             }`}
           >
-            {s.label}
-          </button>
-        ))}
-        {!isStaff && (
-          <Button
-            variant="secondary"
-            className="ml-auto gap-1.5 py-1.5 text-xs"
-            onClick={async () => {
-              const blob = await orderApi.exportOrdersCsv();
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "orders.csv";
-              a.click();
-            }}
-          >
-            <IconDownload size={14} /> Export
-          </Button>
-        )}
-      </div>
-
-      {/* Payment queue */}
-      {pendingPay.length > 0 && (
-        <PanelCard>
-          <SectionHeader title="Payment queue" description="Confirm or reject with a reason." icon={<IconPending size={18} />} accent="amber" />
-          <div className="divide-y dark:divide-gray-800">
-            {pendingPay.map((order) => (
-              <div key={order.id} className="p-4">
-                <div className="mb-2 flex justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">{order.customerName}</p>
-                    <p className="text-xs text-gray-500">
-                      {locationLabel(order)} · {order.phone}
-                    </p>
-                  </div>
-                  <span className="text-xs font-semibold text-amber-600">{order.status.replace("_", " ")}</span>
-                </div>
-                {(order.items as OrderItem[]).map((item, i) => (
-                  <p key={i} className="text-xs text-gray-600">
-                    <span className="font-semibold">{item.name}</span>
-                    {(item.selectedModifiers ?? []).length
-                      ? ` · ${(item.selectedModifiers ?? []).map((m) => m.optionName).join(", ")}`
-                      : ""}
-                    {item.specialInstructions ? ` — “${item.specialInstructions}”` : ""}
-                  </p>
-                ))}
-                {order.notes && (
-                  <p className="mt-1 text-xs italic text-amber-800">Note: {order.notes}</p>
-                )}
-                <p className="mt-2 text-sm font-bold text-[#DE3A16]">
-                  RWF {order.total.toLocaleString()}
-                  {order.estimatedWaitMinutes ? ` · ~${order.estimatedWaitMinutes} min` : ""}
-                </p>
-                {order.txId && (
-                  <p className="mt-1 font-mono text-xs">TxId: {order.txId}</p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    disabled={ordersLoading}
-                    onClick={() => void handleConfirm(order.id)}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Confirm payment
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="border-red-200 text-red-600"
-                    onClick={() => {
-                      setRejectFor(order);
-                      setRejectCode("WRONG_TXID");
-                      setRejectNote("");
-                    }}
-                  >
-                    Reject…
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </PanelCard>
-      )}
-
-      {/* KDS cards */}
-      <div>
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500">
-          Station tickets
-        </h2>
-        {activeKds.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-500">
-            No active prep tickets for this station.
-          </p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {activeKds.map((order) => {
-              const loc = locationLabel(order);
-              const lines = (order.items as OrderItem[]).filter(
-                (i) =>
-                  stationFilter === "ALL" ||
-                  (i.station ?? "KITCHEN") === stationFilter,
-              );
-              return (
-                <div
-                  key={order.id}
-                  className={`rounded-2xl border-2 p-4 shadow-sm dark:bg-gray-900 ${
-                    order.prepStatus === "READY"
-                      ? "border-emerald-500 bg-emerald-50/40"
-                      : "border-gray-200 dark:border-gray-700"
-                  }`}
-                >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-lg font-black tracking-tight">
-                        {loc ?? order.customerName}
-                      </p>
-                      <p className="text-xs text-gray-500">{order.customerName}</p>
-                    </div>
-                    <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[11px] font-bold text-sky-700">
-                      {order.prepStatus}
-                    </span>
-                  </div>
-
-                  <div className="mb-3 flex flex-wrap gap-1">
-                    {guestTimeline(order).map((s) => (
-                      <span
-                        key={s.key}
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-                          s.done ? "bg-[#DE3A16] text-white" : "bg-gray-100 text-gray-400"
-                        }`}
-                      >
-                        {s.label}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="space-y-2">
-                    {lines.map((item) => (
-                      <div
-                        key={item.lineId ?? item.id}
-                        className="rounded-xl bg-white/80 p-2 dark:bg-gray-950/50"
-                      >
-                        <p className="text-sm font-bold">
-                          {item.qty}× {item.name}
-                          <span className="ml-2 text-[10px] font-semibold uppercase text-gray-400">
-                            {item.station ?? "KITCHEN"}
-                          </span>
-                        </p>
-                        {(item.selectedModifiers ?? []).length > 0 && (
-                          <p className="text-xs font-semibold text-[#DE3A16]">
-                            {(item.selectedModifiers ?? []).map((m) => m.optionName).join(" · ")}
-                          </p>
-                        )}
-                        {item.specialInstructions && (
-                          <p className="text-xs italic text-gray-600">
-                            “{item.specialInstructions}”
-                          </p>
-                        )}
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {(["PREPARING", "READY", "SERVED"] as LinePrepStatus[]).map((st) => (
-                            <button
-                              key={st}
-                              type="button"
-                              onClick={() =>
-                                item.lineId &&
-                                void handleLinePrep(order.id, item.lineId, st)
-                              }
-                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                                item.linePrepStatus === st
-                                  ? "bg-sky-600 text-white"
-                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800"
-                              }`}
-                            >
-                              {st === "READY" ? "BUMP READY" : st}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="mt-2 text-right text-xs text-gray-400">
-                    RWF {order.total.toLocaleString()}
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {PREP_FLOW.map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => void handlePrep(order.id, status)}
-                        className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                          order.prepStatus === status
-                            ? "bg-sky-600 text-white"
-                            : "bg-gray-100 dark:bg-gray-800"
-                        }`}
-                      >
-                        {status === "READY" ? "CALL READY" : status}
-                      </button>
-                    ))}
-                  </div>
-
-                  {order.events && order.events.length > 0 && (
-                    <div className="mt-3 border-t pt-2 text-[10px] text-gray-500 dark:border-gray-800">
-                      <p className="mb-1 font-semibold uppercase">Audit</p>
-                      {order.events.slice(0, 4).map((ev) => (
-                        <p key={ev.id}>
-                          {new Date(ev.createdAt).toLocaleTimeString()} · {ev.action}
-                          {ev.actorName ? ` · ${ev.actorName}` : ""}
-                          {ev.detail ? ` — ${ev.detail}` : ""}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Reject modal */}
-      {rejectFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-gray-900">
-            <h3 className="text-lg font-bold">Reject order</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+              Reject order
+            </h3>
             <p className="mt-1 text-sm text-gray-500">{rejectFor.customerName}</p>
-            <label className="mt-4 block text-xs font-semibold text-gray-500">
+            <label className="mt-4 block text-xs font-medium text-gray-500">
               Reason
               <select
-                className="mt-1 w-full rounded-xl border px-3 py-2 text-sm dark:bg-gray-950"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
                 value={rejectCode}
                 onChange={(e) => setRejectCode(e.target.value)}
               >
@@ -681,13 +1180,13 @@ export function BusinessOrdersPage() {
               </select>
             </label>
             <textarea
-              className="mt-3 w-full rounded-xl border px-3 py-2 text-sm dark:bg-gray-950"
+              className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
               rows={2}
-              placeholder="Optional extra detail for the guest"
+              placeholder="Optional detail for the guest"
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
             />
-            <label className="mt-3 flex items-center gap-2 text-sm">
+            <label className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <input
                 type="checkbox"
                 checked={notifyGuest}
@@ -695,15 +1194,11 @@ export function BusinessOrdersPage() {
               />
               Open WhatsApp message to guest
             </label>
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-5 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setRejectFor(null)}>
                 Cancel
               </Button>
-              <Button
-                className="bg-red-600 hover:bg-red-700"
-                disabled={ordersLoading}
-                onClick={() => void submitReject()}
-              >
+              <Button disabled={ordersLoading} onClick={() => void submitReject()}>
                 Reject order
               </Button>
             </div>

@@ -19,7 +19,6 @@ export function BusinessStaffPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [station, setStation] = useState<"KITCHEN" | "BAR" | "FLOOR" | "ALL">("ALL");
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
@@ -45,12 +44,11 @@ export function BusinessStaffPage() {
         email,
         password,
         staffRole: "ORDERS",
-        station,
+        station: "ALL",
       });
       setName("");
       setEmail("");
       setPassword("");
-      setStation("ALL");
       setSuccess("Staff account created. They can log in and open the orders portal.");
       await load();
     } catch (err) {
@@ -87,8 +85,9 @@ export function BusinessStaffPage() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Create order-receiver logins for kitchen, bar, or front desk. Staff see the live orders
-        portal without owning the business account.
+        Create logins for people who take or prepare orders — kitchen, front desk, or
+        whoever handles guests. They use the live orders portal without owning the business
+        account.
       </p>
 
       {error && <Alert message={error} />}
@@ -126,16 +125,6 @@ export function BusinessStaffPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <select
-            className={formControlClass()}
-            value={station}
-            onChange={(e) => setStation(e.target.value as typeof station)}
-          >
-            <option value="ALL">All stations</option>
-            <option value="KITCHEN">Kitchen</option>
-            <option value="BAR">Bar</option>
-            <option value="FLOOR">Floor / room service</option>
-          </select>
           <div className="flex items-end sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
               {submitting ? "Creating…" : "Create staff login"}
@@ -147,7 +136,7 @@ export function BusinessStaffPage() {
       <PanelCard>
         <SectionHeader
           title="Team"
-          description="Active staff receive live order updates over WebSocket."
+          description="Active staff receive live order updates."
           icon={<IconUsers size={18} />}
           accent="brand"
         />
@@ -166,7 +155,6 @@ export function BusinessStaffPage() {
                 </p>
                 <p className="text-xs text-gray-500">{member.user.email}</p>
                 <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-gray-400">
-                  {member.staffRole} · {member.station ?? "ALL"} ·{" "}
                   {member.isActive ? "Active" : "Disabled"}
                 </p>
               </div>
