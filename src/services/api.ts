@@ -691,6 +691,12 @@ export const menuApi = {
       name: string;
       price: number;
       description?: string;
+      customizationHint?: string;
+      allowsSpecialInstructions?: boolean;
+      customizationOptions?: import("../types").CustomizationOptions | null;
+      isSoldOut?: boolean;
+      availability?: import("../types").ItemAvailability;
+      station?: import("../types").PrepStation;
     },
     file?: File | null,
   ) => {
@@ -698,6 +704,16 @@ export const menuApi = {
     formData.append("name", data.name);
     formData.append("price", String(data.price));
     if (data.description) formData.append("description", data.description);
+    if (data.customizationHint) formData.append("customizationHint", data.customizationHint);
+    if (data.allowsSpecialInstructions !== undefined) {
+      formData.append("allowsSpecialInstructions", String(data.allowsSpecialInstructions));
+    }
+    if (data.customizationOptions) {
+      formData.append("customizationOptions", JSON.stringify(data.customizationOptions));
+    }
+    if (data.isSoldOut !== undefined) formData.append("isSoldOut", String(data.isSoldOut));
+    if (data.availability) formData.append("availability", data.availability);
+    if (data.station) formData.append("station", data.station);
     if (file) formData.append("photo", file);
 
     const res = await apiClient.post<ApiResponse<BusinessMenu["items"][number]>>(
@@ -706,6 +722,28 @@ export const menuApi = {
       {
         headers: { "Content-Type": "multipart/form-data" },
       },
+    );
+    return res.data.data;
+  },
+
+  updateMenuItem: async (
+    menuId: string,
+    itemId: string,
+    data: {
+      name?: string;
+      price?: number;
+      description?: string;
+      customizationHint?: string | null;
+      allowsSpecialInstructions?: boolean;
+      customizationOptions?: import("../types").CustomizationOptions | null;
+      isSoldOut?: boolean;
+      availability?: import("../types").ItemAvailability;
+      station?: import("../types").PrepStation;
+    },
+  ) => {
+    const res = await apiClient.patch<ApiResponse<BusinessMenu["items"][number]>>(
+      `/menu/${menuId}/items/${itemId}`,
+      data,
     );
     return res.data.data;
   },
@@ -1344,9 +1382,28 @@ export const orderApi = {
     orderContext?: import("../types").OrderContext;
     tableNumber?: string;
     roomNumber?: string;
-    items: { id: string; name: string; price: number; qty: number; imageUrl: string | null }[];
+    notes?: string;
+    forceDuplicate?: boolean;
+    items: import("../types").OrderItem[];
   }) => {
-    const res = await apiClient.post<ApiResponse<import("../types").Order>>("/orders", data);
+    try {
+      const res = await apiClient.post<ApiResponse<import("../types").Order>>("/orders", data);
+      return res.data.data;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  getFavorite: async (businessId: string, phone: string) => {
+    const res = await apiClient.get<
+      ApiResponse<{
+        id: string;
+        businessId: string;
+        phone: string;
+        customerName: string | null;
+        items: import("../types").OrderItem[];
+      } | null>
+    >("/orders/favorites", { params: { businessId, phone } });
     return res.data.data;
   },
 
@@ -1362,21 +1419,68 @@ export const orderApi = {
     return res.data.data;
   },
 
-  // Business — get all orders for my business
-  getBusinessOrders: async (page = 1, limit = 20) => {
-    const res = await apiClient.get<ApiResponse<import("../types").Order[]> & { pagination: import("../types").ApiPagination }>("/orders/business", { params: { page, limit } });
-    return { orders: res.data.data, pagination: res.data.pagination };
+  // Business / staff — get all orders for my business
+  getBusinessOrders: async (page = 1, limit = 50, station?: string) => {
+    const res = await apiClient.get<
+      ApiResponse<import("../types").Order[]> & {
+        pagination: import("../types").ApiPagination;
+        meta?: {
+          businessId: string;
+          businessName: string;
+          businessType: string;
+          isOwner: boolean;
+          staffRole: string | null;
+          settings?: import("../types").BusinessSettings;
+          rejectReasons?: { code: string; label: string }[];
+        };
+      }
+    >("/orders/business", { params: { page, limit, ...(station ? { station } : {}) } });
+    return {
+      orders: res.data.data,
+      pagination: res.data.pagination,
+      meta: res.data.meta,
+    };
   },
 
-  // Business — confirm payment
+  // Business / staff — confirm payment
   confirmOrder: async (orderId: string) => {
     const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/confirm`);
     return res.data.data;
   },
 
-  // Business — reject order
-  rejectOrder: async (orderId: string) => {
-    const res = await apiClient.post<ApiResponse<import("../types").Order>>(`/orders/${orderId}/reject`);
+  // Business / staff — reject order with reason
+  rejectOrder: async (
+    orderId: string,
+    body?: { reasonCode?: string; reason?: string; notifyGuest?: boolean },
+  ) => {
+    const res = await apiClient.post<
+      ApiResponse<import("../types").Order> & {
+        notify?: { whatsappUrl: string; smsHint: string; shouldNotify: boolean };
+      }
+    >(`/orders/${orderId}/reject`, body ?? {});
+    return { order: res.data.data, notify: (res.data as any).notify };
+  },
+
+  updatePrepStatus: async (
+    orderId: string,
+    prepStatus: import("../types").PrepStatus,
+  ) => {
+    const res = await apiClient.patch<ApiResponse<import("../types").Order>>(
+      `/orders/${orderId}/prep-status`,
+      { prepStatus },
+    );
+    return res.data.data;
+  },
+
+  updateLinePrep: async (
+    orderId: string,
+    lineId: string,
+    linePrepStatus: import("../types").LinePrepStatus,
+  ) => {
+    const res = await apiClient.patch<ApiResponse<import("../types").Order>>(
+      `/orders/${orderId}/line-prep`,
+      { lineId, linePrepStatus },
+    );
     return res.data.data;
   },
 
@@ -1389,6 +1493,51 @@ export const orderApi = {
   // Business — delete a completed or rejected order
   deleteOrder: async (orderId: string) => {
     const res = await apiClient.delete<ApiResponse<{ message: string }>>(`/orders/${orderId}`);
+    return res.data;
+  },
+};
+
+export const staffApi = {
+  me: async () => {
+    const res = await apiClient.get<
+      ApiResponse<{
+        isOwner: boolean;
+        staffRole: string | null;
+        business: { id: string; name: string; businessType: string };
+      }>
+    >("/staff/me");
+    return res.data.data;
+  },
+
+  list: async () => {
+    const res = await apiClient.get<ApiResponse<import("../types").BusinessStaffMember[]>>("/staff");
+    return res.data.data;
+  },
+
+  create: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    staffRole?: "ORDERS" | "MANAGER";
+    station?: import("../types").PrepStation;
+  }) => {
+    const res = await apiClient.post<ApiResponse<import("../types").BusinessStaffMember>>(
+      "/staff",
+      data,
+    );
+    return res.data.data;
+  },
+
+  setActive: async (id: string, isActive: boolean) => {
+    const res = await apiClient.patch<ApiResponse<import("../types").BusinessStaffMember>>(
+      `/staff/${id}/active`,
+      { isActive },
+    );
+    return res.data.data;
+  },
+
+  remove: async (id: string) => {
+    const res = await apiClient.delete<ApiResponse<{ message: string }>>(`/staff/${id}`);
     return res.data;
   },
 };

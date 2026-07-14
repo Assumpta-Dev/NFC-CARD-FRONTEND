@@ -27,8 +27,31 @@ import {
   HiOutlineRefresh,
 } from "react-icons/hi";
 import { orderApi, getErrorMessage } from "../../services/api";
-import { Order } from "../../types";
+import { Order, OrderItem } from "../../types";
 import { PageSpinner } from "../../components/ui";
+import { useGuestOrderSocket } from "../../hooks/useGuestOrderSocket";
+
+function guestSteps(order: Order) {
+  if (order.status === "REJECTED") {
+    return [
+      { label: "Placed", done: true },
+      { label: "Rejected", done: true, bad: true },
+    ];
+  }
+  const paid = order.status === "PAID" || order.status === "WAITING_VERIFICATION";
+  const prep = order.prepStatus ?? "NONE";
+  const preparing = ["PREPARING", "READY", "SERVED"].includes(prep);
+  const ready = ["READY", "SERVED"].includes(prep);
+  const served = prep === "SERVED";
+  const readyLabel = order.orderContext === "ROOM" ? "On the way" : "Ready";
+  return [
+    { label: "Placed", done: true },
+    { label: "Paid", done: paid && order.status === "PAID" },
+    { label: "Preparing", done: preparing },
+    { label: readyLabel, done: ready },
+    { label: "Served", done: served },
+  ];
+}
 
 // ===========================================================
 // RECEIPT PREVIEW — shown inline on the page before printing
@@ -62,19 +85,35 @@ function ReceiptPreview({ order, businessName }: { order: Order; businessName: s
 
       {/* Items */}
       <div className="mb-3 space-y-2">
-        {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-3">
-            {item.imageUrl && (
-              <img src={item.imageUrl} alt={item.name} className="h-9 w-9 rounded-lg object-cover" />
-            )}
-            <div className="flex-grow">
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.name}</p>
-              <p className="text-xs text-gray-400">x{item.qty}</p>
+        {items.map((item, i) => {
+          const mods = (item.selectedModifiers ?? [])
+            .map((m: { optionName: string }) => m.optionName)
+            .join(", ");
+          return (
+            <div key={i} className="flex items-start gap-3">
+              {item.imageUrl && (
+                <img src={item.imageUrl} alt={item.name} className="h-9 w-9 rounded-lg object-cover" />
+              )}
+              <div className="flex-grow">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.name}</p>
+                {mods && <p className="text-[11px] text-gray-500">{mods}</p>}
+                {item.specialInstructions && (
+                  <p className="text-[11px] italic text-[#DE3A16]">“{item.specialInstructions}”</p>
+                )}
+                <p className="text-xs text-gray-400">x{item.qty}</p>
+              </div>
+              <p className="text-sm font-bold text-[#DE3A16]">RWF {(item.price * item.qty).toLocaleString()}</p>
             </div>
-            <p className="text-sm font-bold text-[#DE3A16]">RWF {(item.price * item.qty).toLocaleString()}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {order.notes && (
+        <p className="mb-3 text-xs text-amber-800 dark:text-amber-200">
+          <span className="font-semibold">Note: </span>
+          {order.notes}
+        </p>
+      )}
 
       {/* Total */}
       <div className="flex justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-sm font-bold">
@@ -210,7 +249,7 @@ export function OrderTrackingPage() {
     if (!orderId) return;
     try {
       const result = await orderApi.getOrderStatus(orderId);
-      setOrder(result as any);
+      setOrder(result);
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -219,21 +258,30 @@ export function OrderTrackingPage() {
   useEffect(() => {
     if (!orderId) { setError("Order ID is missing."); setIsLoading(false); return; }
     orderApi.getOrderStatus(orderId)
-      .then((result) => setOrder(result as any))
+      .then((result) => setOrder(result))
       .catch((err) => setError(getErrorMessage(err)))
       .finally(() => setIsLoading(false));
   }, [orderId]);
 
-  // Poll every 5s while not finalized
+  useGuestOrderSocket({
+    orderId,
+    enabled: Boolean(orderId),
+    onUpdate: (updated) => setOrder(updated),
+  });
+
+  // Poll fallback while payment / prep not finished
   useEffect(() => {
     if (!order) return;
-    if (order.status === "PAID" || order.status === "REJECTED") {
+    const done =
+      order.status === "REJECTED" ||
+      (order.status === "PAID" && order.prepStatus === "SERVED");
+    if (done) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
-    intervalRef.current = setInterval(fetchOrder, 5000);
+    intervalRef.current = setInterval(fetchOrder, 8000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [order?.status]);
+  }, [order?.status, order?.prepStatus]);
 
   if (isLoading) return <PageSpinner />;
 
@@ -251,7 +299,8 @@ export function OrderTrackingPage() {
     );
   }
 
-  const items = order.items as any[];
+  const items = order.items as OrderItem[];
+  const steps = guestSteps(order);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 pb-16">
@@ -275,6 +324,45 @@ export function OrderTrackingPage() {
           <div className="mt-3">
             <StatusBadge status={order.status} />
           </div>
+          {order.estimatedWaitMinutes && order.status !== "REJECTED" && order.prepStatus !== "SERVED" && (
+            <p className="mt-2 text-sm font-semibold text-[#DE3A16]">
+              Est. wait ~{order.estimatedWaitMinutes} min
+            </p>
+          )}
+        </div>
+
+        {/* Live status timeline */}
+        <div className="card-soft mb-4 rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
+          <p className="section-label mb-3">Status</p>
+          <div className="space-y-2">
+            {steps.map((step, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
+                    step.done
+                      ? (step as { bad?: boolean }).bad
+                        ? "bg-red-500 text-white"
+                        : "bg-[#DE3A16] text-white"
+                      : "bg-gray-100 text-gray-400 dark:bg-gray-800"
+                  }`}
+                >
+                  {step.done ? "✓" : idx + 1}
+                </span>
+                <span
+                  className={`text-sm font-semibold ${
+                    step.done ? "text-gray-900 dark:text-gray-100" : "text-gray-400"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+          {order.status === "REJECTED" && (order.rejectReason || order.rejectReasonCode) && (
+            <p className="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300">
+              {order.rejectReason ?? order.rejectReasonCode}
+            </p>
+          )}
         </div>
 
         {/* Customer info */}
@@ -283,11 +371,6 @@ export function OrderTrackingPage() {
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {order.customerName.replace(/\s*\(.*\)$/, "")}
           </p>
-          {/\(.*\)$/.test(order.customerName) && (
-            <span className="inline-block mt-1 rounded-full bg-[#fdf3f0] px-2.5 py-0.5 text-xs font-semibold text-[#DE3A16]">
-              {order.customerName.match(/\((.*)\)$/)?.[1]}
-            </span>
-          )}
           <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
             <HiOutlinePhone className="text-sm" /> {order.phone}
           </p>
@@ -301,18 +384,35 @@ export function OrderTrackingPage() {
           <p className="section-label mb-3">Items Ordered</p>
           <div className="space-y-3">
             {items.map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <div key={i} className="flex items-start gap-3">
                 {item.imageUrl && (
                   <img src={item.imageUrl} alt={item.name} className="h-10 w-10 rounded-lg object-cover" />
                 )}
                 <div className="flex-grow">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">x{item.qty}</p>
+                  {(item.selectedModifiers ?? []).length > 0 && (
+                    <p className="text-[11px] text-gray-500">
+                      {(item.selectedModifiers ?? []).map((m) => m.optionName).join(", ")}
+                    </p>
+                  )}
+                  {item.specialInstructions && (
+                    <p className="text-[11px] italic text-[#DE3A16]">“{item.specialInstructions}”</p>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    x{item.qty}
+                    {item.linePrepStatus ? ` · ${item.linePrepStatus}` : ""}
+                  </p>
                 </div>
                 <p className="text-sm font-bold text-[#DE3A16]">RWF {(item.price * item.qty).toLocaleString()}</p>
               </div>
             ))}
           </div>
+          {order.notes && (
+            <p className="mt-3 text-xs text-amber-800 dark:text-amber-200">
+              <span className="font-semibold">Note: </span>
+              {order.notes}
+            </p>
+          )}
           <div className="mt-4 flex justify-between border-t pt-3 text-sm font-bold">
             <span>Total</span>
             <span className="text-[#DE3A16]">RWF {order.total.toLocaleString()}</span>

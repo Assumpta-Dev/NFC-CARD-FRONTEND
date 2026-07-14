@@ -45,16 +45,22 @@ import { PageSpinner, formControlClass } from "../../components/ui";
 import {
   businessTypeLabel,
   defaultOrderContext,
+  isBarType,
   isLodgingType,
+  ITEM_HINT_BY_TYPE,
   menuSectionLabel,
+  ORDER_NOTES_PLACEHOLDER,
 } from "../../constants/businessTypes";
 import { cardApi, getErrorMessage, orderApi } from "../../services/api";
 import {
+  MenuItem,
   OrderItem,
   PublicBusinessProfile,
   PublicCardResponse,
   PublicProfile,
 } from "../../types";
+import { ItemCustomizeModal } from "./ItemCustomizeModal";
+import axios from "axios";
 
 const LINK_ICONS: Record<string, { icon: JSX.Element; bg: string }> = {
   linkedin:  { icon: <FaLinkedin        className="text-2xl" style={{ color: "#fff" }} />, bg: "#0A66C2" },
@@ -213,6 +219,7 @@ export function CardPublicView() {
 
   const [cart, setCart] = useState<OrderItem[]>(saved?.cart ?? []);
   const [showCart, setShowCart] = useState(false);
+  const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<
     "form" | "payment" | "txid" | "waiting" | "done"
   >(saved?.checkoutStep ?? "form");
@@ -220,12 +227,13 @@ export function CardPublicView() {
   const [customerPhone, setCustomerPhone] = useState(
     saved?.customerPhone ?? "",
   );
+  const [orderNotes, setOrderNotes] = useState(saved?.orderNotes ?? "");
   const [txId, setTxId] = useState(saved?.txId ?? "");
   const [orderId, setOrderId] = useState(saved?.orderId ?? "");
   const [orderStatus, setOrderStatus] = useState(saved?.orderStatus ?? "");
   const [orderError, setOrderError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderType, setOrderType] = useState<"table" | "room">(
+  const [orderType, setOrderType] = useState<"table" | "room" | "bar">(
     saved?.orderType ?? "table",
   );
   const [tableRoom, setTableRoom] = useState<string>(saved?.tableRoom ?? "");
@@ -238,6 +246,7 @@ export function CardPublicView() {
       checkoutStep,
       customerName,
       customerPhone,
+      orderNotes,
       txId,
       orderId,
       orderStatus,
@@ -250,6 +259,7 @@ export function CardPublicView() {
     checkoutStep,
     customerName,
     customerPhone,
+    orderNotes,
     txId,
     orderId,
     orderStatus,
@@ -257,10 +267,14 @@ export function CardPublicView() {
     tableRoom,
   ]);
 
-  // Default table vs room from business type when no saved checkout session
+  // Default table / room / bar from business type when no saved checkout session
   useEffect(() => {
     if (cardData?.type !== "business" || saved?.orderType) return;
     const type = cardData.business.businessType;
+    if (type === "BAR") {
+      setOrderType("bar");
+      return;
+    }
     if (type === "RESTAURANT" || type === "CAFE") {
       setOrderType("table");
       return;
@@ -270,7 +284,7 @@ export function CardPublicView() {
       return;
     }
     const ctx = defaultOrderContext(type);
-    setOrderType(ctx === "ROOM" ? "room" : "table");
+    setOrderType(ctx === "ROOM" ? "room" : ctx === "BAR_SEAT" ? "bar" : "table");
   }, [cardData, saved?.orderType]);
 
   // Re-open modal after card data loads if there was an in-progress order
@@ -283,29 +297,26 @@ export function CardPublicView() {
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
-  const addToCart = useCallback(
-    (item: {
-      id: string;
-      name: string;
-      price: number;
-      imageUrl: string | null;
-    }) => {
-      setCart((prev) => {
-        const existing = prev.find((i) => i.id === item.id);
-        if (existing)
-          return prev.map((i) =>
-            i.id === item.id ? { ...i, qty: i.qty + 1 } : i,
-          );
-        return [...prev, { ...item, qty: 1 }];
-      });
-    },
-    [],
-  );
+  const addCustomizedLine = useCallback((line: OrderItem) => {
+    setCart((prev) => {
+      const key = line.cartKey ?? line.id;
+      const existing = prev.find((i) => (i.cartKey ?? i.id) === key);
+      if (existing) {
+        return prev.map((i) =>
+          (i.cartKey ?? i.id) === key ? { ...i, qty: i.qty + line.qty } : i,
+        );
+      }
+      return [...prev, line];
+    });
+    setCustomizeItem(null);
+  }, []);
 
-  const updateQty = useCallback((id: string, delta: number) => {
+  const updateQty = useCallback((cartKey: string, delta: number) => {
     setCart((prev) =>
       prev
-        .map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i))
+        .map((i) =>
+          (i.cartKey ?? i.id) === cartKey ? { ...i, qty: i.qty + delta } : i,
+        )
         .filter((i) => i.qty > 0),
     );
   }, []);
@@ -327,38 +338,90 @@ export function CardPublicView() {
     return () => clearInterval(interval);
   }, [checkoutStep, orderId]);
 
-  const handlePlaceOrder = async (businessId: string) => {
+  const handlePlaceOrder = async (businessId: string, forceDuplicate = false) => {
     if (!customerName.trim() || !customerPhone.trim()) {
       setOrderError("Name and phone are required");
       return;
     }
     if (!tableRoom.trim()) {
       setOrderError(
-        orderType === "table"
-          ? "Table number is required"
-          : "Room number is required",
+        orderType === "room"
+          ? "Room number is required"
+          : orderType === "bar"
+            ? "Bar seat / stool number is required"
+            : "Table number is required",
       );
       return;
     }
     setOrderError("");
     setIsSubmitting(true);
     try {
+      const orderContext =
+        orderType === "room" ? "ROOM" : orderType === "bar" ? "BAR_SEAT" : "TABLE";
       const order = await orderApi.placeOrder({
         businessId,
         customerName: customerName.trim(),
         phone: customerPhone.trim(),
-        orderContext: orderType === "room" ? "ROOM" : "TABLE",
-        tableNumber: orderType === "table" ? tableRoom.trim() : undefined,
+        orderContext,
+        tableNumber: orderType !== "room" ? tableRoom.trim() : undefined,
         roomNumber: orderType === "room" ? tableRoom.trim() : undefined,
-        items: cart,
+        notes: orderNotes.trim() || undefined,
+        forceDuplicate,
+        items: cart.map((c) => ({
+          ...c,
+          station: c.station,
+        })),
       });
       setOrderId(order.id);
       setCheckoutStep("payment");
       sessionStorage.setItem("lastOrderId", order.id);
     } catch (err) {
-      setOrderError(getErrorMessage(err));
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        const msg =
+          err.response.data?.message ||
+          "Same order was placed recently. Order again anyway?";
+        if (window.confirm(msg)) {
+          setIsSubmitting(false);
+          await handlePlaceOrder(businessId, true);
+          return;
+        }
+        setOrderError(msg);
+      } else if (axios.isAxiosError(err) && err.response?.status === 423) {
+        setOrderError(
+          err.response.data?.message ||
+            "Kitchen paused — not accepting orders right now.",
+        );
+      } else {
+        setOrderError(getErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const loadSameAsLast = async () => {
+    if (!businessProfile || !customerPhone.trim()) {
+      setOrderError("Enter your phone first to load your last order.");
+      return;
+    }
+    try {
+      const fav = await orderApi.getFavorite(businessProfile.id, customerPhone.trim());
+      if (!fav?.items?.length) {
+        setOrderError("No previous order found for this phone.");
+        return;
+      }
+      setCart(
+        fav.items.map((i, idx) => ({
+          ...i,
+          cartKey: i.cartKey ?? `${i.id}-fav-${idx}`,
+          qty: i.qty || 1,
+        })),
+      );
+      if (fav.customerName) setCustomerName(fav.customerName);
+      setOrderError("");
+      setShowCart(true);
+    } catch (err) {
+      setOrderError(getErrorMessage(err));
     }
   };
 
@@ -391,17 +454,17 @@ export function CardPublicView() {
     setCheckoutStep("form");
     setCustomerName("");
     setCustomerPhone("");
+    setOrderNotes("");
     setTxId("");
     setOrderId("");
     setOrderStatus("");
     setOrderError("");
     setTableRoom("");
     const ctx =
-      cardData?.type === "business" &&
-      defaultOrderContext(cardData.business.businessType) === "ROOM"
-        ? "room"
-        : "table";
-    setOrderType(ctx);
+      cardData?.type === "business"
+        ? defaultOrderContext(cardData.business.businessType)
+        : "TABLE";
+    setOrderType(ctx === "ROOM" ? "room" : ctx === "BAR_SEAT" ? "bar" : "table");
   };
 
   const resetAll = () => {
@@ -487,17 +550,23 @@ export function CardPublicView() {
   const businessProfile: PublicBusinessProfile | null =
     cardData.type === "business" ? cardData.business : null;
   const showTableOrders =
-    businessProfile?.businessType !== "MOTEL";
+    businessProfile?.businessType !== "MOTEL" &&
+    businessProfile?.businessType !== "BAR";
   const showRoomOrders =
     businessProfile?.businessType === "HOTEL" ||
     businessProfile?.businessType === "MOTEL" ||
     businessProfile?.businessType === "OTHER" ||
     !businessProfile?.businessType;
+  const showBarOrders = isBarType(businessProfile?.businessType);
   const placeOrderLabel = isLodgingType(businessProfile?.businessType)
     ? orderType === "room"
       ? "Request Room Service"
       : "Place Order"
-    : "Place Order";
+    : isBarType(businessProfile?.businessType)
+      ? "Send to Bar"
+      : "Place Order";
+  const busyMode = Boolean(businessProfile?.settings?.busyMode);
+  const waitMins = businessProfile?.settings?.estimatedWaitMinutes;
 
   if (cardData.type === "business" && !businessProfile) {
     return (
@@ -676,25 +745,58 @@ export function CardPublicView() {
           </div>
         )}
 
+        {busyMode && (
+          <div className="card-soft mb-4 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            Kitchen paused — not accepting new orders right now. Please check back shortly.
+          </div>
+        )}
+
+        {!busyMode && waitMins ? (
+          <div className="mb-4 rounded-2xl bg-[#fdf3f0] px-4 py-3 text-center text-sm font-semibold text-[#DE3A16]">
+            Typical wait ~{waitMins} minutes
+            {businessProfile?.settings?.kitchenLoad === "HIGH" ? " (busy)" : ""}
+          </div>
+        ) : null}
+
         {businessProfile?.menus?.length ? (
           <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-2 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-            <p className="section-label mb-3">
-              {menuSectionLabel(businessProfile.businessType)}
-            </p>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="section-label mb-0">
+                {menuSectionLabel(businessProfile.businessType)}
+              </p>
+              {!busyMode && (
+                <button
+                  type="button"
+                  onClick={() => void loadSameAsLast()}
+                  className="text-[11px] font-semibold text-[#DE3A16] underline-offset-2 hover:underline"
+                >
+                  Same as last time
+                </button>
+              )}
+            </div>
             {businessProfile.menus.map((menu) => (
               <div key={menu.id} className="mb-4 last:mb-0">
                 <h3 className="border-b border-gray-100 dark:border-gray-800 pb-1 font-bold text-gray-900 dark:text-gray-100">
                   {menu.title}
                 </h3>
                 <div className="mt-3 space-y-3">
-                  {menu.items?.map((item) => {
-                    const cartItem = cart.find((c) => c.id === item.id);
+                  {menu.items
+                    ?.filter((item) => {
+                      if (item.isSoldOut) return true; // still show, disabled
+                      return true;
+                    })
+                    .map((item) => {
+                    const inCartQty = cart
+                      .filter((c) => c.id === item.id)
+                      .reduce((sum, c) => sum + c.qty, 0);
+                    const soldOut = Boolean(item.isSoldOut);
                     return (
                       <div
                         key={item.id}
-                        className="flex gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                        className={`flex gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                          soldOut ? "opacity-60" : ""
+                        }`}
                       >
-                        {/* Image — larger, left-anchored, zoom on hover */}
                         {item.imageUrl && (
                           <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl">
                             <img
@@ -704,12 +806,21 @@ export function CardPublicView() {
                             />
                           </div>
                         )}
-                        {/* Content + cart controls in same column */}
                         <div className="flex min-w-0 flex-1 flex-col justify-between">
                           <div>
                             <div className="flex items-start justify-between gap-2">
                               <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
                                 {item.name}
+                                {soldOut && (
+                                  <span className="ml-2 text-[10px] font-bold uppercase text-red-500">
+                                    Sold out
+                                  </span>
+                                )}
+                                {item.availability && item.availability !== "ALL" && (
+                                  <span className="ml-2 text-[10px] font-semibold uppercase text-gray-400">
+                                    {item.availability.replace("_", " ")}
+                                  </span>
+                                )}
                               </span>
                               <span className="flex-shrink-0 font-bold text-[#DE3A16]">
                                 RWF {item.price.toLocaleString()}
@@ -720,42 +831,22 @@ export function CardPublicView() {
                                 {item.description}
                               </p>
                             )}
+                            <p className="mt-1 text-[11px] text-gray-400">
+                              Customize how you want it
+                            </p>
                           </div>
-                          {/* Cart controls — pinned to bottom of content column */}
-                          <div className="mt-2">
-                            {cartItem ? (
-                              <div className="inline-flex items-center gap-2 rounded-xl border border-[#DE3A16] px-2 py-1">
-                                <button
-                                  onClick={() => updateQty(item.id, -1)}
-                                  className="text-[#DE3A16] transition-opacity hover:opacity-70"
-                                >
-                                  <HiOutlineMinus className="text-sm" />
-                                </button>
-                                <span className="min-w-[18px] text-center text-sm font-bold text-gray-900 dark:text-gray-100">
-                                  {cartItem.qty}
-                                </span>
-                                <button
-                                  onClick={() => updateQty(item.id, 1)}
-                                  className="text-[#DE3A16] transition-opacity hover:opacity-70"
-                                >
-                                  <HiOutlinePlus className="text-sm" />
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() =>
-                                  addToCart({
-                                    id: item.id,
-                                    name: item.name,
-                                    price: item.price,
-                                    imageUrl: item.imageUrl,
-                                  })
-                                }
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm dark:shadow-none shadow-[#DE3A16]/20 transition-all hover:bg-brand-700"
-                              >
-                                <HiOutlinePlus className="text-xs" /> Add to
-                                cart
-                              </button>
+                          <div className="mt-2 flex items-center gap-2">
+                            <button
+                              disabled={soldOut || busyMode}
+                              onClick={() => setCustomizeItem(item)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm dark:shadow-none shadow-[#DE3A16]/20 transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <HiOutlinePlus className="text-xs" /> Customize & add
+                            </button>
+                            {inCartQty > 0 && (
+                              <span className="text-xs font-semibold text-[#DE3A16]">
+                                {inCartQty} in cart
+                              </span>
                             )}
                           </div>
                         </div>
@@ -855,7 +946,7 @@ export function CardPublicView() {
       </div>
 
       {/* Floating cart button — only for business cards with items in cart */}
-      {businessProfile && cartCount > 0 && checkoutStep === "form" && (
+      {businessProfile && cartCount > 0 && checkoutStep === "form" && !busyMode && (
         <button
           onClick={() => setShowCart(true)}
           className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-[#DE3A16] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#DE3A16]/40"
@@ -898,43 +989,59 @@ export function CardPublicView() {
                 </div>
 
                 {/* Cart items */}
-                <div className="mb-4 max-h-40 space-y-3 overflow-y-auto">
-                  {cart.map((item) => (
-                    <div key={item.id} className="flex items-center gap-3">
-                      {item.imageUrl && (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-10 w-10 rounded-lg object-cover"
-                        />
-                      )}
-                      <div className="flex-grow">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          RWF {item.price.toLocaleString()} &times; {item.qty}
-                        </p>
+                <div className="mb-4 max-h-48 space-y-3 overflow-y-auto">
+                  {cart.map((item) => {
+                    const key = item.cartKey ?? item.id;
+                    const mods = (item.selectedModifiers ?? [])
+                      .map((m) => m.optionName)
+                      .join(", ");
+                    return (
+                      <div key={key} className="flex items-start gap-3">
+                        {item.imageUrl && (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
+                        )}
+                        <div className="flex-grow">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {item.name}
+                          </p>
+                          {mods && (
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                              {mods}
+                            </p>
+                          )}
+                          {item.specialInstructions && (
+                            <p className="text-[11px] italic text-[#DE3A16]">
+                              “{item.specialInstructions}”
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            RWF {item.price.toLocaleString()} &times; {item.qty}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => updateQty(key, -1)}
+                            className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
+                          >
+                            <HiOutlineMinus className="text-xs" />
+                          </button>
+                          <span className="w-5 text-center text-sm font-bold">
+                            {item.qty}
+                          </span>
+                          <button
+                            onClick={() => updateQty(key, 1)}
+                            className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
+                          >
+                            <HiOutlinePlus className="text-xs" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => updateQty(item.id, -1)}
-                          className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
-                        >
-                          <HiOutlineMinus className="text-xs" />
-                        </button>
-                        <span className="w-5 text-center text-sm font-bold">
-                          {item.qty}
-                        </span>
-                        <button
-                          onClick={() => updateQty(item.id, 1)}
-                          className="rounded-lg border p-1 text-gray-500 dark:text-gray-400"
-                        >
-                          <HiOutlinePlus className="text-xs" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="mb-4 flex justify-between border-t pt-3 text-sm font-bold">
@@ -944,35 +1051,56 @@ export function CardPublicView() {
                   </span>
                 </div>
 
-                {/* Table / Room tabs */}
-                {showTableOrders && showRoomOrders ? (
+                {/* Table / Room / Bar tabs */}
+                {(showTableOrders && showRoomOrders) || showBarOrders ? (
                   <div className="mb-3 flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setOrderType("table")}
-                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
-                        orderType === "table"
-                          ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
-                          : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
-                      }`}
-                    >
-                      🍽 Dine In
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOrderType("room")}
-                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
-                        orderType === "room"
-                          ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
-                          : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200"
-                      }`}
-                    >
-                      🛏 Room Service
-                    </button>
+                    {showTableOrders && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType("table")}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                          orderType === "table"
+                            ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-800"
+                        }`}
+                      >
+                        Dine In
+                      </button>
+                    )}
+                    {showBarOrders && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType("bar")}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                          orderType === "bar"
+                            ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-800"
+                        }`}
+                      >
+                        Bar seat
+                      </button>
+                    )}
+                    {showRoomOrders && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderType("room")}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
+                          orderType === "room"
+                            ? "bg-[#DE3A16] text-white shadow-sm dark:shadow-none"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-800"
+                        }`}
+                      >
+                        Room Service
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <p className="mb-3 text-xs font-medium text-gray-500 dark:text-gray-400">
-                    {orderType === "room" ? "Room service order" : "Dine-in order"}
+                    {orderType === "room"
+                      ? "Room service order"
+                      : orderType === "bar"
+                        ? "Bar order"
+                        : "Dine-in order"}
                   </p>
                 )}
 
@@ -995,10 +1123,23 @@ export function CardPublicView() {
                     value={tableRoom}
                     onChange={(e) => setTableRoom(e.target.value)}
                     placeholder={
-                      orderType === "table"
-                        ? "Table number (e.g. 5)"
-                        : "Room number (e.g. 204)"
+                      orderType === "room"
+                        ? "Room number (e.g. 204)"
+                        : orderType === "bar"
+                          ? "Bar seat / stool (e.g. 3)"
+                          : "Table number (e.g. 5)"
                     }
+                    className={formControlClass()}
+                  />
+                  <textarea
+                    value={orderNotes}
+                    onChange={(e) => setOrderNotes(e.target.value)}
+                    placeholder={
+                      ORDER_NOTES_PLACEHOLDER[
+                        businessProfile.businessType ?? "RESTAURANT"
+                      ] ?? ITEM_HINT_BY_TYPE.OTHER
+                    }
+                    rows={2}
                     className={formControlClass()}
                   />
                 </div>
@@ -1179,6 +1320,15 @@ export function CardPublicView() {
             )}
           </div>
         </div>
+      )}
+
+      {customizeItem && businessProfile && (
+        <ItemCustomizeModal
+          item={customizeItem}
+          businessType={businessProfile.businessType}
+          onClose={() => setCustomizeItem(null)}
+          onAdd={addCustomizedLine}
+        />
       )}
     </div>
   );

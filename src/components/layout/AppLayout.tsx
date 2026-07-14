@@ -22,6 +22,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 const roleLabels: Record<UserRole, string> = {
   USER: "User",
   BUSINESS: "Business",
+  STAFF: "Staff",
   ADMIN: "Administrator",
 };
 
