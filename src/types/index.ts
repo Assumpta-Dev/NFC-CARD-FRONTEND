@@ -35,7 +35,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "USER" | "ADMIN" | "BUSINESS";
+  role: "USER" | "ADMIN" | "BUSINESS" | "STAFF";
 }
 
 export interface AuthState {
@@ -68,12 +68,48 @@ export interface BusinessCardLink {
   _count?: { scans: number };
 }
 
+export interface ModifierOption {
+  id: string;
+  name: string;
+  priceDelta: number;
+}
+
+export interface ModifierGroup {
+  id: string;
+  name: string;
+  required?: boolean;
+  maxSelect?: number;
+  options: ModifierOption[];
+}
+
+export interface CustomizationOptions {
+  groups: ModifierGroup[];
+}
+
+export interface SelectedModifier {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceDelta: number;
+}
+
+export type PrepStation = "KITCHEN" | "BAR" | "FLOOR" | "ALL";
+export type ItemAvailability = "ALL" | "HAPPY_HOUR" | "ROOM_SERVICE" | "DINE_IN";
+export type LinePrepStatus = "QUEUED" | "PREPARING" | "READY" | "SERVED" | "CANCELLED";
+
 export interface MenuItem {
   id: string;
   name: string;
   price: number;
   imageUrl: string | null;
   description: string | null;
+  customizationHint?: string | null;
+  allowsSpecialInstructions?: boolean;
+  customizationOptions?: CustomizationOptions | null;
+  isSoldOut?: boolean;
+  availability?: ItemAvailability;
+  station?: PrepStation;
   createdAt?: string;
 }
 
@@ -86,6 +122,7 @@ export interface BusinessMenu {
 
 export type BusinessType =
   | "RESTAURANT"
+  | "BAR"
   | "HOTEL"
   | "MOTEL"
   | "CAFE"
@@ -97,6 +134,10 @@ export interface BusinessSettings {
   checkOutTime?: string;
   operatingHours?: string;
   emergencyPhone?: string;
+  busyMode?: boolean;
+  estimatedWaitMinutes?: number;
+  kitchenLoad?: "LOW" | "NORMAL" | "HIGH";
+  happyHourWindow?: string;
 }
 
 export interface PublicBusinessProfile {
@@ -219,14 +260,39 @@ export interface PaginatedPayments {
 // ORDERS
 // ===========================================================
 export type OrderStatus = "PENDING" | "WAITING_VERIFICATION" | "PAID" | "REJECTED";
-export type OrderContext = "TABLE" | "ROOM";
+export type PrepStatus =
+  | "NONE"
+  | "RECEIVED"
+  | "PREPARING"
+  | "READY"
+  | "SERVED"
+  | "CANCELLED";
+export type OrderContext = "TABLE" | "ROOM" | "BAR_SEAT";
 
 export interface OrderItem {
+  /** Cart line key (unique per customization) */
+  cartKey?: string;
+  lineId?: string;
   id: string;
   name: string;
   price: number;
   qty: number;
   imageUrl: string | null;
+  specialInstructions?: string;
+  selectedModifiers?: SelectedModifier[];
+  unitPrice?: number;
+  station?: PrepStation;
+  linePrepStatus?: LinePrepStatus;
+}
+
+export interface OrderEvent {
+  id: string;
+  orderId: string;
+  actorUserId?: string | null;
+  actorName?: string | null;
+  action: string;
+  detail?: string | null;
+  createdAt: string;
 }
 
 export interface Order {
@@ -237,13 +303,34 @@ export interface Order {
   orderContext?: OrderContext;
   tableNumber?: string | null;
   roomNumber?: string | null;
+  notes?: string | null;
   total: number;
   status: OrderStatus;
+  prepStatus?: PrepStatus;
   txId: string | null;
   items: OrderItem[];
+  estimatedWaitMinutes?: number | null;
+  rejectReasonCode?: string | null;
+  rejectReason?: string | null;
   createdAt: string;
   updatedAt: string;
-  business?: { name: string };
+  business?: { name: string; businessType?: BusinessType; phone?: string | null; settings?: BusinessSettings | null };
+  events?: OrderEvent[];
+}
+
+export interface BusinessStaffMember {
+  id: string;
+  staffRole: "ORDERS" | "MANAGER";
+  station?: PrepStation;
+  isActive: boolean;
+  createdAt?: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    createdAt?: string;
+  };
 }
 
 export interface PaginatedOrders {

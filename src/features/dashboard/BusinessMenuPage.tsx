@@ -11,6 +11,8 @@ import {
   BUSINESS_TYPES,
   BusinessType,
   BUSINESS_TYPE_LABELS,
+  defaultCustomizationTemplate,
+  ITEM_HINT_BY_TYPE,
 } from "../../constants/businessTypes";
 import { businessApi, getErrorMessage, menuApi } from "../../services/api";
 import { BusinessCardLink, BusinessMenu, BusinessProfile, BusinessSettings } from "../../types";
@@ -36,6 +38,11 @@ type ItemFormState = {
   name: string;
   price: string;
   description: string;
+  customizationHint: string;
+  applyVenueOptions: boolean;
+  isSoldOut: boolean;
+  availability: "ALL" | "HAPPY_HOUR" | "ROOM_SERVICE" | "DINE_IN";
+  station: "KITCHEN" | "BAR" | "FLOOR";
 };
 
 const EMPTY_BUSINESS_FORM: BusinessFormState = {
@@ -81,6 +88,11 @@ const EMPTY_ITEM_FORM: ItemFormState = {
   name: "",
   price: "",
   description: "",
+  customizationHint: "",
+  applyVenueOptions: true,
+  isSoldOut: false,
+  availability: "ALL",
+  station: "KITCHEN",
 };
 
 export function BusinessMenuPage() {
@@ -322,12 +334,24 @@ export function BusinessMenuPage() {
     setIsAddingItem(true);
 
     try {
+      const venueType = businessForm.businessType;
       await menuApi.addMenuItem(
         selectedMenuId,
         {
           name: itemForm.name.trim(),
           price: parsedPrice,
           description: itemForm.description.trim(),
+          customizationHint:
+            itemForm.customizationHint.trim() ||
+            ITEM_HINT_BY_TYPE[venueType] ||
+            undefined,
+          allowsSpecialInstructions: true,
+          customizationOptions: itemForm.applyVenueOptions
+            ? defaultCustomizationTemplate(venueType)
+            : null,
+          isSoldOut: itemForm.isSoldOut,
+          availability: itemForm.availability,
+          station: itemForm.station,
         },
         itemPhoto,
       );
@@ -725,6 +749,81 @@ export function BusinessMenuPage() {
                     placeholder="Spiced ginger and milk tea"
                     rows={3}
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <Input
+                    label="Guest customization hint"
+                    value={itemForm.customizationHint}
+                    onChange={(event) =>
+                      updateItemField("customizationHint", event.target.value)
+                    }
+                    placeholder={ITEM_HINT_BY_TYPE[businessForm.businessType]}
+                  />
+                  <label className="mt-3 flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={itemForm.applyVenueOptions}
+                      onChange={(event) =>
+                        setItemForm((prev) => ({
+                          ...prev,
+                          applyVenueOptions: event.target.checked,
+                        }))
+                      }
+                    />
+                    <span>
+                      Attach {BUSINESS_TYPE_LABELS[businessForm.businessType]}{" "}
+                      customization options (spice/ice/milk/delivery preferences)
+                      so guests can specify exactly how they want this item.
+                    </span>
+                  </label>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <input
+                        type="checkbox"
+                        checked={itemForm.isSoldOut}
+                        onChange={(e) =>
+                          setItemForm((p) => ({ ...p, isSoldOut: e.target.checked }))
+                        }
+                      />
+                      Sold out
+                    </label>
+                    <label className="text-xs text-gray-500">
+                      Availability
+                      <select
+                        className="mt-1 w-full rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
+                        value={itemForm.availability}
+                        onChange={(e) =>
+                          setItemForm((p) => ({
+                            ...p,
+                            availability: e.target.value as ItemFormState["availability"],
+                          }))
+                        }
+                      >
+                        <option value="ALL">All day</option>
+                        <option value="HAPPY_HOUR">Happy hour only</option>
+                        <option value="ROOM_SERVICE">Room service only</option>
+                        <option value="DINE_IN">Dine-in / bar only</option>
+                      </select>
+                    </label>
+                    <label className="text-xs text-gray-500">
+                      Station
+                      <select
+                        className="mt-1 w-full rounded-lg border px-2 py-1.5 text-sm dark:bg-gray-900"
+                        value={itemForm.station}
+                        onChange={(e) =>
+                          setItemForm((p) => ({
+                            ...p,
+                            station: e.target.value as ItemFormState["station"],
+                          }))
+                        }
+                      >
+                        <option value="KITCHEN">Kitchen</option>
+                        <option value="BAR">Bar</option>
+                        <option value="FLOOR">Floor</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
                 <div className="space-y-1 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
