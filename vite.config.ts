@@ -23,9 +23,15 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
+      // Backend runs on 5001 (see NFC-CARD-BACKEND PORT / .env)
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

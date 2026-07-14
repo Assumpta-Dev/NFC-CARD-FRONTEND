@@ -15,8 +15,10 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PageSpinner } from './ui';
 
+type AppRole = 'USER' | 'ADMIN' | 'BUSINESS' | 'STAFF';
+
 interface ProtectedRouteProps {
-  requiredRole?: 'USER' | 'ADMIN' | 'BUSINESS';
+  requiredRole?: AppRole | AppRole[];
 }
 
 export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
@@ -32,9 +34,15 @@ export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Role check — if a specific role is required and user doesn't have it
-  if (requiredRole && user?.role !== requiredRole && user?.role !== 'ADMIN') {
-    return <Navigate to="/dashboard" replace />;
+  // Role check — ADMIN always passes; otherwise match required role(s)
+  if (requiredRole) {
+    const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    const ok =
+      user?.role === 'ADMIN' ||
+      (user?.role && allowed.includes(user.role as AppRole));
+    if (!ok) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   // Render the child route — Outlet is React Router v6's way to render nested routes

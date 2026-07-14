@@ -41,6 +41,7 @@ import { PaymentsPage } from "./features/payments/PaymentsPage";
 import { CheckoutPage } from "./features/payments/CheckoutPage";
 import { BusinessMenuPage } from "./features/dashboard/BusinessMenuPage";
 import { BusinessOrdersPage } from "./features/dashboard/BusinessOrdersPage";
+import { BusinessStaffPage } from "./features/dashboard/BusinessStaffPage";
 import { BusinessCardAnalyticsPage } from "./features/dashboard/BusinessCardAnalyticsPage";
 
 // New landing pages
@@ -91,9 +92,13 @@ export default function App() {
                 <Route path="/dashboard/payments" element={<PaymentsPage />} />
                 <Route path="/dashboard/checkout" element={<CheckoutPage />} />
 
+                <Route element={<ProtectedRoute requiredRole={["BUSINESS", "STAFF"]} />}>
+                  <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
+                </Route>
+
                 <Route element={<ProtectedRoute requiredRole="BUSINESS" />}>
                   <Route path="/dashboard/menu" element={<BusinessMenuPage />} />
-                  <Route path="/dashboard/orders" element={<BusinessOrdersPage />} />
+                  <Route path="/dashboard/staff" element={<BusinessStaffPage />} />
                   <Route path="/dashboard/card-analytics" element={<BusinessCardAnalyticsPage />} />
                 </Route>
 

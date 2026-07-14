@@ -10,7 +10,7 @@ import {
   IconUsers,
 } from "../icons/DashboardIcons";
 
-export type UserRole = "USER" | "BUSINESS" | "ADMIN";
+export type UserRole = "USER" | "BUSINESS" | "ADMIN" | "STAFF";
 
 export type AdminSection =
   | "overview"
@@ -52,6 +52,12 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
         roles: ["BUSINESS"],
       },
       {
+        to: "/dashboard/orders",
+        label: "Orders Portal",
+        icon: IconOrders,
+        roles: ["STAFF"],
+      },
+      {
         to: "/profile",
         label: "Edit Profile",
         icon: IconEdit,
@@ -78,6 +84,12 @@ export const sidebarNavGroups: SidebarNavGroup[] = [
         to: "/dashboard/orders",
         label: "Orders",
         icon: IconOrders,
+        roles: ["BUSINESS", "ADMIN"],
+      },
+      {
+        to: "/dashboard/staff",
+        label: "Staff",
+        icon: IconUsers,
         roles: ["BUSINESS", "ADMIN"],
       },
       {
@@ -147,6 +159,7 @@ const pageTitleEntries: [string, string][] = [
   ["/dashboard/card-analytics", "Card Analytics"],
   ["/dashboard/menu", "Business Menu"],
   ["/dashboard/orders", "Orders"],
+  ["/dashboard/staff", "Staff"],
   ["/dashboard", "Dashboard"],
   ["/profile", "Edit Profile"],
   ["/admin/analytics", "Analytics"],
