@@ -20,9 +20,11 @@ import { businessApi, getErrorMessage } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import { getChartColors } from "../../utils/chartTheme";
 import type { BusinessScanDashboard } from "../../types";
-import { Alert, MetricTileCompact, PageSpinner } from "../../components/ui";
+import { Alert, MetricTileCompact, PageSpinner, Pagination } from "../../components/ui";
 
 type TimeFilter = "7d" | "30d" | "all";
+
+const CARDS_PER_PAGE = 6;
 
 export function BusinessCardAnalyticsPage() {
   const { resolvedTheme } = useTheme();
@@ -30,6 +32,7 @@ export function BusinessCardAnalyticsPage() {
 
   const [data, setData] = useState<BusinessScanDashboard | null>(null);
   const [selectedCardId, setSelectedCardId] = useState("");
+  const [cardPage, setCardPage] = useState(1);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("30d");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +59,14 @@ export function BusinessCardAnalyticsPage() {
   }, [selectedCardId]);
 
   if (isLoading) return <PageSpinner />;
+
+  const cards = data?.cards ?? [];
+  const cardTotalPages = Math.max(1, Math.ceil(cards.length / CARDS_PER_PAGE));
+  const safeCardPage = Math.min(cardPage, cardTotalPages);
+  const pagedCards = cards.slice(
+    (safeCardPage - 1) * CARDS_PER_PAGE,
+    safeCardPage * CARDS_PER_PAGE,
+  );
 
   const analytics = data?.analytics;
   const filteredBreakdown =
@@ -136,7 +147,7 @@ export function BusinessCardAnalyticsPage() {
               <h2 className="font-semibold text-gray-900 dark:text-gray-100">Your Cards</h2>
             </div>
             <div className="divide-y divide-gray-50 dark:divide-gray-800">
-              {data.cards.map((card) => (
+              {pagedCards.map((card) => (
                 <button
                   key={card.cardId}
                   type="button"
@@ -168,6 +179,15 @@ export function BusinessCardAnalyticsPage() {
                 </button>
               ))}
             </div>
+            {cards.length > CARDS_PER_PAGE && (
+              <div className="border-t border-gray-100 px-5 py-3 dark:border-gray-800">
+                <Pagination
+                  currentPage={safeCardPage}
+                  totalPages={cardTotalPages}
+                  onPageChange={setCardPage}
+                />
+              </div>
+            )}
           </div>
 
           {analytics && (

@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Button,
   PageSpinner,
+  Pagination,
   PanelCard,
   SectionHeader,
   formControlClass,
@@ -11,8 +12,11 @@ import { IconUsers } from "../../components/icons/DashboardIcons";
 import { getErrorMessage, staffApi } from "../../services/api";
 import type { BusinessStaffMember } from "../../types";
 
+const STAFF_PER_PAGE = 8;
+
 export function BusinessStaffPage() {
   const [staff, setStaff] = useState<BusinessStaffMember[]>([]);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -33,6 +37,17 @@ export function BusinessStaffPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const totalPages = Math.max(1, Math.ceil(staff.length / STAFF_PER_PAGE));
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const pagedStaff = useMemo(() => {
+    const start = (page - 1) * STAFF_PER_PAGE;
+    return staff.slice(start, start + STAFF_PER_PAGE);
+  }, [staff, page]);
+
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -50,6 +65,7 @@ export function BusinessStaffPage() {
       setEmail("");
       setPassword("");
       setSuccess("Staff account created. They can log in and open the orders portal.");
+      setPage(1);
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -144,7 +160,7 @@ export function BusinessStaffPage() {
           {staff.length === 0 && (
             <p className="py-10 text-center text-sm text-gray-500">No staff yet.</p>
           )}
-          {staff.map((member) => (
+          {pagedStaff.map((member) => (
             <div
               key={member.id}
               className="flex flex-wrap items-center justify-between gap-3 py-4"
@@ -173,6 +189,15 @@ export function BusinessStaffPage() {
             </div>
           ))}
         </div>
+        {staff.length > STAFF_PER_PAGE && (
+          <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </PanelCard>
     </div>
   );

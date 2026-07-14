@@ -957,14 +957,30 @@ export const adminApi = {
    *   ✓ Only emails shown (PII limited to what's necessary)
    *   ✓ Role cannot be escalated via API (role stored/set server-side only)
    */
-  getAllUsers: async () => {
-    const res =
-      await apiClient.get<ApiResponse<AdminUser[] | PaginatedUsers>>(
-        "/admin/users",
-      );
+  getAllUsers: async (page = 1, size = 25) => {
+    const res = await apiClient.get<ApiResponse<AdminUser[] | PaginatedUsers>>(
+      "/admin/users",
+      { params: { page, size } },
+    );
     const data = res.data.data;
     // Handle both array and paginated response formats
-    return Array.isArray(data) ? data : (data as PaginatedUsers).users;
+    if (Array.isArray(data)) {
+      return {
+        users: data,
+        total: data.length,
+        page: 1,
+        size: data.length,
+        pages: 1,
+      };
+    }
+    const paginated = data as PaginatedUsers;
+    return {
+      users: paginated.users,
+      total: paginated.total,
+      page: paginated.page,
+      size: paginated.size,
+      pages: Math.max(1, Math.ceil(paginated.total / paginated.size)),
+    };
   },
 
   /**

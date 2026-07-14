@@ -3,6 +3,7 @@ import {
   Alert,
   Button,
   PageSpinner,
+  Pagination,
 } from "../../components/ui";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOrdersSocket } from "../../hooks/useOrdersSocket";
@@ -25,6 +26,7 @@ import { playReadyBumpSound } from "../../utils/readyBumpSound";
 type OrdersView = "list" | "grid" | "board" | "bars";
 
 const VIEW_STORAGE_KEY = "nfc-orders-view";
+const ORDERS_PER_PAGE = 10;
 
 const VIEW_OPTIONS: { id: OrdersView; label: string; hint: string }[] = [
   { id: "list", label: "List", hint: "Compact rows" },
@@ -116,13 +118,15 @@ function StatusBadge({
   tone?: "neutral" | "warn" | "progress" | "ready" | "done";
 }) {
   const tones = {
-    neutral: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200",
-    warn: "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-950/40 dark:text-amber-200 dark:ring-amber-800/60",
+    neutral:
+      "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    warn:
+      "bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/80 dark:bg-amber-500/15 dark:text-amber-200 dark:ring-amber-400/25",
     progress:
-      "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/80 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-800/60",
+      "bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200/80 dark:bg-sky-500/15 dark:text-sky-200 dark:ring-sky-400/25",
     ready:
-      "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-800/60",
-    done: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+      "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-200 dark:ring-emerald-400/25",
+    done: "bg-gray-100 text-gray-500 dark:bg-gray-800/80 dark:text-gray-500",
   };
   return (
     <span
@@ -132,6 +136,16 @@ function StatusBadge({
     </span>
   );
 }
+
+/** Elevated card surface — readable over dashboard dark:bg-gray-950 */
+const surface =
+  "border border-gray-200 bg-white shadow-sm dark:border-gray-700/70 dark:bg-gray-900 dark:shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset]";
+const surfaceMuted =
+  "border border-gray-200 bg-gray-50/80 dark:border-gray-700/60 dark:bg-gray-900/50";
+const hoverRow =
+  "hover:bg-gray-50 dark:hover:bg-gray-800/70";
+const muted = "text-gray-500 dark:text-gray-400";
+const mutedFaint = "text-gray-400 dark:text-gray-500";
 
 function prepTone(status?: PrepStatus | null): "neutral" | "progress" | "ready" | "done" {
   if (status === "PREPARING") return "progress";
@@ -158,18 +172,18 @@ function nextPrepAction(status?: PrepStatus | null): PrepStatus | null {
 }
 
 function railClass(order: Order) {
-  if (isPendingPay(order)) return "border-l-amber-400";
-  if (order.prepStatus === "PREPARING") return "border-l-sky-400";
-  if (order.prepStatus === "READY") return "border-l-emerald-400";
+  if (isPendingPay(order)) return "border-l-amber-400 dark:border-l-amber-400/90";
+  if (order.prepStatus === "PREPARING") return "border-l-sky-400 dark:border-l-sky-400/90";
+  if (order.prepStatus === "READY") return "border-l-emerald-400 dark:border-l-emerald-400/90";
   return "border-l-gray-300 dark:border-l-gray-600";
 }
 
 function barFillClass(order: Order) {
-  if (isPendingPay(order)) return "bg-amber-400";
-  if (order.prepStatus === "PREPARING") return "bg-sky-400";
-  if (order.prepStatus === "READY") return "bg-emerald-400";
-  if (order.prepStatus === "RECEIVED") return "bg-gray-300";
-  return "bg-gray-200";
+  if (isPendingPay(order)) return "bg-amber-400 dark:bg-amber-400/90";
+  if (order.prepStatus === "PREPARING") return "bg-sky-400 dark:bg-sky-400/90";
+  if (order.prepStatus === "READY") return "bg-emerald-400 dark:bg-emerald-400/90";
+  if (order.prepStatus === "RECEIVED") return "bg-gray-300 dark:bg-gray-500";
+  return "bg-gray-200 dark:bg-gray-600";
 }
 
 function barFillWidth(order: Order) {
@@ -219,7 +233,7 @@ function ViewSwitcher({
 }) {
   return (
     <div
-      className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-900/70"
+      className="inline-flex rounded-xl border border-gray-200 bg-gray-100/80 p-1 dark:border-gray-700/80 dark:bg-gray-950/80"
       role="group"
       aria-label="Order view"
     >
@@ -231,8 +245,8 @@ function ViewSwitcher({
           onClick={() => onChange(opt.id)}
           className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
             value === opt.id
-              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-50"
-              : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+              ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white dark:shadow-none dark:ring-1 dark:ring-white/10"
+              : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-200"
           }`}
         >
           {opt.label}
@@ -292,7 +306,7 @@ function OrderDetailModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-detail-title"
-        className={`relative z-10 flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl transition-all duration-300 ease-out dark:bg-gray-950 sm:rounded-3xl ${
+        className={`relative z-10 flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-transparent bg-white shadow-2xl transition-all duration-300 ease-out dark:border-gray-700/80 dark:bg-gray-900 dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)] sm:rounded-3xl ${
           shown
             ? "translate-y-0 scale-100 opacity-100"
             : "translate-y-6 scale-[0.97] opacity-0 sm:translate-y-4"
@@ -300,7 +314,7 @@ function OrderDetailModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
               Order detail
             </p>
             <h2
@@ -309,7 +323,7 @@ function OrderDetailModal({
             >
               {loc ?? order.customerName}
             </h2>
-            <p className="mt-0.5 text-sm text-gray-500">
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
               {loc ? `${order.customerName} · ` : ""}
               {order.phone} · {timeAgo(order.createdAt)}
             </p>
@@ -331,13 +345,13 @@ function OrderDetailModal({
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <div className="mb-4 flex items-baseline justify-between gap-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {itemCount(order)} item{itemCount(order) === 1 ? "" : "s"}
               {order.estimatedWaitMinutes
                 ? ` · guest wait ~${order.estimatedWaitMinutes} min`
                 : ""}
             </p>
-            <p className="text-lg font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+            <p className="text-lg font-semibold tabular-nums text-gray-900 dark:text-gray-50">
               RWF {order.total.toLocaleString()}
             </p>
           </div>
@@ -357,7 +371,7 @@ function OrderDetailModal({
               return (
                 <li
                   key={item.lineId ?? item.id}
-                  className="flex flex-col gap-2 rounded-xl border border-gray-100 p-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-700/60 dark:bg-gray-950/50 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-800 dark:bg-gray-800 dark:text-gray-100">
@@ -367,21 +381,21 @@ function OrderDetailModal({
                       <p
                         className={`font-medium ${
                           lineDone
-                            ? "text-gray-400 line-through"
+                            ? "text-gray-400 line-through dark:text-gray-600"
                             : "text-gray-900 dark:text-gray-100"
                         }`}
                       >
                         {item.name}
                       </p>
                       {(item.selectedModifiers ?? []).length > 0 && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {(item.selectedModifiers ?? [])
                             .map((m) => m.optionName)
                             .join(" · ")}
                         </p>
                       )}
                       {item.specialInstructions && (
-                        <p className="text-sm italic text-gray-500">
+                        <p className="text-sm italic text-gray-500 dark:text-gray-400">
                           “{item.specialInstructions}”
                         </p>
                       )}
@@ -409,7 +423,7 @@ function OrderDetailModal({
                       onClick={() =>
                         onLinePrep(order.id, item.lineId!, lineNext as LinePrepStatus)
                       }
-                      className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-white dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                     >
                       Mark{" "}
                       {LINE_ACTIONS.find((a) => a.status === lineNext)?.label.toLowerCase()}
@@ -421,7 +435,7 @@ function OrderDetailModal({
           </ul>
 
           {(order.notes || order.txId) && (
-            <div className="mt-4 space-y-1 rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-400">
+            <div className="mt-4 space-y-1 rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-600 dark:bg-gray-950/70 dark:text-gray-400 dark:ring-1 dark:ring-gray-800">
               {order.notes && <p>Note: {order.notes}</p>}
               {order.txId && <p className="font-mono text-xs">TxId {order.txId}</p>}
             </div>
@@ -429,10 +443,10 @@ function OrderDetailModal({
 
           {order.events && order.events.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
                 History
               </p>
-              <ul className="mt-2 space-y-1.5 text-xs text-gray-500">
+              <ul className="mt-2 space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
                 {order.events.slice(0, 8).map((ev) => (
                   <li key={ev.id}>
                     {new Date(ev.createdAt).toLocaleTimeString()} — {ev.action}
@@ -445,7 +459,7 @@ function OrderDetailModal({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-gray-100 bg-gray-50/90 px-5 py-4 dark:border-gray-800 dark:bg-gray-900/60">
+        <div className="flex flex-wrap gap-2 border-t border-gray-100 bg-gray-50/90 px-5 py-4 dark:border-gray-800 dark:bg-gray-950/80">
           {pending ? (
             <>
               <Button
@@ -476,7 +490,7 @@ function OrderDetailModal({
                   className={`rounded-lg px-3 py-2 text-xs font-medium ${
                     order.prepStatus === action.status
                       ? "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-100"
-                      : "text-gray-500 hover:bg-white dark:hover:bg-gray-800"
+                      : "text-gray-500 hover:bg-white dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                   }`}
                 >
                   {action.label}
@@ -505,6 +519,7 @@ export function BusinessOrdersPage() {
   const [rejectReasons, setRejectReasons] = useState<{ code: string; label: string }[]>([]);
   const [soundOn, setSoundOn] = useState(() => isOrderAlertSoundEnabled());
   const [view, setView] = useState<OrdersView>(() => readStoredView());
+  const [listPage, setListPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [rejectFor, setRejectFor] = useState<Order | null>(null);
@@ -521,6 +536,7 @@ export function BusinessOrdersPage() {
       if (knownOrderIds.current.has(order.id)) return;
       knownOrderIds.current.add(order.id);
       setOrders((prev) => (prev.some((o) => o.id === order.id) ? prev : [order, ...prev]));
+      setListPage(1);
       setSuccess("New order received live.");
       if (soundOn) void playOrderAlertSound();
     },
@@ -616,30 +632,42 @@ export function BusinessOrdersPage() {
     () => orders.filter((o) => isPendingPay(o) || isActivePrep(o)),
     [orders],
   );
-  const pendingPay = useMemo(() => orders.filter(isPendingPay), [orders]);
+
+  const listTotalPages = Math.max(1, Math.ceil(activeOrders.length / ORDERS_PER_PAGE));
+
+  useEffect(() => {
+    if (listPage > listTotalPages) setListPage(listTotalPages);
+  }, [listPage, listTotalPages]);
+
+  const pagedOrders = useMemo(() => {
+    const start = (listPage - 1) * ORDERS_PER_PAGE;
+    return activeOrders.slice(start, start + ORDERS_PER_PAGE);
+  }, [activeOrders, listPage]);
+
+  const pendingPay = useMemo(() => pagedOrders.filter(isPendingPay), [pagedOrders]);
   const cooking = useMemo(
     () =>
-      orders.filter(
+      activeOrders.filter(
         (o) =>
           o.status === "PAID" &&
           (o.prepStatus === "RECEIVED" || o.prepStatus === "PREPARING" || !o.prepStatus),
       ),
-    [orders],
+    [activeOrders],
   );
   const newPaid = useMemo(
     () =>
-      orders.filter(
+      pagedOrders.filter(
         (o) => o.status === "PAID" && (o.prepStatus === "RECEIVED" || !o.prepStatus),
       ),
-    [orders],
+    [pagedOrders],
   );
   const preparing = useMemo(
-    () => orders.filter((o) => o.status === "PAID" && o.prepStatus === "PREPARING"),
-    [orders],
+    () => pagedOrders.filter((o) => o.status === "PAID" && o.prepStatus === "PREPARING"),
+    [pagedOrders],
   );
   const ready = useMemo(
-    () => orders.filter((o) => o.status === "PAID" && o.prepStatus === "READY"),
-    [orders],
+    () => pagedOrders.filter((o) => o.status === "PAID" && o.prepStatus === "READY"),
+    [pagedOrders],
   );
 
   const selectedOrder = useMemo(
@@ -767,22 +795,24 @@ export function BusinessOrdersPage() {
   const isStaff = user?.role === "STAFF";
 
   const renderEmpty = () => (
-    <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-14 text-center dark:border-gray-700 dark:bg-gray-950">
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No active orders</p>
-      <p className="mt-1 text-sm text-gray-500">New guest orders will appear here live.</p>
+    <div className={`rounded-2xl border-dashed py-14 text-center ${surfaceMuted}`}>
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">No active orders</p>
+      <p className={`mt-1 text-sm ${muted}`}>New guest orders will appear here live.</p>
     </div>
   );
 
   const listView = (
-    <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-950">
-      {activeOrders.map((order) => {
+    <ul
+      className={`divide-y divide-gray-100 overflow-hidden rounded-2xl dark:divide-gray-800 ${surface}`}
+    >
+      {pagedOrders.map((order) => {
         const loc = locationLabel(order);
         return (
           <li key={order.id}>
             <button
               type="button"
               onClick={() => openOrder(order)}
-              className={`flex w-full items-center gap-3 border-l-4 px-4 py-3.5 text-left transition hover:bg-gray-50 dark:hover:bg-gray-900/60 ${railClass(order)}`}
+              className={`flex w-full items-center gap-3 border-l-4 px-4 py-3.5 text-left transition ${hoverRow} ${railClass(order)}`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -791,18 +821,18 @@ export function BusinessOrdersPage() {
                   </p>
                   <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
                 </div>
-                <p className="mt-0.5 truncate text-sm text-gray-500">
+                <p className={`mt-0.5 truncate text-sm ${muted}`}>
                   {itemSummary(order)} · {timeAgo(order.createdAt)}
                 </p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-50">
                   RWF {order.total.toLocaleString()}
                 </p>
-                <p className="text-xs text-gray-400">{itemCount(order)} items</p>
+                <p className={`text-xs ${mutedFaint}`}>{itemCount(order)} items</p>
               </div>
               <svg
-                className="h-4 w-4 shrink-0 text-gray-300"
+                className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -819,14 +849,14 @@ export function BusinessOrdersPage() {
 
   const gridView = (
     <ul className="grid gap-3 sm:grid-cols-2">
-      {activeOrders.map((order) => {
+      {pagedOrders.map((order) => {
         const loc = locationLabel(order);
         return (
           <li key={order.id}>
             <button
               type="button"
               onClick={() => openOrder(order)}
-              className={`flex h-full w-full flex-col rounded-2xl border border-gray-200 border-l-4 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-950 ${railClass(order)}`}
+              className={`flex h-full w-full flex-col rounded-2xl border-l-4 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${surface} ${railClass(order)}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="text-lg font-semibold text-gray-900 dark:text-gray-50">
@@ -834,15 +864,15 @@ export function BusinessOrdersPage() {
                 </p>
                 <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
               </div>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className={`mt-1 text-sm ${muted}`}>
                 {loc ? order.customerName : order.phone}
               </p>
               <p className="mt-3 line-clamp-2 text-sm text-gray-700 dark:text-gray-300">
                 {itemSummary(order, 4)}
               </p>
               <div className="mt-auto flex items-end justify-between pt-4">
-                <span className="text-xs text-gray-400">{timeAgo(order.createdAt)}</span>
-                <span className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">
+                <span className={`text-xs ${mutedFaint}`}>{timeAgo(order.createdAt)}</span>
+                <span className="font-semibold tabular-nums text-gray-900 dark:text-gray-50">
                   RWF {order.total.toLocaleString()}
                 </span>
               </div>
@@ -854,16 +884,16 @@ export function BusinessOrdersPage() {
   );
 
   const boardColumn = (title: string, list: Order[], empty: string) => (
-    <div className="min-w-[220px] flex-1 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-900/40">
+    <div className={`min-w-[220px] flex-1 rounded-2xl p-3 ${surfaceMuted}`}>
       <div className="mb-3 flex items-center gap-2 px-1">
         <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
-        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-500 shadow-sm dark:bg-gray-800">
+        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-gray-500 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:shadow-none dark:ring-1 dark:ring-white/10">
           {list.length}
         </span>
       </div>
       <ul className="space-y-2">
         {list.length === 0 && (
-          <li className="rounded-xl border border-dashed border-gray-200 px-3 py-6 text-center text-xs text-gray-400 dark:border-gray-700">
+          <li className="rounded-xl border border-dashed border-gray-200 px-3 py-6 text-center text-xs text-gray-400 dark:border-gray-700 dark:text-gray-500">
             {empty}
           </li>
         )}
@@ -874,14 +904,16 @@ export function BusinessOrdersPage() {
               <button
                 type="button"
                 onClick={() => openOrder(order)}
-                className="w-full rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-gray-300 hover:shadow dark:border-gray-700 dark:bg-gray-950 dark:hover:border-gray-600"
+                className={`w-full rounded-xl p-3 text-left transition hover:border-gray-300 hover:shadow dark:hover:border-gray-600 dark:hover:bg-gray-800 ${surface}`}
               >
                 <p className="font-semibold text-gray-900 dark:text-gray-50">
                   {loc ?? order.customerName}
                 </p>
-                <p className="mt-1 line-clamp-2 text-xs text-gray-500">{itemSummary(order, 2)}</p>
+                <p className={`mt-1 line-clamp-2 text-xs ${muted}`}>
+                  {itemSummary(order, 2)}
+                </p>
                 <div className="mt-2 flex justify-between text-xs">
-                  <span className="text-gray-400">{timeAgo(order.createdAt)}</span>
+                  <span className={mutedFaint}>{timeAgo(order.createdAt)}</span>
                   <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-200">
                     RWF {order.total.toLocaleString()}
                   </span>
@@ -905,14 +937,14 @@ export function BusinessOrdersPage() {
 
   const barsView = (
     <ul className="space-y-2">
-      {activeOrders.map((order) => {
+      {pagedOrders.map((order) => {
         const loc = locationLabel(order);
         return (
           <li key={order.id}>
             <button
               type="button"
               onClick={() => openOrder(order)}
-              className="group w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700"
+              className={`group w-full overflow-hidden rounded-xl text-left transition hover:border-gray-300 dark:hover:border-gray-600 ${surface}`}
             >
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
@@ -922,9 +954,9 @@ export function BusinessOrdersPage() {
                     </p>
                     <StatusBadge label={orderStatusLabel(order)} tone={orderTone(order)} />
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-gray-500">{itemSummary(order)}</p>
+                  <p className={`mt-0.5 truncate text-xs ${muted}`}>{itemSummary(order)}</p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold tabular-nums text-gray-800 dark:text-gray-100">
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-gray-800 dark:text-gray-50">
                   RWF {order.total.toLocaleString()}
                 </p>
               </div>
@@ -942,15 +974,11 @@ export function BusinessOrdersPage() {
   );
 
   return (
-    <div
-      className={`mx-auto space-y-6 pb-10 ${
-        view === "board" ? "max-w-6xl" : "max-w-3xl"
-      }`}
-    >
-      <header className="rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+    <div className="w-full space-y-4 pb-6">
+      <header className={`rounded-2xl px-5 py-4 ${surface}`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">
               {businessName || "Orders"}
             </p>
             <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-50">
@@ -971,8 +999,8 @@ export function BusinessOrdersPage() {
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
                 socketStatus === "connected"
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"
-                  : "bg-gray-100 text-gray-500 dark:bg-gray-800"
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-1 dark:ring-emerald-400/25"
+                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
               }`}
             >
               <span
@@ -1035,24 +1063,24 @@ export function BusinessOrdersPage() {
       {success && <Alert message={success} type="success" />}
 
       {settings.busyMode && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-100">
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/25 dark:bg-amber-500/10 dark:text-amber-100">
           Orders are paused — guests cannot place new orders until you resume.
         </p>
       )}
 
       {!isStaff && settingsOpen && (
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+        <section className={`rounded-2xl p-5 ${surface}`}>
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             Guest wait estimate
           </h2>
           <div className="mt-4 flex flex-wrap items-end gap-4">
-            <label className="text-xs font-medium text-gray-500">
+            <label className={`text-xs font-medium ${muted}`}>
               Minutes
               <input
                 type="number"
                 min={5}
                 max={120}
-                className="mt-1 block w-24 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="mt-1 block w-24 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
                 value={settings.estimatedWaitMinutes ?? 15}
                 onChange={(e) =>
                   setSettings((s) => ({
@@ -1062,10 +1090,10 @@ export function BusinessOrdersPage() {
                 }
               />
             </label>
-            <label className="text-xs font-medium text-gray-500">
+            <label className={`text-xs font-medium ${muted}`}>
               Kitchen load
               <select
-                className="mt-1 block rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="mt-1 block rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
                 value={settings.kitchenLoad ?? "NORMAL"}
                 onChange={(e) =>
                   setSettings((s) => ({
@@ -1079,10 +1107,10 @@ export function BusinessOrdersPage() {
                 <option value="HIGH">High</option>
               </select>
             </label>
-            <label className="text-xs font-medium text-gray-500">
+            <label className={`text-xs font-medium ${muted}`}>
               Happy hour
               <input
-                className="mt-1 block w-36 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="mt-1 block w-36 rounded-lg border border-gray-200 bg-white px-2.5 py-2 text-sm dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
                 placeholder="17:00-19:00"
                 value={settings.happyHourWindow ?? ""}
                 onChange={(e) =>
@@ -1102,7 +1130,7 @@ export function BusinessOrdersPage() {
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
             Active orders
           </h2>
-          <p className="text-xs text-gray-500">
+          <p className={`text-xs ${muted}`}>
             Click an order to see items and take action
           </p>
         </div>
@@ -1118,6 +1146,26 @@ export function BusinessOrdersPage() {
             : view === "board"
               ? boardView
               : barsView}
+
+      {activeOrders.length > 0 && listTotalPages > 1 && (
+        <div className={`rounded-2xl px-4 py-3 ${surface}`}>
+          <div className="mb-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>
+              Showing {(listPage - 1) * ORDERS_PER_PAGE + 1}–
+              {Math.min(listPage * ORDERS_PER_PAGE, activeOrders.length)} of{" "}
+              {activeOrders.length}
+            </span>
+            <span>
+              Page {listPage} of {listTotalPages}
+            </span>
+          </div>
+          <Pagination
+            currentPage={listPage}
+            totalPages={listTotalPages}
+            onPageChange={setListPage}
+          />
+        </div>
+      )}
 
       <OrderDetailModal
         order={selectedOrder}
@@ -1147,7 +1195,7 @@ export function BusinessOrdersPage() {
             onClick={() => setRejectFor(null)}
           />
           <div
-            className={`relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl transition-all duration-300 ease-out dark:bg-gray-900 ${
+            className={`relative z-10 w-full max-w-md rounded-2xl border border-transparent bg-white p-6 shadow-xl transition-all duration-300 ease-out dark:border-gray-700/80 dark:bg-gray-900 dark:shadow-[0_24px_64px_rgba(0,0,0,0.55)] ${
               rejectAnim.shown
                 ? "translate-y-0 scale-100 opacity-100"
                 : "translate-y-3 scale-95 opacity-0"
@@ -1156,11 +1204,11 @@ export function BusinessOrdersPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
               Reject order
             </h3>
-            <p className="mt-1 text-sm text-gray-500">{rejectFor.customerName}</p>
-            <label className="mt-4 block text-xs font-medium text-gray-500">
+            <p className={`mt-1 text-sm ${muted}`}>{rejectFor.customerName}</p>
+            <label className={`mt-4 block text-xs font-medium ${muted}`}>
               Reason
               <select
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
+                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
                 value={rejectCode}
                 onChange={(e) => setRejectCode(e.target.value)}
               >
@@ -1180,7 +1228,7 @@ export function BusinessOrdersPage() {
               </select>
             </label>
             <textarea
-              className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950"
+              className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
               rows={2}
               placeholder="Optional detail for the guest"
               value={rejectNote}

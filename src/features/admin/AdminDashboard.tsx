@@ -61,6 +61,10 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [cards, setCards] = useState<AdminCard[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [assignUsers, setAssignUsers] = useState<AdminUser[]>([]);
+  const [userTotal, setUserTotal] = useState(0);
+  const [userTotalPages, setUserTotalPages] = useState(1);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -95,7 +99,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Lazy-load cards/users/analytics only when that section is first opened
+  // Lazy-load cards/analytics; users list is page-driven below
   useEffect(() => {
     if (section === "cards" && cards.length === 0) {
       adminApi
@@ -109,21 +113,13 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
         })
         .catch((err) => setError(getErrorMessage(err)));
     }
-    if (section === "users" && users.length === 0) {
+    if (section === "cards" && assignUsers.length === 0) {
       adminApi
-        .getAllUsers()
-        .then(setUsers)
-        .catch((err) => setError(getErrorMessage(err)));
-    }
-    if (section === "cards" && users.length === 0) {
-      // Load users for card assignment functionality
-      adminApi
-        .getAllUsers()
-        .then(setUsers)
+        .getAllUsers(1, 100)
+        .then((result) => setAssignUsers(result.users))
         .catch((err) => setError(getErrorMessage(err)));
     }
     if (section === "analytics" && dailyScans.length === 0) {
-      // Load all analytics data
       Promise.all([
         adminApi.getUserCount(),
         adminApi.getCardCount(),
@@ -156,29 +152,38 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
         )
         .catch((err) => setError(getErrorMessage(err)));
     }
-  }, [section, cards.length, users.length, dailyScans.length]);
+  }, [section, cards.length, assignUsers.length, dailyScans.length]);
 
-  // Pagination logic
+  // Server-side users pagination
+  useEffect(() => {
+    if (section !== "users") return;
+    setUsersLoading(true);
+    adminApi
+      .getAllUsers(userPage, ITEMS_PER_PAGE)
+      .then((result) => {
+        setUsers(result.users);
+        setUserTotal(result.total);
+        setUserTotalPages(result.pages);
+      })
+      .catch((err) => setError(getErrorMessage(err)))
+      .finally(() => setUsersLoading(false));
+  }, [section, userPage]);
+
+  // Pagination logic — cards still client-side
   const totalCardPages = Math.ceil(cards.length / ITEMS_PER_PAGE);
   const pagedCards = cards.slice(
     (cardPage - 1) * ITEMS_PER_PAGE,
     cardPage * ITEMS_PER_PAGE,
   );
 
-  const totalUserPages = Math.ceil(users.length / ITEMS_PER_PAGE);
-  const pagedUsers = users.slice(
-    (userPage - 1) * ITEMS_PER_PAGE,
-    userPage * ITEMS_PER_PAGE,
-  );
-
-  // Reset page when tab changes or data loads
+  // Reset card page when tab changes or data loads
   useEffect(() => {
     if (section === "cards") setCardPage(1);
   }, [section, cards.length]);
 
   useEffect(() => {
-    if (section === "users") setUserPage(1);
-  }, [section, users.length]);
+    if (section !== "users") setUserPage(1);
+  }, [section]);
 
   // ── Assign Card Handler ─────────────────────────────────
   const handleAssignCard = async (cardId: string) => {
@@ -627,7 +632,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                                         )}
                                       >
                                         <option value="">Select User</option>
-                                        {users.map((user) => (
+                                        {assignUsers.map((user) => (
                                           <option key={user.id} value={user.id}>
                                             {user.name} ({user.email})
                                           </option>
@@ -695,12 +700,16 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
               <div>
                 <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Users</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {users.length} users registered
+                  {userTotal} users registered
                 </p>
               </div>
             </div>
 
-            {users.length === 0 ? (
+            {usersLoading ? (
+              <div className="py-12">
+                <PageSpinner />
+              </div>
+            ) : users.length === 0 ? (
               <EmptyState
                 icon={<IconUsers size={22} />}
                 title="No users yet"
@@ -726,7 +735,7 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {pagedUsers.map((user) => (
+                      {users.map((user) => (
                         <tr
                           key={user.id}
                           className="hover:bg-gray-50 dark:bg-gray-950/50 transition-colors"
@@ -760,13 +769,15 @@ export function AdminDashboard({ section = "overview" }: AdminDashboardProps) {
                   </table>
                 </div>
 
-                <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
-                  <Pagination
-                    currentPage={userPage}
-                    totalPages={totalUserPages}
-                    onPageChange={setUserPage}
-                  />
-                </div>
+                {userTotalPages > 1 && (
+                  <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+                    <Pagination
+                      currentPage={userPage}
+                      totalPages={userTotalPages}
+                      onPageChange={setUserPage}
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>

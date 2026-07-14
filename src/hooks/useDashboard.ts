@@ -59,7 +59,10 @@ export function useCardAnalytics(cardId: string, pollInterval?: number) {
 export function useAdminUsers(enabled = true) {
   return useQuery({
     queryKey: ["adminUsers"],
-    queryFn: () => adminApi.getAllUsers(),
+    queryFn: async () => {
+      const result = await adminApi.getAllUsers(1, 100);
+      return result.users;
+    },
     enabled,
     staleTime: 60 * 1000, // 60 seconds for admin data
   });

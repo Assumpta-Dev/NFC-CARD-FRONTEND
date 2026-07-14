@@ -600,356 +600,418 @@ export function CardPublicView() {
   const coverImage = cardData.type === "personal" ? profile?.coverImageUrl ?? null : null;
   // Fullscreen bg only for business cards
   const bgImage = cardData.type === "business" ? businessProfile?.imageUrl ?? null : null;
+  const isBusiness = cardData.type === "business";
+  const socialLinks = profile?.links?.length
+    ? profile.links
+    : businessProfile?.links?.length
+      ? businessProfile.links
+      : null;
 
-  return (
-    <div className="relative min-h-screen pb-10 bg-white dark:bg-gray-950">
-      {/* Full-screen background image — only rendered when profile has a photo */}
-      {bgImage && (
-        <div
-          className="fixed inset-0 z-0"
-          style={{
-            backgroundImage: `url('${bgImage}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center center",
-            backgroundRepeat: "no-repeat",
-            backgroundAttachment: "fixed",
-          }}
-        />
-      )}
+  const identityCard = (
+    <div className="card-soft overflow-hidden rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-pop-in transition-all duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)]">
+      {coverImage ? (
+        <div className="h-44 w-full overflow-hidden lg:h-52">
+          <img src={coverImage} alt="Cover" className="h-full w-full object-cover" />
+        </div>
+      ) : cardData.type === "personal" ? (
+        <div className="h-24 w-full bg-gradient-to-r from-brand-500/20 to-brand-400/10 lg:h-32" />
+      ) : businessProfile?.imageUrl ? (
+        <div className="relative hidden h-36 w-full overflow-hidden lg:block">
+          <img
+            src={businessProfile.imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent dark:from-gray-950 dark:via-gray-950/50" />
+        </div>
+      ) : null}
 
-      {/* Scrollable content */}
-      <div className="relative z-10 mx-auto w-full max-w-sm px-4 pt-8">
-        {/* Profile card */}
-        <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] overflow-hidden animate-pop-in hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] transition-all duration-300">
-          {/* Cover photo banner — personal cards only */}
-          {coverImage ? (
-            <div className="w-full h-44 overflow-hidden">
-              <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+      <div
+        className={`p-6 text-center ${
+          coverImage || cardData.type === "personal"
+            ? "-mt-10"
+            : businessProfile?.imageUrl
+              ? "lg:-mt-10"
+              : ""
+        }`}
+      >
+        <div className="relative mx-auto mb-4 h-24 w-24 animate-pop-in lg:h-28 lg:w-28">
+          {profile?.imageUrl || businessProfile?.imageUrl ? (
+            <img
+              src={profile ? profile.imageUrl! : businessProfile!.imageUrl!}
+              alt={profile ? profile.fullName : businessProfile!.name}
+              className="h-full w-full rounded-full border-4 border-white object-cover shadow-[0_0_0_3px_rgba(222,58,22,0.3),0_2px_12px_rgba(0,0,0,0.15)]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-full border-4 border-white bg-white shadow-[0_2px_12px_rgba(0,0,0,0.10)] dark:bg-gray-900">
+              <span className="text-3xl font-bold text-[#DE3A16]">
+                {profile
+                  ? profile.fullName.charAt(0).toUpperCase()
+                  : businessProfile?.name.charAt(0).toUpperCase()}
+              </span>
             </div>
-          ) : cardData.type === "personal" ? (
-            <div className="w-full h-24 bg-gradient-to-r from-brand-500/20 to-brand-400/10" />
-          ) : null}
-
-          <div className={`p-6 text-center ${coverImage || cardData.type === "personal" ? "-mt-10" : ""}`}>
-          <div className="relative mx-auto mb-4 h-24 w-24 animate-pop-in">
-            {profile?.imageUrl || businessProfile?.imageUrl ? (
-              <img
-                src={profile ? profile.imageUrl! : businessProfile!.imageUrl!}
-                alt={profile ? profile.fullName : businessProfile!.name}
-                className="h-24 w-24 rounded-full object-cover shadow-[0_0_0_3px_rgba(222,58,22,0.3),0_2px_12px_rgba(0,0,0,0.15)] border-4 border-white"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white dark:bg-gray-900 shadow-[0_2px_12px_rgba(0,0,0,0.10)] border-4 border-white">
-                <span className="text-3xl font-bold text-[#DE3A16]">
-                  {profile
-                    ? profile.fullName.charAt(0).toUpperCase()
-                    : businessProfile?.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
-            <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white bg-green-400 shadow" />
-          </div>
-
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {profile ? profile.fullName : businessProfile?.name}
-          </h1>
-          {(profile?.jobTitle || businessProfile) && (
-            <p className="mt-1 text-sm font-medium text-brand-400">
-              {profile
-                ? profile.jobTitle
-                : businessTypeLabel(
-                    businessProfile?.businessType,
-                    businessProfile?.category,
-                  )}
-            </p>
           )}
-          {(profile?.company || businessProfile?.location) && (
-            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
-              {profile ? profile.company : businessProfile?.location}
-            </p>
-          )}
-
-          {/* Download QR — available for all card types */}
-          {qrUrl && (profile || businessProfile) && (
-            <a
-              href={qrUrl}
-              download={`${cardData.cardId}-qr.png`}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all duration-200 hover:bg-brand-600"
-            >
-              <HiOutlineQrcode className="text-lg" />
-              Save Contact
-            </a>
-          )}
-          </div>
+          <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white bg-green-400 shadow" />
         </div>
 
-        {(profile?.bio || businessProfile?.description) && (
-          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-            <p className="section-label mb-3">About</p>
-            <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-              {profile ? profile.bio : businessProfile?.description}
-            </p>
-          </div>
-        )}
-
-        {businessProfile &&
-          (isLodgingType(businessProfile.businessType) ||
-            businessProfile.settings?.operatingHours ||
-            businessProfile.settings?.emergencyPhone) && (
-          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-            <p className="section-label mb-3">
-              {isLodgingType(businessProfile.businessType)
-                ? "Guest Information"
-                : "Visit Info"}
-            </p>
-            <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-              {businessProfile.settings?.operatingHours && (
-                <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Hours: </span>
-                  {businessProfile.settings.operatingHours}
-                </p>
-              )}
-              {isLodgingType(businessProfile.businessType) &&
-                businessProfile.settings?.checkInTime && (
-                  <p>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">Check-in: </span>
-                    {businessProfile.settings.checkInTime}
-                  </p>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 lg:text-2xl">
+          {profile ? profile.fullName : businessProfile?.name}
+        </h1>
+        {(profile?.jobTitle || businessProfile) && (
+          <p className="mt-1 text-sm font-medium text-brand-400">
+            {profile
+              ? profile.jobTitle
+              : businessTypeLabel(
+                  businessProfile?.businessType,
+                  businessProfile?.category,
                 )}
-              {isLodgingType(businessProfile.businessType) &&
-                businessProfile.settings?.checkOutTime && (
-                  <p>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">Check-out: </span>
-                    {businessProfile.settings.checkOutTime}
-                  </p>
-                )}
-              {isLodgingType(businessProfile.businessType) &&
-                businessProfile.settings?.wifiPassword && (
-                  <p>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">WiFi: </span>
-                    {businessProfile.settings.wifiPassword}
-                  </p>
-                )}
-              {businessProfile.settings?.emergencyPhone && (
-                <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Emergency: </span>
-                  <a
-                    href={`tel:${businessProfile.settings.emergencyPhone.replace(/\s+/g, "")}`}
-                    className="text-brand-500"
-                  >
-                    {businessProfile.settings.emergencyPhone}
-                  </a>
-                </p>
-              )}
-            </div>
-          </div>
+          </p>
+        )}
+        {(profile?.company || businessProfile?.location) && (
+          <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+            {profile ? profile.company : businessProfile?.location}
+          </p>
         )}
 
-        {busyMode && (
-          <div className="card-soft mb-4 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-            Kitchen paused — not accepting new orders right now. Please check back shortly.
-          </div>
+        {qrUrl && (profile || businessProfile) && (
+          <a
+            href={qrUrl}
+            download={`${cardData.cardId}-qr.png`}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-all duration-200 hover:bg-brand-600"
+          >
+            <HiOutlineQrcode className="text-lg" />
+            Save Contact
+          </a>
         )}
+      </div>
+    </div>
+  );
 
-        {!busyMode && waitMins ? (
-          <div className="mb-4 rounded-2xl bg-[#fdf3f0] px-4 py-3 text-center text-sm font-semibold text-[#DE3A16]">
-            Typical wait ~{waitMins} minutes
-            {businessProfile?.settings?.kitchenLoad === "HIGH" ? " (busy)" : ""}
-          </div>
-        ) : null}
-
-        {businessProfile?.menus?.length ? (
-          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-2 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="section-label mb-0">
-                {menuSectionLabel(businessProfile.businessType)}
-              </p>
-              {!busyMode && (
-                <button
-                  type="button"
-                  onClick={() => void loadSameAsLast()}
-                  className="text-[11px] font-semibold text-[#DE3A16] underline-offset-2 hover:underline"
-                >
-                  Same as last time
-                </button>
-              )}
-            </div>
-            {businessProfile.menus.map((menu) => (
-              <div key={menu.id} className="mb-4 last:mb-0">
-                <h3 className="border-b border-gray-100 dark:border-gray-800 pb-1 font-bold text-gray-900 dark:text-gray-100">
-                  {menu.title}
-                </h3>
-                <div className="mt-3 space-y-3">
-                  {menu.items
-                    ?.filter((item) => {
-                      if (item.isSoldOut) return true; // still show, disabled
-                      return true;
-                    })
-                    .map((item) => {
-                    const inCartQty = cart
-                      .filter((c) => c.id === item.id)
-                      .reduce((sum, c) => sum + c.qty, 0);
-                    const soldOut = Boolean(item.isSoldOut);
-                    return (
-                      <div
-                        key={item.id}
-                        className={`flex gap-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                          soldOut ? "opacity-60" : ""
-                        }`}
-                      >
-                        {item.imageUrl && (
-                          <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl">
-                            <img
-                              src={item.imageUrl}
-                              alt={item.name}
-                              className="h-full w-full object-cover transition-transform duration-300 ease-out hover:scale-110"
-                            />
-                          </div>
-                        )}
-                        <div className="flex min-w-0 flex-1 flex-col justify-between">
-                          <div>
-                            <div className="flex items-start justify-between gap-2">
-                              <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
-                                {item.name}
-                                {soldOut && (
-                                  <span className="ml-2 text-[10px] font-bold uppercase text-red-500">
-                                    Sold out
-                                  </span>
-                                )}
-                                {item.availability && item.availability !== "ALL" && (
-                                  <span className="ml-2 text-[10px] font-semibold uppercase text-gray-400">
-                                    {item.availability.replace("_", " ")}
-                                  </span>
-                                )}
-                              </span>
-                              <span className="flex-shrink-0 font-bold text-[#DE3A16]">
-                                RWF {item.price.toLocaleString()}
-                              </span>
-                            </div>
-                            {item.description && (
-                              <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                                {item.description}
-                              </p>
-                            )}
-                            <p className="mt-1 text-[11px] text-gray-400">
-                              Customize how you want it
-                            </p>
-                          </div>
-                          <div className="mt-2 flex items-center gap-2">
-                            <button
-                              disabled={soldOut || busyMode}
-                              onClick={() => setCustomizeItem(item)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm dark:shadow-none shadow-[#DE3A16]/20 transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <HiOutlinePlus className="text-xs" /> Customize & add
-                            </button>
-                            {inCartQty > 0 && (
-                              <span className="text-xs font-semibold text-[#DE3A16]">
-                                {inCartQty} in cart
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        {hasContacts && (
-          <div className="card-soft mb-4 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] px-2 py-3 animate-slide-up-3">
-            <p className="section-label mb-2 px-2">Contact</p>
-
-            {(profile?.phone || businessProfile?.phone) && (
-              <ContactRow
-                href={`tel:${(profile ? profile.phone : businessProfile?.phone)!.replace(/\s+/g, "")}`}
-                icon={<HiOutlinePhone className="text-lg text-green-400" />}
-                label="Phone"
-                value={profile ? profile.phone! : businessProfile!.phone!}
-              />
-            )}
-            {(profile?.email || businessProfile?.email) && (
-              <ContactRow
-                href={`mailto:${profile ? profile.email : businessProfile?.email}`}
-                icon={<HiOutlineMail className="text-lg text-blue-400" />}
-                label="Email"
-                value={profile ? profile.email! : businessProfile!.email!}
-              />
-            )}
-            {(profile?.whatsapp || businessProfile?.whatsapp) && (
-              <ContactRow
-                href={`https://wa.me/${(profile ? profile.whatsapp! : businessProfile!.whatsapp!).replace(/[^0-9]/g, "")}`}
-                icon={<FaWhatsapp className="text-lg text-emerald-400" />}
-                label="WhatsApp"
-                value={`+${profile ? profile.whatsapp! : businessProfile!.whatsapp!}`}
-                target="_blank"
-              />
-            )}
-            {(profile?.website || businessProfile?.website) && (
-              <ContactRow
-                href={(() => {
-                  const w = profile
-                    ? profile.website!
-                    : businessProfile!.website!;
-                  return /^https?:\/\//i.test(w) ? w : `https://${w}`;
-                })()}
-                icon={<HiOutlineGlobe className="text-lg text-purple-400" />}
-                label="Website"
-                value={(profile
-                  ? profile.website!
-                  : businessProfile!.website!
-                ).replace(/^https?:\/\//, "")}
-                target="_blank"
-              />
-            )}
-          </div>
-        )}
-
-        {(() => {
-          const links = profile?.links?.length ? profile.links : businessProfile?.links?.length ? businessProfile.links : null;
-          if (!links) return null;
-          return (
-            <div className="card-soft mb-5 rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-5 animate-slide-up-4 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] hover:-translate-y-1.5 transition-all duration-300">
-              <p className="section-label mb-4">Social Network</p>
-              <div className="flex flex-wrap gap-3">
-                {links.map((link, index) => (
-                  <a
-                    key={index}
-                    href={resolveLink(link.type, link.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col items-center gap-2"
-                    aria-label={link.label}
-                  >
-                    <div
-                      style={{ backgroundColor: getLinkDisplay(link.type, link.url).bg }}
-                      className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg"
-                    >
-                      {getLinkDisplay(link.type, link.url).icon}
-                    </div>
-                    <span className="max-w-[56px] truncate text-center text-xs text-gray-600 dark:text-gray-400 transition-colors group-hover:text-gray-800 dark:text-gray-200">
-                      {link.label}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-          Powered by Icumu Tech Ltd
+  const aboutCard =
+    profile?.bio || businessProfile?.description ? (
+      <div className="card-soft rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-slide-up-1 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)]">
+        <p className="section-label mb-3">About</p>
+        <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+          {profile ? profile.bio : businessProfile?.description}
         </p>
       </div>
+    ) : null;
 
-      {/* Floating cart button — only for business cards with items in cart */}
+  const visitInfoCard =
+    businessProfile &&
+    (isLodgingType(businessProfile.businessType) ||
+      businessProfile.settings?.operatingHours ||
+      businessProfile.settings?.emergencyPhone) ? (
+      <div className="card-soft rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-slide-up-1 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)]">
+        <p className="section-label mb-3">
+          {isLodgingType(businessProfile.businessType)
+            ? "Guest Information"
+            : "Visit Info"}
+        </p>
+        <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+          {businessProfile.settings?.operatingHours && (
+            <p>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">Hours: </span>
+              {businessProfile.settings.operatingHours}
+            </p>
+          )}
+          {isLodgingType(businessProfile.businessType) &&
+            businessProfile.settings?.checkInTime && (
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Check-in: </span>
+                {businessProfile.settings.checkInTime}
+              </p>
+            )}
+          {isLodgingType(businessProfile.businessType) &&
+            businessProfile.settings?.checkOutTime && (
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">Check-out: </span>
+                {businessProfile.settings.checkOutTime}
+              </p>
+            )}
+          {isLodgingType(businessProfile.businessType) &&
+            businessProfile.settings?.wifiPassword && (
+              <p>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">WiFi: </span>
+                {businessProfile.settings.wifiPassword}
+              </p>
+            )}
+          {businessProfile.settings?.emergencyPhone && (
+            <p>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">Emergency: </span>
+              <a
+                href={`tel:${businessProfile.settings.emergencyPhone.replace(/\s+/g, "")}`}
+                className="text-brand-500"
+              >
+                {businessProfile.settings.emergencyPhone}
+              </a>
+            </p>
+          )}
+        </div>
+      </div>
+    ) : null;
+
+  const orderBanners = (
+    <>
+      {busyMode && (
+        <div className="card-soft rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+          Kitchen paused — not accepting new orders right now. Please check back shortly.
+        </div>
+      )}
+      {!busyMode && waitMins ? (
+        <div className="rounded-2xl bg-[#fdf3f0] px-4 py-3 text-center text-sm font-semibold text-[#DE3A16]">
+          Typical wait ~{waitMins} minutes
+          {businessProfile?.settings?.kitchenLoad === "HIGH" ? " (busy)" : ""}
+        </div>
+      ) : null}
+    </>
+  );
+
+  const menuSection =
+    businessProfile?.menus?.length ? (
+      <div className="card-soft rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-slide-up-2 transition-all duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)] lg:p-6">
+        <div className="mb-3 flex items-center justify-between gap-2 lg:mb-5">
+          <p className="section-label mb-0">
+            {menuSectionLabel(businessProfile.businessType)}
+          </p>
+          {!busyMode && (
+            <button
+              type="button"
+              onClick={() => void loadSameAsLast()}
+              className="text-[11px] font-semibold text-[#DE3A16] underline-offset-2 hover:underline lg:text-xs"
+            >
+              Same as last time
+            </button>
+          )}
+        </div>
+        {businessProfile.menus.map((menu) => (
+          <div key={menu.id} className="mb-6 last:mb-0">
+            <h3 className="border-b border-gray-100 pb-1 font-bold text-gray-900 dark:border-gray-800 dark:text-gray-100 lg:text-lg">
+              {menu.title}
+            </h3>
+            <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
+              {menu.items?.map((item) => {
+                const inCartQty = cart
+                  .filter((c) => c.id === item.id)
+                  .reduce((sum, c) => sum + c.qty, 0);
+                const soldOut = Boolean(item.isSoldOut);
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex gap-3 rounded-2xl border border-gray-100 bg-white p-3 text-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900 lg:gap-4 lg:p-4 ${
+                      soldOut ? "opacity-60" : ""
+                    }`}
+                  >
+                    {item.imageUrl && (
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl lg:h-28 lg:w-28">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-full w-full object-cover transition-transform duration-300 ease-out hover:scale-110"
+                        />
+                      </div>
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col justify-between">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-semibold leading-snug text-gray-900 dark:text-gray-100 lg:text-base">
+                            {item.name}
+                            {soldOut && (
+                              <span className="ml-2 text-[10px] font-bold uppercase text-red-500">
+                                Sold out
+                              </span>
+                            )}
+                            {item.availability && item.availability !== "ALL" && (
+                              <span className="ml-2 text-[10px] font-semibold uppercase text-gray-400">
+                                {item.availability.replace("_", " ")}
+                              </span>
+                            )}
+                          </span>
+                          <span className="flex-shrink-0 font-bold text-[#DE3A16]">
+                            RWF {item.price.toLocaleString()}
+                          </span>
+                        </div>
+                        {item.description && (
+                          <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400 lg:mt-1 lg:line-clamp-2">
+                            {item.description}
+                          </p>
+                        )}
+                        <p className="mt-1 text-[11px] text-gray-400">
+                          Customize how you want it
+                        </p>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          disabled={soldOut || busyMode}
+                          onClick={() => setCustomizeItem(item)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#DE3A16] px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-[#DE3A16]/20 transition-all hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-none lg:px-3.5 lg:py-2"
+                        >
+                          <HiOutlinePlus className="text-xs" /> Customize & add
+                        </button>
+                        {inCartQty > 0 && (
+                          <span className="text-xs font-semibold text-[#DE3A16]">
+                            {inCartQty} in cart
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
+  const contactCard = hasContacts ? (
+    <div className="card-soft rounded-3xl px-2 py-3 shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-slide-up-3">
+      <p className="section-label mb-2 px-2">Contact</p>
+      {(profile?.phone || businessProfile?.phone) && (
+        <ContactRow
+          href={`tel:${(profile ? profile.phone : businessProfile?.phone)!.replace(/\s+/g, "")}`}
+          icon={<HiOutlinePhone className="text-lg text-green-400" />}
+          label="Phone"
+          value={profile ? profile.phone! : businessProfile!.phone!}
+        />
+      )}
+      {(profile?.email || businessProfile?.email) && (
+        <ContactRow
+          href={`mailto:${profile ? profile.email : businessProfile?.email}`}
+          icon={<HiOutlineMail className="text-lg text-blue-400" />}
+          label="Email"
+          value={profile ? profile.email! : businessProfile!.email!}
+        />
+      )}
+      {(profile?.whatsapp || businessProfile?.whatsapp) && (
+        <ContactRow
+          href={`https://wa.me/${(profile ? profile.whatsapp! : businessProfile!.whatsapp!).replace(/[^0-9]/g, "")}`}
+          icon={<FaWhatsapp className="text-lg text-emerald-400" />}
+          label="WhatsApp"
+          value={`+${profile ? profile.whatsapp! : businessProfile!.whatsapp!}`}
+          target="_blank"
+        />
+      )}
+      {(profile?.website || businessProfile?.website) && (
+        <ContactRow
+          href={(() => {
+            const w = profile ? profile.website! : businessProfile!.website!;
+            return /^https?:\/\//i.test(w) ? w : `https://${w}`;
+          })()}
+          icon={<HiOutlineGlobe className="text-lg text-purple-400" />}
+          label="Website"
+          value={(profile ? profile.website! : businessProfile!.website!).replace(
+            /^https?:\/\//,
+            "",
+          )}
+          target="_blank"
+        />
+      )}
+    </div>
+  ) : null;
+
+  const socialCard = socialLinks ? (
+    <div className="card-soft rounded-3xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.08)] animate-slide-up-4 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.13)]">
+      <p className="section-label mb-4">Social Network</p>
+      <div className="flex flex-wrap gap-3 lg:gap-4">
+        {socialLinks.map((link, index) => (
+          <a
+            key={index}
+            href={resolveLink(link.type, link.url)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col items-center gap-2"
+            aria-label={link.label}
+          >
+            <div
+              style={{ backgroundColor: getLinkDisplay(link.type, link.url).bg }}
+              className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg"
+            >
+              {getLinkDisplay(link.type, link.url).icon}
+            </div>
+            <span className="max-w-[56px] truncate text-center text-xs text-gray-600 transition-colors group-hover:text-gray-800 dark:text-gray-400 dark:group-hover:text-gray-200">
+              {link.label}
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  const poweredBy = (
+    <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+      Powered by Icumu Tech Ltd
+    </p>
+  );
+
+  return (
+    <div className="relative min-h-screen bg-white pb-24 dark:bg-gray-950 lg:pb-10">
+      {bgImage && (
+        <>
+          <div
+            className="fixed inset-0 z-0"
+            style={{
+              backgroundImage: `url('${bgImage}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center center",
+              backgroundRepeat: "no-repeat",
+              backgroundAttachment: "fixed",
+            }}
+          />
+          <div className="fixed inset-0 z-0 bg-white/70 backdrop-blur-[1px] dark:bg-gray-950/75 lg:bg-white/80 lg:dark:bg-gray-950/80" />
+        </>
+      )}
+
+      <div
+        className={`relative z-10 mx-auto w-full px-4 pt-8 ${
+          isBusiness ? "max-w-sm lg:max-w-6xl" : "max-w-sm lg:max-w-2xl"
+        }`}
+      >
+        {isBusiness ? (
+          <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-8">
+            <aside className="space-y-4 lg:sticky lg:top-8 lg:self-start">
+              {identityCard}
+              {aboutCard}
+              {visitInfoCard}
+              {contactCard}
+              {socialCard}
+              <div className="hidden lg:block">{poweredBy}</div>
+            </aside>
+            <main className="mt-4 space-y-4 lg:mt-0">
+              {orderBanners}
+              {menuSection ?? (
+                <div className="card-soft rounded-3xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-500 dark:border-gray-700">
+                  Menu coming soon.
+                </div>
+              )}
+              <div className="lg:hidden">{poweredBy}</div>
+            </main>
+          </div>
+        ) : (
+          <div className="space-y-4 lg:space-y-5">
+            {identityCard}
+            {aboutCard && (
+              <div className="lg:mx-auto lg:max-w-none">{aboutCard}</div>
+            )}
+            {(contactCard || socialCard) && (
+              <div
+                className={`grid gap-4 ${
+                  contactCard && socialCard ? "lg:grid-cols-2" : ""
+                }`}
+              >
+                {contactCard}
+                {socialCard}
+              </div>
+            )}
+            {poweredBy}
+          </div>
+        )}
+      </div>
+
       {businessProfile && cartCount > 0 && checkoutStep === "form" && !busyMode && (
         <button
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-[#DE3A16] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#DE3A16]/40"
+          className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-[#DE3A16] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#DE3A16]/40 lg:bottom-8"
         >
           <HiOutlineShoppingCart className="text-lg" />
           {cartCount} item{cartCount > 1 ? "s" : ""} &middot; RWF{" "}
@@ -957,11 +1019,10 @@ export function CardPublicView() {
         </button>
       )}
 
-      {/* Resume in-progress order — shown when modal is closed but order is active */}
       {businessProfile && !showCart && checkoutStep !== "form" && (
         <button
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-bold text-white shadow-lg"
+          className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-bold text-white shadow-lg lg:bottom-8"
         >
           <HiOutlineShoppingCart className="text-lg" />
           {checkoutStep === "waiting"
@@ -972,10 +1033,9 @@ export function CardPublicView() {
         </button>
       )}
 
-      {/* Checkout modal — slides up from bottom */}
       {showCart && businessProfile && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-t-3xl bg-white dark:bg-gray-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-[1px] animate-fade-in sm:items-center sm:p-4">
+          <div className="max-h-[92vh] w-full max-w-sm overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl animate-sheet-up dark:bg-gray-900 sm:max-w-md sm:rounded-3xl sm:animate-modal-pop">
             {/* STEP 1 — cart review + customer details */}
             {checkoutStep === "form" && (
               <>

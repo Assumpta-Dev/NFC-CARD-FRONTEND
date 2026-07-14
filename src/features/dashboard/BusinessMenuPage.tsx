@@ -1,12 +1,20 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   HiOutlineLink,
   HiOutlinePhotograph,
   HiOutlinePlus,
   HiOutlineTrash,
 } from "react-icons/hi";
-import { Alert, Button, Input, PageSpinner, Select, Textarea } from "../../components/ui";
+import {
+  Alert,
+  Button,
+  Input,
+  PageSpinner,
+  Pagination,
+  Select,
+  Textarea,
+} from "../../components/ui";
 import {
   BUSINESS_TYPES,
   BusinessType,
@@ -119,11 +127,23 @@ export function BusinessMenuPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Pagination — menu items
+  // Pagination — menu items & linked cards
   const ITEMS_PER_PAGE = 5;
+  const CARDS_PER_PAGE = 5;
   const [itemPage, setItemPage] = useState(1);
+  const [cardPage, setCardPage] = useState(1);
 
   const selectedMenu = menus.find((menu) => menu.id === selectedMenuId) || null;
+
+  const cardTotalPages = Math.max(1, Math.ceil(linkedCards.length / CARDS_PER_PAGE));
+  const pagedCards = useMemo(() => {
+    const start = (cardPage - 1) * CARDS_PER_PAGE;
+    return linkedCards.slice(start, start + CARDS_PER_PAGE);
+  }, [linkedCards, cardPage]);
+
+  useEffect(() => {
+    if (cardPage > cardTotalPages) setCardPage(cardTotalPages);
+  }, [cardPage, cardTotalPages]);
 
   useEffect(() => {
     void initializePage();
@@ -605,7 +625,7 @@ export function BusinessMenuPage() {
             </div>
 
             <div className="space-y-3">
-              {linkedCards.map((card) => (
+              {pagedCards.map((card) => (
                 <div
                   key={card.id}
                   className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 px-4 py-3"
@@ -636,6 +656,15 @@ export function BusinessMenuPage() {
                 </div>
               )}
             </div>
+            {linkedCards.length > CARDS_PER_PAGE && (
+              <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+                <Pagination
+                  currentPage={cardPage}
+                  totalPages={cardTotalPages}
+                  onPageChange={setCardPage}
+                />
+              </div>
+            )}
           </div>
 
           <div className="card-soft rounded-2xl bg-white dark:bg-gray-900 p-6">
@@ -891,24 +920,12 @@ export function BusinessMenuPage() {
                   )}
 
                   {totalItemPages > 1 && (
-                    <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Page {itemPage} of {totalItemPages}</span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setItemPage((p) => Math.max(1, p - 1))}
-                          disabled={itemPage === 1}
-                          className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => setItemPage((p) => Math.min(totalItemPages, p + 1))}
-                          disabled={itemPage === totalItemPages}
-                          className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:bg-gray-950 disabled:opacity-40"
-                        >
-                          Next
-                        </button>
-                      </div>
+                    <div className="border-t border-gray-100 pt-4 dark:border-gray-800">
+                      <Pagination
+                        currentPage={itemPage}
+                        totalPages={totalItemPages}
+                        onPageChange={setItemPage}
+                      />
                     </div>
                   )}
                 </>
